@@ -41,12 +41,6 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 
 	public PHPExplorerLabelProvider(ScriptExplorerContentProvider cp, IPreferenceStore store) {
 		super(cp, store == null ? PHPUiPlugin.getDefault().getPreferenceStore() : store);
-		super.setIsFlatLayout(false);
-	}
-
-	@Override
-	public void setIsFlatLayout(boolean state) {
-		super.setIsFlatLayout(false);
 	}
 
 	@Override
@@ -157,7 +151,11 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 		if (label != null) {
 			return new StyledString(label);
 		}
-		return super.getStyledText(element);
+		StyledString text = super.getStyledText(element);
+		if (element instanceof IScriptFolder) {
+			return new StyledString(text.getString().replace('/', '\\'));
+		}
+		return text;
 	}
 
 	private String doGetText(Object element) {
