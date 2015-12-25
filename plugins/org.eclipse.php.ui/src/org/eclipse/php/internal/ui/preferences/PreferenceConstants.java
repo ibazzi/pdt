@@ -377,7 +377,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PUBLIC_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(34, 128, 76), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { ColorHelper.getColorString(127, 0, 85), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for the PHP variable
@@ -392,7 +392,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PROTECTED_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(165, 124, 44), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { ColorHelper.getColorString(127, 0, 85), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for the PHP variable
@@ -407,7 +407,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PRIVATE_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(194, 27, 48), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { ColorHelper.getColorString(127, 0, 85), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for public keyword
