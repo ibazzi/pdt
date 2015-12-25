@@ -87,7 +87,7 @@ public class LanguageModelContainer implements IBuildpathContainer {
 			HashMap<String, String> map = new HashMap<String, String>();
 			map.put("$nl$", Platform.getNL()); //$NON-NLS-1$
 			URL url = FileLocator.find(provider.getPlugin().getBundle(), provider.getPath(project), map);
-			File sourceFile = new File(FileLocator.toFileURL(url).getPath());
+			File sourceFile = Path.fromOSString(FileLocator.toFileURL(url).getPath()).toFile();
 			LocalFile sourceDir = new LocalFile(sourceFile);
 
 			IPath targetPath = LanguageModelInitializer.getTargetLocation(provider,
