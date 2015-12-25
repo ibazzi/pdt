@@ -79,12 +79,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 
 	protected void init() {
 		IncludePathManager.getInstance().registerIncludepathListener(this);
-		setIsFlatLayout(false);
 		jsContentProvider = new StandardJavaScriptElementContentProvider(true);
-	}
-
-	public void setIsFlatLayout(final boolean state) {
-		super.setIsFlatLayout(false);
 	}
 
 	@Override
@@ -162,9 +157,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 					ArrayList<Object> returnChlidren = new ArrayList<Object>();
 					for (IResource resource2 : members) {
 						IModelElement modelElement = DLTKCore.create(resource2);
-						if (modelElement != null && isSourceFolder(modelElement)) {
-							returnChlidren.add(modelElement);
-						} else {
+						if (modelElement == null || !isSourceFolder(modelElement)) {
 							returnChlidren.add(resource2);
 						}
 					}
@@ -216,15 +209,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 							}
 						}
 					} else {
-						IResource[] resChildren = ((IContainer) resource).members();
-						for (IResource resource2 : resChildren) {
-							IModelElement modelElement = DLTKCore.create(resource2);
-							if (modelElement != null && isInSourceFolder(modelElement)) {
-								returnChildren.add(modelElement);
-							} else {
-								returnChildren.add(resource2);
-							}
-						}
+						return super.getChildren(parentElement);
 					}
 
 					// Adding External libraries to the treeview :

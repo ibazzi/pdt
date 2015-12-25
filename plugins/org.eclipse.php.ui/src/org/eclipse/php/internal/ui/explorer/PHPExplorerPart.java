@@ -60,20 +60,6 @@ public class PHPExplorerPart extends ScriptExplorerPart {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.dltk.internal.ui.scriptview.ScriptExplorerPart#setFlatLayout
-	 * (boolean)
-	 * 
-	 * Always displays in hierarchical mode, never flat.
-	 */
-	@Override
-	public void setFlatLayout(boolean enable) {
-		super.setFlatLayout(false);
-	}
-
 	protected void configWorkingSet() {
 		ScriptExplorerActionGroup actionSet = getActionGroup();
 		WorkingSetModel workingSetModel = getWorkingSetModel();
