@@ -1584,7 +1584,12 @@ public final class ASTRewriteAnalyzer extends AbstractVisitor {
 				|| ((NamespaceDeclaration) node.getParent()).isBracketed()) {
 			blockStart++;
 		}
-		rewriteParagraphList(node, Block.STATEMENTS_PROPERTY, blockStart, startIndent, 0, 1);
+
+		if (node.getParent() instanceof TypeDeclaration) {
+			rewriteParagraphList(node, Block.STATEMENTS_PROPERTY, blockStart, startIndent, -1, 2);
+		} else {
+			rewriteParagraphList(node, Block.STATEMENTS_PROPERTY, blockStart, startIndent, 0, 1);
+		}
 
 		// Check for While, For, If, ForEach, Switch
 		// In each case, the basic form of the alternate syntax is to change the

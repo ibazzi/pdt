@@ -209,7 +209,7 @@ public class ASTRewriteFlattener extends AbstractVisitor {
 
 	public boolean visit(Block block) {
 		if (block.isBracketed()) {
-			result.append("{\n"); //$NON-NLS-1$
+			result.append(" {\n"); //$NON-NLS-1$
 		} else if (block.isColon()) {
 			result.append(":\n"); //$NON-NLS-1$
 		}
@@ -217,7 +217,7 @@ public class ASTRewriteFlattener extends AbstractVisitor {
 		visitList(block, Block.STATEMENTS_PROPERTY, null);
 
 		if (block.isBracketed()) {
-			result.append("}\n"); //$NON-NLS-1$
+			result.append("}"); //$NON-NLS-1$
 		} else if (block.isColon()) {
 			StructuralPropertyDescriptor locationInParent = block.getLocationInParent();
 			if (locationInParent == IfStatement.TRUE_STATEMENT_PROPERTY) {
