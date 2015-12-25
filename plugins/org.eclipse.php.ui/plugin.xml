@@ -623,7 +623,7 @@
 			id="org.eclipse.php.ui.explorer.EmptyPackageFilter"
 			targetId="org.eclipse.php.ui.explorer">
 		</filter>
-		<filter name="%HideEmptyInnerPackages.label" enabled="false"
+		<filter name="%HideEmptyInnerPackages.label" enabled="true"
 			description="%HideEmptyInnerPackages.description"
 			class="org.eclipse.dltk.internal.ui.filters.EmptyInnerPackageFilter"
 			id="org.eclipse.php.ui.explorer.EmptyInnerPackageFilter"

@@ -79,13 +79,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 
 	protected void init() {
 		IncludePathManager.getInstance().registerIncludepathListener(this);
-		setIsFlatLayout(false);
 		jsContentProvider = new StandardJavaScriptElementContentProvider(true);
-	}
-
-	@Override
-	public void setIsFlatLayout(final boolean state) {
-		super.setIsFlatLayout(false);
 	}
 
 	@Override
@@ -218,14 +212,12 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 							}
 						}
 					} else {
-						IResource[] resChildren = ((IContainer) resource).members();
-						for (IResource resource2 : resChildren) {
-							IModelElement modelElement = DLTKCore.create(resource2);
-							if (modelElement != null && isInSourceFolder(modelElement)) {
-								returnChildren.add(modelElement);
-							} else {
-								returnChildren.add(resource2);
+						Object[] children = super.getChildren(parentElement);
+						for (Object child : children) {
+							if (child instanceof BuildPathContainer) {
+								continue;
 							}
+							returnChildren.add(child);
 						}
 					}
 
