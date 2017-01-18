@@ -29,6 +29,8 @@ import org.eclipse.ui.PlatformUI;
 public class PHPAppearancePreferencePage extends AbstractPreferencePage {
 
 	private Button showReturnTypeCB;
+	private Button showParameterTypeCB;
+	private Button showParameterNameCB;
 
 	public PHPAppearancePreferencePage() {
 		setPreferenceStore(PHPUiPlugin.getDefault().getPreferenceStore());
@@ -47,6 +49,18 @@ public class PHPAppearancePreferencePage extends AbstractPreferencePage {
 		showReturnTypeCB.setData(PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE);
 		showReturnTypeCB.setLayoutData(gd);
 		add(showReturnTypeCB);
+
+		showParameterTypeCB = new Button(comp, SWT.CHECK);
+		showParameterTypeCB.setText(PHPUIMessages.PHPAppearancePreferencePage_showMehodsParameterType);
+		showParameterTypeCB.setData(PreferenceConstants.APPEARANCE_METHOD_PARAMETER_TYPES);
+		showParameterTypeCB.setLayoutData(gd);
+		add(showParameterTypeCB);
+
+		showParameterNameCB = new Button(comp, SWT.CHECK);
+		showParameterNameCB.setText(PHPUIMessages.PHPAppearancePreferencePage_showMehodsParameterName);
+		showParameterNameCB.setData(PreferenceConstants.APPEARANCE_METHOD_PARAMETER_NAMES);
+		showParameterNameCB.setLayoutData(gd);
+		add(showParameterNameCB);
 	}
 
 	@Override
