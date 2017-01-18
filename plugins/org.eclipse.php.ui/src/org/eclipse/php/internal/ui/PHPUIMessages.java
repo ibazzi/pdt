@@ -234,6 +234,8 @@ public final class PHPUIMessages extends NLS {
 	public static String SearchParticipant_error_noClass;
 	public static String OpenTypeAction_errorTitle;
 	public static String PHPAppearancePreferencePage_showMehodsReturnType;
+	public static String PHPAppearancePreferencePage_showMehodsParameterType;
+	public static String PHPAppearancePreferencePage_showMehodsParameterName;
 	public static String PHPSearchResultPage_groupby_type;
 	public static String IncludePathVariablesPreferencePage_savechanges_message;
 	public static String moveAction_label;
