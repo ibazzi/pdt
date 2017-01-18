@@ -115,15 +115,6 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		if (parent instanceof ISourceModule) {
 			ISourceModule sourceModule = (ISourceModule) parent;
 			this.fSourceModule = sourceModule;
-
-			if (isNamespaceSupported(sourceModule)) {
-				// if namespaces are supported, add use statements node:
-				Object[] newChildren = new Object[children.length + 1];
-				fUseStatementsNode = new UseStatementsNode(sourceModule);
-				newChildren[0] = fUseStatementsNode;
-				System.arraycopy(children, 0, newChildren, 1, children.length);
-				children = newChildren;
-			}
 		}
 		return children;
 	}
