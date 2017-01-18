@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.filters;
 
+import org.eclipse.dltk.core.IImportContainer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.php.internal.ui.outline.PHPOutlineContentProvider.UseStatementsNode;
@@ -21,7 +22,8 @@ public class UseStatementsFilter extends ViewerFilter {
 
 	@Override
 	public boolean select(Viewer viewer, Object parentElement, Object element) {
-		if (element instanceof UseStatementsNode || parentElement instanceof UseStatementsNode) {
+		if (element instanceof UseStatementsNode || parentElement instanceof UseStatementsNode
+				|| element instanceof IImportContainer) {
 			return false;
 		}
 
