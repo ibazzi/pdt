@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.outline;
 
+import org.eclipse.dltk.core.IImportContainer;
 import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ISourceReference;
@@ -397,7 +398,7 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 		}
 
 		public String getText(Object element) {
-			if (element instanceof UseStatementsNode) {
+			if (element instanceof IImportContainer) {
 				return PHPUIMessages.PHPContentOutlineConfiguration_2;
 			}
 			if (element instanceof IModelElement) {
