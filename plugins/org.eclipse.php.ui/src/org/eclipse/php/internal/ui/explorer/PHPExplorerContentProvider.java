@@ -31,7 +31,6 @@ import org.eclipse.dltk.internal.core.*;
 import org.eclipse.dltk.internal.ui.StandardModelElementContentProvider;
 import org.eclipse.dltk.internal.ui.navigator.ProjectFragmentContainer;
 import org.eclipse.dltk.internal.ui.navigator.ScriptExplorerContentProvider;
-import org.eclipse.dltk.internal.ui.scriptview.BuildPathContainer;
 import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -42,7 +41,6 @@ import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.includepath.IIncludepathListener;
 import org.eclipse.php.internal.core.includepath.IncludePath;
 import org.eclipse.php.internal.core.includepath.IncludePathManager;
-import org.eclipse.php.internal.core.language.LanguageModelInitializer;
 import org.eclipse.php.internal.core.project.PHPNature;
 import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.GlobalNamespace;
@@ -209,7 +207,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 							}
 						}
 					} else {
-						return super.getChildren(parentElement);
+						returnChildren.addAll(Arrays.asList(super.getChildren(parentElement)));
 					}
 
 					// Adding External libraries to the treeview :
@@ -251,19 +249,6 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 				returnChildren.add(incPathContainer);
 			}
 		} catch (CoreException e) {
-			Logger.logException(e);
-		}
-
-		// Add the language library
-		try {
-			Object[] projectChildren = getProjectFragments(scriptProject);
-			for (Object modelElement : projectChildren) {
-				if (modelElement instanceof BuildPathContainer && ((BuildPathContainer) modelElement)
-						.getBuildpathEntry().getPath().equals(LanguageModelInitializer.LANGUAGE_CONTAINER_PATH)) {
-					returnChildren.add(modelElement);
-				}
-			}
-		} catch (ModelException e) {
 			Logger.logException(e);
 		}
 
