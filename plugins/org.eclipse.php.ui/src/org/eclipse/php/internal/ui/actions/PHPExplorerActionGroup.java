@@ -20,7 +20,6 @@ import java.util.List;
 import org.eclipse.dltk.internal.ui.actions.CCPActionGroup;
 import org.eclipse.dltk.internal.ui.actions.NewWizardsActionGroup;
 import org.eclipse.dltk.internal.ui.actions.refactoring.RefactorActionGroup;
-import org.eclipse.dltk.internal.ui.scriptview.LayoutActionGroup;
 import org.eclipse.dltk.internal.ui.scriptview.ScriptExplorerActionGroup;
 import org.eclipse.dltk.internal.ui.scriptview.ScriptExplorerPart;
 import org.eclipse.dltk.internal.ui.wizards.buildpath.newsourcepage.GenerateBuildPathActionGroup;
@@ -91,8 +90,8 @@ public class PHPExplorerActionGroup extends ScriptExplorerActionGroup {
 				filtered.add(new PHPNewWizardsActionGroup(getPart().getSite()));
 			} else if (groups[i] instanceof GenerateBuildPathActionGroup) {
 				// ignore
-			} else if (!(groups[i] instanceof LayoutActionGroup || groups[i] instanceof GenerateActionGroup
-					|| groups[i] instanceof RefactorActionGroup || groups[i] instanceof CCPActionGroup)) {
+			} else if (!(groups[i] instanceof GenerateActionGroup || groups[i] instanceof RefactorActionGroup
+					|| groups[i] instanceof CCPActionGroup)) {
 				// use pdt's NavigateActionGroup instead of dltk's
 				if (groups[i] instanceof org.eclipse.dltk.internal.ui.actions.NavigateActionGroup) {
 					groups[i].dispose();
