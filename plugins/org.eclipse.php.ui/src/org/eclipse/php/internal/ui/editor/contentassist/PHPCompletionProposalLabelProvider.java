@@ -40,12 +40,12 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 
 	private static final String ENCLOSING_TYPE_SEPARATOR = String.valueOf(NamespaceReference.NAMESPACE_SEPARATOR);
 
-	protected String createMethodProposalLabel(CompletionProposal methodProposal) {
-		return createStyledMethodProposalLabel(methodProposal).toString();
+	protected StyledString createMethodProposalLabel(CompletionProposal methodProposal) {
+		return createStyledMethodProposalLabel(methodProposal);
 	}
 
-	protected String createOverrideMethodProposalLabel(CompletionProposal methodProposal) {
-		return createStyledOverrideMethodProposalLabel(methodProposal).toString();
+	protected StyledString createOverrideMethodProposalLabel(CompletionProposal methodProposal) {
+		return createStyledOverrideMethodProposalLabel(methodProposal);
 	}
 
 	protected StyledString createStyledOverrideMethodProposalLabel(CompletionProposal methodProposal) {
@@ -132,8 +132,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 				.getBoolean(PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE);
 	}
 
-	public String createTypeProposalLabel(CompletionProposal typeProposal) {
-		return createStyledTypeProposalLabel(typeProposal).toString();
+	public StyledString createTypeProposalLabel(CompletionProposal typeProposal) {
+		return createStyledTypeProposalLabel(typeProposal);
 	}
 
 	protected String createLabelWithTypeAndDeclaration(CompletionProposal proposal) {
@@ -149,11 +149,6 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 
 		return nameBuffer.toString();
-	}
-
-	@Override
-	protected String createTypeProposalLabel(String fullName) {
-		return super.createTypeProposalLabel(fullName);
 	}
 
 	@Override
@@ -179,8 +174,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		return super.createTypeImageDescriptor(proposal);
 	}
 
-	public String createFieldProposalLabel(CompletionProposal proposal) {
-		return createStyledFieldProposalLabel(proposal).toString();
+	public StyledString createFieldProposalLabel(CompletionProposal proposal) {
+		return createStyledFieldProposalLabel(proposal);
 	}
 
 	@Override
@@ -404,8 +399,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	@Override
-	protected String createSimpleLabelWithType(CompletionProposal proposal) {
-		return createStyledSimpleLabelWithType(proposal).toString();
+	protected StyledString createSimpleLabelWithType(CompletionProposal proposal) {
+		return createStyledSimpleLabelWithType(proposal);
 	}
 
 	protected void appendQualifier(StyledString buffer, IModelElement modelElement) {
@@ -413,13 +408,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			return;
 		}
 		buffer.append(" - ", StyledString.QUALIFIER_STYLER); //$NON-NLS-1$
-
-		if (modelElement instanceof IType) {
-			IType type = (IType) modelElement;
-			buffer.append(type.getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR), StyledString.QUALIFIER_STYLER); // $NON-NLS-1$
-		} else {
-			buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
-		}
+		buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
 	}
 
 }
