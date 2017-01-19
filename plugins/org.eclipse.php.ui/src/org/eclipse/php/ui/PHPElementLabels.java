@@ -11,11 +11,17 @@
  *******************************************************************************/
 package org.eclipse.php.ui;
 
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.internal.corext.util.Strings;
 import org.eclipse.dltk.ui.ScriptElementLabels;
+import org.eclipse.dltk.ui.viewsupport.ScriptElementLabelComposer;
+import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.core.compiler.IPHPModifiers;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
+import org.eclipse.php.internal.ui.viewsupport.PHPElementLabelComposer;
+import org.eclipse.ui.model.IWorkbenchAdapter;
 
 public class PHPElementLabels extends ScriptElementLabels {
 	private final String MIXED_RETURN_TYPE = "mixed"; //$NON-NLS-1$
@@ -208,6 +214,27 @@ public class PHPElementLabels extends ScriptElementLabels {
 		} else if (method.getParameters().length > 0) {
 			buf.append(ELLIPSIS_STRING);
 		}
+	}
+
+	protected ScriptElementLabelComposer getScriptElementLabelComposer(StringBuffer buf) {
+		return new PHPElementLabelComposer(buf);
+	}
+
+	protected ScriptElementLabelComposer getScriptElementLabelComposer(StyledString buf) {
+		return new PHPElementLabelComposer(buf);
+	}
+
+	public StyledString getStyledTextLabel(Object obj, long flags) {
+		if (obj instanceof IModelElement) {
+			return getStyledElementLabel((IModelElement) obj, flags);
+
+		} else if (obj instanceof IAdaptable) {
+			IWorkbenchAdapter wbadapter = (IWorkbenchAdapter) ((IAdaptable) obj).getAdapter(IWorkbenchAdapter.class);
+			if (wbadapter != null) {
+				return Strings.markLTR(new StyledString(wbadapter.getLabel(obj)));
+			}
+		}
+		return new StyledString();
 	}
 
 	@Override
