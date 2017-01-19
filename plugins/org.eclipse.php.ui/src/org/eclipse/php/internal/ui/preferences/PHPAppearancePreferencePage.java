@@ -13,7 +13,9 @@
 package org.eclipse.php.internal.ui.preferences;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.dltk.ui.PreferenceConstants;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.php.internal.ui.IPHPHelpContextIds;
 import org.eclipse.php.internal.ui.PHPUIMessages;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
@@ -61,6 +63,11 @@ public class PHPAppearancePreferencePage extends AbstractPreferencePage {
 		showParameterNameCB.setData(PreferenceConstants.APPEARANCE_METHOD_PARAMETER_NAMES);
 		showParameterNameCB.setLayoutData(gd);
 		add(showParameterNameCB);
+	}
+
+	@Override
+	public IPreferenceStore getPreferenceStore() {
+		return DLTKUIPlugin.getDefault().getPreferenceStore();
 	}
 
 	protected Control createContents(Composite parent) {

@@ -445,8 +445,9 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	 */
 	protected ElementTreeSelectionDialog createWorkspaceFileSelectionDialog(String title, String message) {
 		ScriptExplorerContentProvider treeContentProvider = createContentProvider();
+		final IPreferenceStore store = DLTKUIPlugin.getDefault().getPreferenceStore();
 		final DecoratingLabelProvider provider = new DecoratingLabelProvider(
-				new PHPExplorerLabelProvider(treeContentProvider, null), new ProblemsLabelDecorator(null));
+				new PHPExplorerLabelProvider(treeContentProvider, store), new ProblemsLabelDecorator(null));
 
 		ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(getShell(), provider, treeContentProvider);
 		// dialog.setComparator(new JavaElementComparator());
@@ -507,8 +508,9 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		// | JavaElementLabelProvider.SHOW_SMALL_ICONS;
 
 		ScriptExplorerContentProvider treeContentProvider = createContentProvider();
+		final IPreferenceStore store = DLTKUIPlugin.getDefault().getPreferenceStore();
 		final DecoratingLabelProvider provider = new DecoratingLabelProvider(
-				new PHPExplorerLabelProvider(treeContentProvider, null), new ProblemsLabelDecorator(null));
+				new PHPExplorerLabelProvider(treeContentProvider, store), new ProblemsLabelDecorator(null));
 		fInputGroup = new CheckboxTreeAndListGroup(parent, DLTKCore.create(ResourcesPlugin.getWorkspace().getRoot()),
 				treeContentProvider, provider, new StandardModelElementContentProvider(), provider, SWT.NONE,
 				SIZING_SELECTION_WIDGET_WIDTH, SIZING_SELECTION_WIDGET_HEIGHT) {

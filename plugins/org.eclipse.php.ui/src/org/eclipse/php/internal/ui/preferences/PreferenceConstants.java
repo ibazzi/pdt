@@ -13,6 +13,7 @@ package org.eclipse.php.internal.ui.preferences;
 
 import java.util.Locale;
 
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.MessageDialogWithToggle;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -1062,11 +1063,15 @@ public class PreferenceConstants {
 		store.setDefault(APPEARANCE_METHOD_RETURNTYPE, true);
 		store.setDefault(APPEARANCE_METHOD_TYPEPARAMETERS, true);
 
-		store.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE, true);
-		store.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_TYPEPARAMETERS, true);
-		store.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_PARAMETER_TYPES, false);
-		store.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_PARAMETER_NAMES, true);
-		store.setDefault(APPEARANCE_ENABLE_VISIBILITY_SORT_ORDER, false);
+		DLTKUIPlugin.getDefault().getPreferenceStore()
+				.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE, true);
+		DLTKUIPlugin.getDefault().getPreferenceStore()
+				.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_TYPEPARAMETERS, true);
+		DLTKUIPlugin.getDefault().getPreferenceStore()
+				.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_PARAMETER_TYPES, false);
+		DLTKUIPlugin.getDefault().getPreferenceStore()
+				.setDefault(org.eclipse.dltk.ui.PreferenceConstants.APPEARANCE_METHOD_PARAMETER_NAMES, true);
+		DLTKUIPlugin.getDefault().getPreferenceStore().setDefault(APPEARANCE_ENABLE_VISIBILITY_SORT_ORDER, false);
 
 		store.setDefault(EDITOR_CLOSE_BRACKETS, true);
 		store.setDefault(EDITOR_CLOSE_BRACES, true);

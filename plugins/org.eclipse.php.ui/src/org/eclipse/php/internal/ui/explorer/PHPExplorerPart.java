@@ -106,7 +106,8 @@ public class PHPExplorerPart extends ScriptExplorerPart {
 	 */
 	@Override
 	protected ScriptExplorerLabelProvider createLabelProvider() {
-		return new PHPExplorerLabelProvider(getContentProvider(), null);
+		final IPreferenceStore store = DLTKUIPlugin.getDefault().getPreferenceStore();
+		return new PHPExplorerLabelProvider(getContentProvider(), store);
 	}
 
 	/**

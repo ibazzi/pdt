@@ -56,7 +56,7 @@ public class ParameterVariableHighlighting extends AbstractSemanticHighlighting 
 
 	@Override
 	protected void initDefaultPreferences() {
-		getStyle().setEnabledByDefault(false).setUnderlineByDefault(true);
+		getStyle().setEnabledByDefault(true).setDefaultTextColor(106, 62, 62);
 	}
 
 	public String getDisplayName() {

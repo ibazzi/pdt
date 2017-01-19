@@ -388,12 +388,12 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 	class PHPAppearanceAwareLabelProvider extends AppearanceAwareLabelProvider {
 
 		public PHPAppearanceAwareLabelProvider(IPreferenceStore store) {
-			super(store == null ? PHPUiPlugin.getDefault().getPreferenceStore() : store);
+			super(store);
 			fImageLabelProvider = new UseStatementAwareImageProvider();
 		}
 
 		public PHPAppearanceAwareLabelProvider(long textFlags, int imageFlags, IPreferenceStore store) {
-			super(textFlags, imageFlags, store == null ? PHPUiPlugin.getDefault().getPreferenceStore() : store);
+			super(textFlags, imageFlags, store);
 			fImageLabelProvider = new UseStatementAwareImageProvider();
 		}
 

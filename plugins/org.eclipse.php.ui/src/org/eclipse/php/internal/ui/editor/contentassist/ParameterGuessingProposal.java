@@ -364,7 +364,7 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 				AliasType aliasType = (AliasType) fc.getParent();
 				alias = aliasType.getAlias();
 				if (aliasType.getParent() instanceof IType) {
-					fc = FakeConstructor.createFakeConstructor(null, (IType) aliasType.getParent(), false);
+					fc = FakeConstructor.createFakeConstructor(null, (IType) aliasType.getType(), false);
 				}
 			}
 			IType type = fc.getDeclaringType();

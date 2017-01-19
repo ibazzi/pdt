@@ -24,7 +24,6 @@ import org.eclipse.jface.text.IInformationControlExtension3;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.corext.util.SuperTypeHierarchyCache;
 import org.eclipse.php.ui.OverrideIndicatorLabelDecorator;
 import org.eclipse.swt.graphics.Rectangle;
@@ -43,7 +42,7 @@ public class PHPOutlineInformationControl extends ScriptOutlineInformationContro
 		implements IInformationControlExtension3 {
 
 	public PHPOutlineInformationControl(Shell parent, int shellStyle, int treeStyle, String commandId) {
-		super(parent, shellStyle, treeStyle, commandId, PHPUiPlugin.getDefault().getPreferenceStore());
+		super(parent, shellStyle, treeStyle, commandId, null);
 	}
 
 	protected ITypeHierarchy getSuperTypeHierarchy(org.eclipse.dltk.core.IType type) {
