@@ -44,7 +44,6 @@ import org.eclipse.php.internal.ui.documentation.PHPElementLinks;
 import org.eclipse.php.internal.ui.util.Messages;
 import org.eclipse.php.internal.ui.util.OpenBrowserUtil;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
-import org.eclipse.php.ui.PHPElementLabels;
 import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.php.ui.editor.hover.IHoverMessageDecorator;
 import org.eclipse.php.ui.editor.hover.IPHPTextHover;
@@ -820,7 +819,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 
 	private static StringBuilder getInfoText(IModelElement member) {
 		long flags = member.getElementType() == IModelElement.FIELD ? LOCAL_VARIABLE_FLAGS : LABEL_FLAGS;
-		String label = PHPElementLabels.getDefault().getElementLabel(member, flags);
+		String label = PHPElementLinks.getElementLabel(member, flags);
 		return new StringBuilder(label);
 	}
 }

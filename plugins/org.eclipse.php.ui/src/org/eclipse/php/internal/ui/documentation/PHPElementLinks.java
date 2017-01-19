@@ -15,11 +15,16 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
+import org.eclipse.php.internal.ui.corext.util.Strings;
+import org.eclipse.php.internal.ui.viewsupport.PHPElementLabelComposer;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
@@ -72,6 +77,61 @@ public class PHPElementLinks {
 		 * Informs the handler that the text of the browser was set.
 		 */
 		void handleTextSet();
+	}
+
+	private static final class PHPElementLinkedLabelComposer extends PHPElementLabelComposer {
+
+		private static List<String> primitiveTypes = Arrays.asList(new String[] { "bool", "int", "boolean", "integer",
+				"float", "double", "string", "array", "object", "callback", "mixed", "void" });
+		private final IModelElement fElement;
+
+		public PHPElementLinkedLabelComposer(IModelElement member, StringBuffer buf) {
+			super(buf);
+			if (member instanceof IPackageDeclaration) {
+				fElement = member.getAncestor(IModelElement.PACKAGE_DECLARATION);
+			} else {
+				fElement = member;
+			}
+		}
+
+		@Override
+		public String getElementName(IModelElement element) {
+			String elementName = element.getElementName();
+			return getElementName(element, elementName);
+		}
+
+		@Override
+		protected String getElementName(String typeName, ISourceModule sourceModule, int offset) {
+			if (primitiveTypes.contains(typeName)) {
+				return typeName;
+			}
+			try {
+				IType[] types = PHPModelUtils.getTypes(typeName, sourceModule, offset, null);
+				if (types.length > 0) {
+					return getElementName(types[0]);
+				}
+			} catch (ModelException e) {
+			}
+			return super.getElementName(typeName, sourceModule, offset);
+		}
+
+		private String getElementName(IModelElement element, String elementName) {
+			if (element.equals(fElement)) { // linking to the member itself
+											// would be a no-op
+				return elementName;
+			}
+			if (elementName.length() == 0) { // anonymous
+				return elementName;
+			}
+			try {
+				String uri = createURI(PHPDOC_SCHEME, element);
+				return createHeaderLink(uri, elementName);
+			} catch (URISyntaxException e) {
+				PHPUiPlugin.log(e);
+				return elementName;
+			}
+		}
+
 	}
 
 	public static final String OPEN_LINK_SCHEME = "eclipse-open"; //$NON-NLS-1$
@@ -293,6 +353,78 @@ public class PHPElementLinks {
 			}
 		}
 		return new URI(scheme, ssp.toString(), null).toASCIIString();
+	}
+
+	/**
+	 * Creates a link with the given URI and label text.
+	 * 
+	 * @param uri
+	 *            the URI
+	 * @param label
+	 *            the label
+	 * @return the HTML link
+	 * @since 3.6
+	 */
+	public static String createLink(String uri, String label) {
+		return "<a href='" + uri + "'>" + label + "</a>"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	}
+
+	/**
+	 * Creates a header link with the given URI and label text.
+	 * 
+	 * @param uri
+	 *            the URI
+	 * @param label
+	 *            the label
+	 * @return the HTML link
+	 * @since 3.6
+	 */
+	public static String createHeaderLink(String uri, String label) {
+		return "<a class='header' href='" + uri + "'>" + label + "</a>"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+	}
+
+	/**
+	 * Returns the label for a Java element with the flags as defined by
+	 * {@link JavaElementLabels}. Referenced element names in the label (except
+	 * the given element's name) are rendered as header links.
+	 * 
+	 * @param element
+	 *            the element to render
+	 * @param flags
+	 *            the rendering flags
+	 * @return the label of the Java element
+	 * @since 3.5
+	 */
+	public static String getElementLabel(IModelElement element, long flags) {
+		return getElementLabel(element, flags, false);
+	}
+
+	/**
+	 * Returns the label for a Java element with the flags as defined by
+	 * {@link JavaElementLabels}. Referenced element names in the label are
+	 * rendered as header links. If <code>linkAllNames</code> is
+	 * <code>false</code>, don't link the name of the given element
+	 * 
+	 * @param element
+	 *            the element to render
+	 * @param flags
+	 *            the rendering flags
+	 * @param linkAllNames
+	 *            if <code>true</code>, link all names; if <code>false</code>,
+	 *            link all names except original element's name
+	 * @return the label of the Java element
+	 * @since 3.6
+	 */
+	public static String getElementLabel(IModelElement element, long flags, boolean linkAllNames) {
+		StringBuffer buf = new StringBuffer();
+
+		if (!Strings.USE_TEXT_PROCESSOR) {
+			new PHPElementLinkedLabelComposer(linkAllNames ? null : element, buf).getElementLabel(element, flags);
+			return Strings.markLTR(buf.toString());
+		} else {
+			String label = ScriptElementLabels.getDefault().getElementLabel(element, flags);
+			return label.replaceAll("<", "&lt;").replaceAll(">", "&gt;"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		}
 	}
 
 }
