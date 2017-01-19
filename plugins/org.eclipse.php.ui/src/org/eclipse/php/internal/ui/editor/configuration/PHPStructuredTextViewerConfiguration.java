@@ -19,7 +19,9 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IPreferencesService;
 import org.eclipse.dltk.internal.ui.typehierarchy.HierarchyInformationControl;
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.dltk.ui.actions.IScriptEditorActionDefinitionIds;
+import org.eclipse.dltk.ui.viewsupport.ColoredViewersManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.*;
@@ -279,6 +281,8 @@ public class PHPStructuredTextViewerConfiguration extends StructuredTextViewerCo
 					PHPCoreConstants.CODEASSIST_AUTOACTIVATION_DELAY, 0, null));
 			fContentAssistant.enableAutoInsert(preferencesService.getBoolean(PHPCorePlugin.ID,
 					PHPCoreConstants.CODEASSIST_AUTOINSERT, false, null));
+			fContentAssistant.enableColoredLabels(ColoredViewersManager.showColoredLabels());
+			fContentAssistant.setRestoreCompletionProposalSize(getSettings("completion_proposal_size"));
 
 			addContentAssistProcessors(sourceViewer);
 		}
@@ -754,6 +758,14 @@ public class PHPStructuredTextViewerConfiguration extends StructuredTextViewerCo
 		IEditorInput input = editor.getEditorInput();
 		IDocumentProvider provider = editor.getDocumentProvider();
 		return provider.getDocument(input);
+	}
+
+	protected IDialogSettings getSettings(String sectionName) {
+		IDialogSettings settings = DLTKUIPlugin.getDefault().getDialogSettings().getSection(sectionName);
+		if (settings == null)
+			settings = DLTKUIPlugin.getDefault().getDialogSettings().addNewSection(sectionName);
+
+		return settings;
 	}
 
 }
