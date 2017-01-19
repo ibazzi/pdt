@@ -27,7 +27,6 @@ import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.core.libfolders.LibraryFolderManager;
 import org.eclipse.php.internal.core.includepath.IncludePath;
 import org.eclipse.php.internal.core.language.LanguageModelInitializer;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.util.LabelProviderUtil;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.swt.graphics.Image;
@@ -40,7 +39,7 @@ import org.eclipse.swt.graphics.Image;
 public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 
 	public PHPExplorerLabelProvider(ScriptExplorerContentProvider cp, IPreferenceStore store) {
-		super(cp, store == null ? PHPUiPlugin.getDefault().getPreferenceStore() : store);
+		super(cp, store);
 	}
 
 	@Override

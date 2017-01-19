@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.navigator;
 
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.php.internal.ui.explorer.PHPExplorerContentProvider;
 import org.eclipse.php.internal.ui.explorer.PHPExplorerLabelProvider;
 
@@ -20,6 +21,6 @@ public class PHPNavigatorLabelProvider extends PHPExplorerLabelProvider {
 			@Override
 			protected void init() {
 			}
-		}, null);
+		}, DLTKUIPlugin.getDefault().getPreferenceStore());
 	}
 }

@@ -17,13 +17,13 @@ import org.eclipse.dltk.core.IType;
 import org.eclipse.dltk.core.ITypeHierarchy;
 import org.eclipse.dltk.core.ModelException;
 import org.eclipse.dltk.ui.text.ScriptOutlineInformationControl;
+import org.eclipse.dltk.ui.viewsupport.ColoringLabelProvider;
 import org.eclipse.dltk.ui.viewsupport.ScriptUILabelProvider;
 import org.eclipse.dltk.ui.viewsupport.StyledDecoratingModelLabelProvider;
 import org.eclipse.jface.text.IInformationControlExtension3;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.corext.util.SuperTypeHierarchyCache;
 import org.eclipse.php.ui.OverrideIndicatorLabelDecorator;
 import org.eclipse.swt.graphics.Rectangle;
@@ -42,7 +42,7 @@ public class PHPOutlineInformationControl extends ScriptOutlineInformationContro
 		implements IInformationControlExtension3 {
 
 	public PHPOutlineInformationControl(Shell parent, int shellStyle, int treeStyle, String commandId) {
-		super(parent, shellStyle, treeStyle, commandId, PHPUiPlugin.getDefault().getPreferenceStore());
+		super(parent, shellStyle, treeStyle, commandId, null);
 	}
 
 	protected ITypeHierarchy getSuperTypeHierarchy(org.eclipse.dltk.core.IType type) {
@@ -83,7 +83,7 @@ public class PHPOutlineInformationControl extends ScriptOutlineInformationContro
 		if (decoratorMgr.getEnabled("org.eclipse.php.ui.override.decorator")) { //$NON-NLS-1$
 			IBaseLabelProvider labelProvider = viewer.getLabelProvider();
 			if (labelProvider instanceof ScriptUILabelProvider) {
-				((ScriptUILabelProvider) viewer.getLabelProvider())
+				((ScriptUILabelProvider) ((ColoringLabelProvider) viewer.getLabelProvider()).getStyledStringProvider())
 						.addLabelDecorator(new OverrideIndicatorLabelDecorator());
 			} else if (labelProvider instanceof StyledDecoratingModelLabelProvider) {
 				// DLTK 5.2
