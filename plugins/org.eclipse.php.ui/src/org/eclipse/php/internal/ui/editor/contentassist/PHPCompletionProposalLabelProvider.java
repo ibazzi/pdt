@@ -32,7 +32,7 @@ import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
 import org.eclipse.php.internal.ui.util.PHPModelLabelProvider;
-import org.eclipse.php.ui.PHPElementLabels;
+import org.eclipse.php.internal.ui.viewsupport.PHPElementLabelComposer;
 
 public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelProvider
 		implements ICompletionProposalLabelProviderExtension {
@@ -41,13 +41,13 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	private static final String ENCLOSING_TYPE_SEPARATOR = String.valueOf(NamespaceReference.NAMESPACE_SEPARATOR);
 
 	@Override
-	protected String createMethodProposalLabel(CompletionProposal methodProposal) {
-		return createStyledMethodProposalLabel(methodProposal).toString();
+	protected StyledString createMethodProposalLabel(CompletionProposal methodProposal) {
+		return createStyledMethodProposalLabel(methodProposal);
 	}
 
 	@Override
-	protected String createOverrideMethodProposalLabel(CompletionProposal methodProposal) {
-		return createStyledOverrideMethodProposalLabel(methodProposal).toString();
+	protected StyledString createOverrideMethodProposalLabel(CompletionProposal methodProposal) {
+		return createStyledOverrideMethodProposalLabel(methodProposal);
 	}
 
 	protected StyledString createStyledOverrideMethodProposalLabel(CompletionProposal methodProposal) {
@@ -135,8 +135,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	@Override
-	public String createTypeProposalLabel(CompletionProposal typeProposal) {
-		return createStyledTypeProposalLabel(typeProposal).toString();
+	public StyledString createTypeProposalLabel(CompletionProposal typeProposal) {
+		return createStyledTypeProposalLabel(typeProposal);
 	}
 
 	protected String createLabelWithTypeAndDeclaration(CompletionProposal proposal) {
@@ -152,11 +152,6 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 
 		return nameBuffer.toString();
-	}
-
-	@Override
-	protected String createTypeProposalLabel(String fullName) {
-		return super.createTypeProposalLabel(fullName);
 	}
 
 	@Override
@@ -183,8 +178,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	@Override
-	public String createFieldProposalLabel(CompletionProposal proposal) {
-		return createStyledFieldProposalLabel(proposal).toString();
+	public StyledString createFieldProposalLabel(CompletionProposal proposal) {
+		return createStyledFieldProposalLabel(proposal);
 	}
 
 	@Override
@@ -314,7 +309,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 						buffer.append(' ');
 					}
 					if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {
-						buffer.append(PHPElementLabels.REFERENCE_STRING);
+						buffer.append(PHPElementLabelComposer.REFERENCE_STRING);
 					}
 					if (isVariadic && i + 1 == parameterNames.length) {
 						buffer.append(ScriptElementLabels.ELLIPSIS_STRING); // $NON-NLS-1$
@@ -336,7 +331,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 					buffer.append(' ');
 				}
 				if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {
-					buffer.append(PHPElementLabels.REFERENCE_STRING);
+					buffer.append(PHPElementLabelComposer.REFERENCE_STRING);
 				}
 				if (isVariadic && i + 1 == parameterNames.length) {
 					buffer.append(ScriptElementLabels.ELLIPSIS_STRING);
@@ -408,8 +403,8 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	@Override
-	protected String createSimpleLabelWithType(CompletionProposal proposal) {
-		return createStyledSimpleLabelWithType(proposal).toString();
+	protected StyledString createSimpleLabelWithType(CompletionProposal proposal) {
+		return createStyledSimpleLabelWithType(proposal);
 	}
 
 	protected void appendQualifier(StyledString buffer, IModelElement modelElement) {
@@ -417,13 +412,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			return;
 		}
 		buffer.append(" - ", StyledString.QUALIFIER_STYLER); //$NON-NLS-1$
-
-		if (modelElement instanceof IType) {
-			IType type = (IType) modelElement;
-			buffer.append(type.getTypeQualifiedName(ENCLOSING_TYPE_SEPARATOR), StyledString.QUALIFIER_STYLER); // $NON-NLS-1$
-		} else {
-			buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
-		}
+		buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
 	}
 
 }

@@ -13,13 +13,20 @@ package org.eclipse.php.internal.ui.editor.templates;
 
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension4;
+import org.eclipse.jface.text.contentassist.ICompletionProposalExtension6;
 import org.eclipse.jface.text.templates.Template;
 import org.eclipse.jface.text.templates.TemplateContext;
 import org.eclipse.jface.text.templates.TemplateProposal;
+import org.eclipse.jface.viewers.StyledCellLabelProvider;
+import org.eclipse.jface.viewers.StyledString;
+import org.eclipse.php.internal.ui.util.Messages;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.wst.sse.core.utils.StringUtils;
 
-public class PHPTemplateProposal extends TemplateProposal implements ICompletionProposalExtension4 {
+public class PHPTemplateProposal extends TemplateProposal
+		implements ICompletionProposalExtension4, ICompletionProposalExtension6 {
+
+	private StyledString fDisplayString;
 
 	public PHPTemplateProposal(Template template, TemplateContext context, IRegion region, Image image, int relevance) {
 		super(template, context, region, image, relevance);
@@ -48,6 +55,24 @@ public class PHPTemplateProposal extends TemplateProposal implements ICompletion
 			return false;
 		PHPTemplateProposal newTemplateProposal = (PHPTemplateProposal) obj;
 		return getTemplate().equals(newTemplateProposal.getTemplate());
+	}
+
+	@Override
+	public String getDisplayString() {
+		return getStyledDisplayString().getString();
+	}
+
+	@Override
+	public StyledString getStyledDisplayString() {
+		if (fDisplayString == null) {
+			Template template = getTemplate();
+			String[] arguments = new String[] { template.getName(), template.getDescription() };
+			String decorated = Messages.format("{0} - {1}", arguments);
+			StyledString string = new StyledString(template.getName(), StyledString.COUNTER_STYLER);
+			fDisplayString = StyledCellLabelProvider.styleDecoratedString(decorated, StyledString.QUALIFIER_STYLER,
+					string);
+		}
+		return fDisplayString;
 	}
 
 	@Override
