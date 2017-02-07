@@ -132,6 +132,7 @@ public class PHPPluginImages {
 	public static final ImageDescriptor DESC_TEMPLATE = createManaged(CLASS_BROWSER, IMG_TEMPLATE);
 
 	public static final ImageDescriptor DESC_OBJS_LIBRARY = createManaged(T_OBJ, IMG_OBJS_LIBRARY);
+	public static final ImageDescriptor DESC_OBJS_PHP_PROJECT = createManaged(T_OBJ, IMG_OBJS_PHP_PROJECT);
 	public static final ImageDescriptor DESC_OBJS_TRAIT = createManaged(T_OBJ, IMG_OBJS_TRAIT);
 
 	public static final ImageDescriptor DESC_DLCL_CONFIGURE_ANNOTATIONS = create(T_DLCL, "configure_annotations.gif"); //$NON-NLS-1$
