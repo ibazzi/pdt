@@ -29,7 +29,6 @@ import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocBlock;
 import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag;
 import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag.TagKind;
 import org.eclipse.php.internal.core.compiler.ast.nodes.VarComment;
-import org.eclipse.php.internal.core.compiler.ast.parser.php5.CompilerAstLexer;
 import org.eclipse.php.internal.core.compiler.ast.parser.php56.CompilerParserConstants;
 import org.eclipse.php.internal.core.compiler.ast.parser.php56.PhpTokenNames;
 import org.eclipse.php.internal.core.documentModel.parser.PHPRegionContext;
@@ -124,6 +123,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	 */
 	private List<ReplaceEdit> changes = new LinkedList<ReplaceEdit>();
 	private int stInScriptin = -1;
+	private int stWhile = -1;
+	private int stElse = -1;
+	private int stElseIf = -1;
 	private boolean isInsideFun;
 
 	private Stack<Integer> chainStack = new Stack<Integer>();
@@ -211,18 +213,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		}
 	}
 
-	private int checkFirstTokenLength(int start, int end) {
-		int length = 0;
-		try {
-			scan(start, end);
-			Symbol token = (Symbol) tokens.get(0);
-			length = token.right - token.left;
-		} catch (Exception e) {
-			Logger.logException(e);
-		}
-		return length;
-	}
-
 	private int countStrInBuffer(String str) {
 		int count = 0;
 		int index = replaceBuffer.indexOf(str);
@@ -291,11 +281,19 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	private AstLexer getLexer(Reader reader) throws Exception {
 		AstLexer result = null;
 		if (PHPVersion.PHP5.equals(phpVersion)) {
-			result = new CompilerAstLexer(reader);
-			((CompilerAstLexer) result).setAST(new AST(reader, PHPVersion.PHP5, false, useShortTags));
-			stInScriptin = CompilerAstLexer.ST_IN_SCRIPTING; // save the initial
-			// state for reset
+			result = new org.eclipse.php.internal.core.compiler.ast.parser.php5.CompilerAstLexer(reader);
+			((org.eclipse.php.internal.core.compiler.ast.parser.php5.CompilerAstLexer) result)
+					.setAST(new AST(reader, PHPVersion.PHP5, false, useShortTags));
+			stInScriptin = org.eclipse.php.internal.core.compiler.ast.parser.php5.CompilerAstLexer.ST_IN_SCRIPTING; // save
+			// the
+			// initial
+			// state
+			// for
+			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php5.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php5.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php5.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP5_3.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php53.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php53.CompilerAstLexer) result)
@@ -307,6 +305,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php53.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php53.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php53.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP5_4.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php54.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php54.CompilerAstLexer) result)
@@ -318,6 +319,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php54.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php54.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php54.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP5_5.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php55.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php55.CompilerAstLexer) result)
@@ -329,6 +333,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php55.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php55.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php55.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP5_6.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php56.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php56.CompilerAstLexer) result)
@@ -340,6 +347,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php56.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php56.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php56.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP7_0.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php7.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php7.CompilerAstLexer) result)
@@ -351,6 +361,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php7.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php7.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php7.ParserConstants.T_ELSEIF;
 		} else if (PHPVersion.PHP7_1.equals(phpVersion)) {
 			result = new org.eclipse.php.internal.core.compiler.ast.parser.php71.CompilerAstLexer(reader);
 			((org.eclipse.php.internal.core.compiler.ast.parser.php71.CompilerAstLexer) result)
@@ -362,6 +375,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			// for
 			// reset
 			// operation
+			stWhile = org.eclipse.php.internal.core.ast.scanner.php71.ParserConstants.T_WHILE;
+			stElse = org.eclipse.php.internal.core.ast.scanner.php71.ParserConstants.T_ELSE;
+			stElseIf = org.eclipse.php.internal.core.ast.scanner.php71.ParserConstants.T_ELSEIF;
 		} else {
 			throw new IllegalArgumentException("unrecognized version " //$NON-NLS-1$
 					+ phpVersion);
@@ -371,16 +387,30 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 	private byte getPhpStartTag(int offset) {
 		try {
-			if (document.getChar(offset) == '<') {
-				if (document.getChar(offset + 1) == '%') {
-					return PHP_OPEN_ASP_TAG;
-				} else if (document.getChar(offset + 2) == '=') {
-					return PHP_OPEN_SHORT_TAG_WITH_EQUAL;
-				} else if (document.getChar(offset + 2) != 'p' && document.getChar(offset + 2) != 'P') {
-					return PHP_OPEN_SHORT_TAG;
-				} else if (document.getChar(offset + 1) == '?') {
-					return PHP_OPEN_TAG;
+			// 6 = "<?php".length() + 1
+			String text = document.get(offset, Math.min(6, document.getLength() - offset)).toLowerCase();
+			if (text.startsWith("<%")) { //$NON-NLS-1$
+				return PHP_OPEN_ASP_TAG;
+			}
+			if (text.startsWith("<?=")) { //$NON-NLS-1$
+				return PHP_OPEN_SHORT_TAG_WITH_EQUAL;
+			}
+			if (text.startsWith("<?")) { //$NON-NLS-1$
+				if (text.startsWith("<?php") && text.length() >= 6) { //$NON-NLS-1$
+					char separatorChar = text.charAt(5);
+					// the definition of token PHP_START in
+					// PHPTokenizer.jflex tells us that "<?php" must ALWAYS
+					// be followed by a whitespace character to be recognized as
+					// a PHP_OPEN_TAG
+					if (separatorChar == ' ' || separatorChar == '\t' || separatorChar == '\r'
+							|| separatorChar == '\n') {
+						return PHP_OPEN_TAG;
+					}
 				}
+				// Short tag "<?".
+				// But also (for example) "<?phpXYZ :" must be handled as
+				// a PHP_OPEN_SHORT_TAG followed by label "XYZ".
+				return PHP_OPEN_SHORT_TAG;
 			}
 		} catch (Exception e) {
 			Logger.logException(e);
@@ -531,6 +561,20 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		assert astLexer != null;
 		boolean hasComments = astLexer.getCommentList().size() > 0;
 		return hasComments;
+	}
+
+	private int getFirstTokenOffset(int start, int end, int tokenId, boolean shouldScan) throws Exception {
+		if (shouldScan) {
+			scan(start, end);
+		}
+
+		assert astLexer != null;
+		for (Symbol token : tokens) {
+			if (token.sym == tokenId) {
+				return start + token.left;
+			}
+		}
+		return -1;
 	}
 
 	private void handleCharsWithoutComments(int offset, int end) throws BadLocationException {
@@ -959,7 +1003,8 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 						}
 					}
 					int commentTokLen = commentContent.startsWith("#") ? 1 : 2;//$NON-NLS-1$
-					commentWords = Arrays.asList(commentContent.substring(commentTokLen).trim().split("[ \\t\\v\\f]")); //$NON-NLS-1$
+					commentWords = Arrays.asList(
+							MagicMemberUtil.WHITESPACE_SEPERATOR.split(commentContent.substring(commentTokLen).trim()));
 					commentWords = removeEmptyString(commentWords);
 					commentContent = join(commentWords, " "); //$NON-NLS-1$
 					commentContent = commentContent.trim();
@@ -1173,7 +1218,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 					// indent all lines, even empty lines
 					for (int i = 1; i < lines.size(); i++) {
 						insertNewLineForPHPDoc(false);
-						appendToBuffer(lines.get(i).replaceFirst("^[ \\t\\v\\f]+", "")); //$NON-NLS-1$ //$NON-NLS-2$
+						appendToBuffer(lines.get(i).replaceFirst("^\\p{javaWhitespace}+", "")); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					handleCharsWithoutComments(comment.sourceStart() + offset, comment.sourceEnd() + offset, true);
 				}
@@ -1418,7 +1463,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 					// indent all lines, even empty lines
 					for (int i = 1; i < lines.size(); i++) {
 						insertNewLineForPHPBlockComment(indentLengthForComment, indentStringForComment, false);
-						appendToBuffer(lines.get(i).replaceFirst("^[ \\t\\v\\f]+", "")); //$NON-NLS-1$ //$NON-NLS-2$
+						appendToBuffer(lines.get(i).replaceFirst("^\\p{javaWhitespace}+", "")); //$NON-NLS-1$ //$NON-NLS-2$
 					}
 					handleCharsWithoutComments(comment.sourceStart() + offset, comment.sourceEnd() + offset, true);
 				}
@@ -2111,14 +2156,14 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		}
 	}
 
-	private int setSpaceAfterBlock(int offset) {
+	private void setSpaceAfterBlock(Statement statement) {
+		if (statement instanceof Block && !((Block) statement).isCurly()) {
+			// do not insert a space when handling "if :" and "else :" blocks
+			return;
+		}
 		if (this.preferences.insert_space_after_closing_brace_in_block) {
 			insertSpace();
-			// handleChars(offset, offset + 1);
-			// return offset + 1;
-			handleChars(offset, offset);
 		}
-		return offset;
 	}
 
 	public boolean visit(ArrayAccess arrayAccess) {
@@ -2149,8 +2194,20 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			}
 			lastPosition = arrayAccess.getIndex().getEnd();
 		}
+
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=468155
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
+		// https://bugs.eclipse.org/bugs/attachment.cgi?id=245293
+		// if (arrayAccess.getArrayType() == ArrayAccess.VARIABLE_ARRAY) {
+		// appendToBuffer(CLOSE_BRACKET);
+		// } else {
+		// appendToBuffer(CLOSE_CURLY);
+		// }
+		// handleChars(lastPosition, arrayAccess.getEnd());
+
 		handleChars(lastPosition, arrayAccess.getEnd() - 1);
 		lineWidth++;// we need to add the closing bracket/curly
+
 		return false;
 	}
 
@@ -2210,13 +2267,18 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 		}
 
-		if (arrayCreation.isHasArrayKey()) {
-			appendToBuffer(CLOSE_PARN);
-		} else {
-			appendToBuffer(CLOSE_BRACKET);
-		}
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=468155
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
+		// https://bugs.eclipse.org/bugs/attachment.cgi?id=245293
+		// if (arrayCreation.isHasArrayKey()) {
+		// appendToBuffer(CLOSE_PARN);
+		// } else {
+		// appendToBuffer(CLOSE_BRACKET);
+		// }
+		// handleChars(lastPosition, arrayCreation.getEnd());
 
-		handleChars(lastPosition, arrayCreation.getEnd());
+		handleChars(lastPosition, arrayCreation.getEnd() - 1);
+		lineWidth++;// we need to add the closing bracket/parenthesis
 
 		return false;
 	}
@@ -2478,7 +2540,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			indentationLevel--;
 			indentationLevelDescending = true;
 		}
-		int endPosition = block.getEnd() - 1;
+		int endPosition = block.getEnd();
 		boolean hasComments = false;
 		if (startRegionPosition < endPosition && endRegionPosition >= endPosition) {
 			try {
@@ -2520,27 +2582,28 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			}
 		}
 
-		if (block.getEnd() > block.getStart()) {
-			int end = block.getEnd() - 1;
+		if (endPosition > lastStatementEndOffset) {
+			// exclude closing curly
+			int end = endPosition - 1;
 			if (!block.isCurly()) {
 				switch (block.getParent().getType()) {
 				case ASTNode.SWITCH_STATEMENT:
-					end = block.getEnd() - "endswitch".length();//$NON-NLS-1$
+					end = endPosition - "endswitch".length();//$NON-NLS-1$
 					break;
 				case ASTNode.WHILE_STATEMENT:
-					end = block.getEnd() - "endwhile".length();//$NON-NLS-1$
+					end = endPosition - "endwhile".length();//$NON-NLS-1$
 					break;
 				case ASTNode.FOR_STATEMENT:
-					end = block.getEnd() - "endfor".length();//$NON-NLS-1$
+					end = endPosition - "endfor".length();//$NON-NLS-1$
 					break;
 				case ASTNode.FOR_EACH_STATEMENT:
-					end = block.getEnd() - "endforeach".length();//$NON-NLS-1$
+					end = endPosition - "endforeach".length();//$NON-NLS-1$
 					break;
 				case ASTNode.DECLARE_STATEMENT:
-					end = block.getEnd() - "enddeclare".length();//$NON-NLS-1$
+					end = endPosition - "enddeclare".length();//$NON-NLS-1$
 					break;
 				case ASTNode.IF_STATEMENT:
-					end = block.getEnd();
+					end = endPosition;
 					break;
 				}
 			}
@@ -2570,7 +2633,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			blockEnd = true;
 			handleChars(lastStatementEndOffset, end);
 			blockEnd = false;
-			lineWidth++;// closing curly
+			if (block.isCurly()) {
+				lineWidth++;// closing curly
+			}
 		}
 		return false;
 	}
@@ -2829,7 +2894,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	public boolean visit(ClassInstanceCreation classInstanceCreation) {
 		// insertSpace();
 		appendToBuffer("new "); //$NON-NLS-1$
-		// lineWidth += 3; // the 'new' word
 		handleChars(classInstanceCreation.getStart(), classInstanceCreation.getClassName().getStart());
 		classInstanceCreation.getClassName().accept(this);
 		if (this.preferences.insert_space_before_opening_paren_in_function) {
@@ -3062,31 +3126,27 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		lineWidth += 2;
 		Statement body = doStatement.getBody();
 		handleAction(doStatement.getStart() + 2, body, true);
-		int lastPosition = body.getEnd();// this variable
-		// will be changed
-		int doActionEnd = body.getEnd();
 		if (preferences.control_statement_insert_newline_before_while_in_do) {
 			insertNewLine();
 			indent();
 		} else {
-			lastPosition = setSpaceAfterBlock(doActionEnd);
+			setSpaceAfterBlock(body);
 		}
 
-		String textBetween = ""; //$NON-NLS-1$
-		int indexOfWhile = -1;
+		int positionOfWhile = -1;
+		int lastPosition = body.getEnd();
 		try {
-			textBetween = document.get(doActionEnd, doStatement.getCondition().getStart() - doActionEnd).toLowerCase();
-		} catch (BadLocationException e) {
+			positionOfWhile = getFirstTokenOffset(lastPosition, doStatement.getCondition().getStart(), stWhile, true);
+		} catch (Exception e) {
 			Logger.logException(e);
 			return false;
 		}
-		indexOfWhile = textBetween.indexOf("while"); //$NON-NLS-1$
-		if (indexOfWhile > 0) {
-			indexOfWhile += doActionEnd;
-			handleChars(lastPosition, indexOfWhile);
+		if (positionOfWhile > lastPosition) {
+			handleChars(lastPosition, positionOfWhile + 5); // 5 =
+															// "while".length()
 			appendToBuffer("while"); //$NON-NLS-1$
-			handleChars(indexOfWhile, indexOfWhile);
-			lastPosition = indexOfWhile;
+			handleChars(positionOfWhile + 5, positionOfWhile + 5);
+			lastPosition = positionOfWhile + 5;
 		} else {
 			appendToBuffer("while"); //$NON-NLS-1$
 		}
@@ -3588,8 +3648,15 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	}
 
 	public boolean visit(IfStatement ifStatement) {
-		// check if the token is 'if' or 'elseif'
-		int len = checkFirstTokenLength(ifStatement.getStart(), ifStatement.getCondition().getStart());
+		int len;
+		try {
+			// looking for 'if' or 'elseif'
+			len = getFirstTokenOffset(ifStatement.getStart(), ifStatement.getCondition().getStart(), stElseIf,
+					true) != -1 ? 6 : 2;
+		} catch (Exception e) {
+			Logger.logException(e);
+			return false;
+		}
 
 		// handle the chars between the 'while' and the condition start position
 		if (this.preferences.insert_space_before_opening_paren_in_if) {
@@ -3619,7 +3686,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		appendToBuffer(CLOSE_PARN);
 
 		// action
-		int lastPosition = ifStatement.getCondition().getEnd();
 		boolean addNewlineBeforeAction = true;
 		if (ifStatement.getTrueStatement().getType() != ASTNode.BLOCK) {
 			if (len == 2) {// if
@@ -3630,8 +3696,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 				addNewlineBeforeAction = !preferences.control_statement_keep_then_on_same_line;
 			}
 		}
-		handleAction(lastPosition, ifStatement.getTrueStatement(), addNewlineBeforeAction);
-		lastPosition = ifStatement.getTrueStatement().getEnd();
+		handleAction(ifStatement.getCondition().getEnd(), ifStatement.getTrueStatement(), addNewlineBeforeAction);
 		if (ifStatement.getFalseStatement() == null || ifStatement.getFalseStatement().getType() == ASTNode.AST_ERROR) {
 			return false;
 		}
@@ -3649,16 +3714,16 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 					insertNewLine();
 					indent();
 				} else {
-					lastPosition = setSpaceAfterBlock(ifStatement.getTrueStatement().getEnd());
+					setSpaceAfterBlock(ifStatement.getTrueStatement());
 				}
 
 				try {
-					lastPosition = internalHandleElse(ifStatement, lastPosition);
+					int lastPosition = internalHandleElse(ifStatement);
+					handleAction(lastPosition, ifStatement.getFalseStatement(), true);
 				} catch (BadLocationException ble) {
 					Logger.logException(ble);
 					return false;
 				}
-				handleAction(lastPosition, ifStatement.getFalseStatement(), true);
 				boolean processed = isProcessed(ifStatement);
 				if (!((Block) ifStatement.getTrueStatement()).isCurly() && !processed) {
 					handleChars(ifStatement.getFalseStatement().getEnd(), ifStatement.getEnd());
@@ -3671,14 +3736,13 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 				indent();
 
 				try {
-					lastPosition = internalHandleElse(ifStatement, lastPosition);
+					int lastPosition = internalHandleElse(ifStatement);
+					boolean elseActionInSameLine = preferences.control_statement_keep_else_on_same_line;
+					handleAction(lastPosition, ifStatement.getFalseStatement(), !elseActionInSameLine);
 				} catch (BadLocationException ble) {
 					Logger.logException(ble);
 					return false;
 				}
-
-				boolean elseActionInSameLine = preferences.control_statement_keep_else_on_same_line;
-				handleAction(lastPosition, ifStatement.getFalseStatement(), !elseActionInSameLine);
 			}
 		}
 		return false;
@@ -3694,34 +3758,40 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	}
 
 	private void handleElseIfCases(IfStatement ifStatement) throws BadLocationException {
-		int lastPosition = ifStatement.getTrueStatement().getEnd();
-		int len;
 		IfStatement falseIfStatement = (IfStatement) ifStatement.getFalseStatement();
-		len = checkFirstTokenLength(falseIfStatement.getStart(), falseIfStatement.getCondition().getStart());
 		boolean elseIndentationLevelChanged = false;
-
-		// information needed to handleChars between if statement end to the
-		// else if...
-		String textBetween = ""; //$NON-NLS-1$
 		int trueStatementEnd = ifStatement.getTrueStatement().getEnd();
-		int indexOfElse = -1;
-		textBetween = document.get(trueStatementEnd, ifStatement.getFalseStatement().getStart() - trueStatementEnd)
-				.toLowerCase();
-		indexOfElse = textBetween.lastIndexOf("else"); //$NON-NLS-1$
+		boolean isIfToken = false;
+		int positionOfElse = -1;
+		try {
+			// looking for 'if' or 'elseif'
+			isIfToken = getFirstTokenOffset(falseIfStatement.getStart(), falseIfStatement.getCondition().getStart(),
+					stElseIf, true) == -1;
+			// looking for 'else' or 'elseif'
+			positionOfElse = getFirstTokenOffset(trueStatementEnd, ifStatement.getFalseStatement().getStart(), stElse,
+					true);
+			if (positionOfElse == -1) {
+				positionOfElse = getFirstTokenOffset(trueStatementEnd, ifStatement.getFalseStatement().getStart(),
+						stElseIf, false /* no need to re-scan same range */);
+			}
+		} catch (Exception e) {
+			Logger.logException(e);
+			return;
+		}
 
 		if (ifStatement.getTrueStatement().getType() == ASTNode.BLOCK) {
 			if (preferences.control_statement_insert_newline_before_else_and_elseif_in_if) {
 				insertNewLine();
 				indent();
 			} else {
-				if (len == 2) {
-					lastPosition = setSpaceAfterBlock(ifStatement.getTrueStatement().getEnd());
+				if (isIfToken) {
+					setSpaceAfterBlock(ifStatement.getTrueStatement());
 				}
 			}
 
-			if (len != 2) {// elseif case
-				if (indexOfElse > 0) {
-					handleChars(lastPosition, ifStatement.getFalseStatement().getStart());
+			if (!isIfToken) {// elseif case
+				if (positionOfElse > trueStatementEnd) {
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				} else {
 					// fix for setSpaceAfterBlock when no space is required
 					// before 'elseif'
@@ -3729,12 +3799,11 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 							&& preferences.insert_space_after_closing_brace_in_block) {
 						insertSpace();
 					}
-					handleChars(ifStatement.getTrueStatement().getEnd(), ifStatement.getFalseStatement().getStart());
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				}
 			} else {
-				if (indexOfElse > 0) {
-					indexOfElse += trueStatementEnd;
-					handleChars(lastPosition, indexOfElse);
+				if (positionOfElse > trueStatementEnd) {
+					handleChars(trueStatementEnd, positionOfElse);
 					appendToBuffer("else "); //$NON-NLS-1$
 					if (!preferences.control_statement_keep_else_if_on_same_line) {
 						insertNewLine();
@@ -3742,8 +3811,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 						elseIndentationLevelChanged = true;
 						indent();
 					}
-					handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
-					lastPosition = indexOfElse;
+					handleChars(positionOfElse, ifStatement.getFalseStatement().getStart());
 				} else {
 					appendToBuffer("else "); //$NON-NLS-1$
 					if (!preferences.control_statement_keep_else_if_on_same_line) {
@@ -3752,20 +3820,17 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 						elseIndentationLevelChanged = true;
 						indent();
 					}
-					// the following line handles the case : '}else' when
+					// the following line also handles the case : '}else' when
 					// setSpaceAfterBlock() is called and offset is set to +1
-					indexOfElse = (trueStatementEnd < lastPosition) ? lastPosition : indexOfElse + trueStatementEnd;
-
-					handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
+					handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 				}
 			}
 		} else { // if the true statement is not a block then we should add new
 			// line
 			insertNewLine();
 			indent();
-			if (indexOfElse > 0) {
-				indexOfElse += trueStatementEnd;
-				handleChars(lastPosition, indexOfElse);
+			if (positionOfElse > trueStatementEnd) {
+				handleChars(trueStatementEnd, positionOfElse);
 				appendToBuffer("else "); //$NON-NLS-1$
 				if (!preferences.control_statement_keep_else_if_on_same_line) {
 					insertNewLine();
@@ -3773,21 +3838,17 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 					elseIndentationLevelChanged = true;
 					indent();
 				}
-				handleChars(indexOfElse, ifStatement.getFalseStatement().getStart());
-				lastPosition = indexOfElse;
+				handleChars(positionOfElse, ifStatement.getFalseStatement().getStart());
 			} else {
-				appendToBuffer(len == 2 ? "else " : EMPTY_STRING); //$NON-NLS-1$
-				if ((len == 2) && !preferences.control_statement_keep_else_if_on_same_line) {
+				appendToBuffer(isIfToken ? "else " : EMPTY_STRING); //$NON-NLS-1$
+				if (isIfToken && !preferences.control_statement_keep_else_if_on_same_line) {
 					insertNewLine();
 					indentationLevel++;
 					elseIndentationLevelChanged = true;
 					indent();
 				}
-				if (indexOfElse == -1) {// in case of: STATEMENT;elseif ...
-					indexOfElse = 0;
-				}
-
-				handleChars(indexOfElse + trueStatementEnd, ifStatement.getFalseStatement().getStart());
+				// in case of: STATEMENT;elseif ...
+				handleChars(trueStatementEnd, ifStatement.getFalseStatement().getStart());
 			}
 		}
 		boolean processed = isProcessed(ifStatement);
@@ -3815,19 +3876,24 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 	// this will perform handleChars() between the statement's end AND the
 	// 'else'
-	private int internalHandleElse(IfStatement ifStatement, int lastPosition) throws BadLocationException {
-		String textBetween = ""; //$NON-NLS-1$
-		int trueStatementEnd = ifStatement.getTrueStatement().getEnd();
-		int indexOfElse = -1;
-		textBetween = document.get(trueStatementEnd, ifStatement.getFalseStatement().getStart() - trueStatementEnd)
-				.toLowerCase();
-		indexOfElse = textBetween.lastIndexOf("else"); //$NON-NLS-1$
-		if (indexOfElse > 0) {
-			indexOfElse += trueStatementEnd;
-			handleChars(lastPosition, indexOfElse);
+	private int internalHandleElse(IfStatement ifStatement) throws BadLocationException {
+		int lastPosition = ifStatement.getTrueStatement().getEnd();
+		int positionOfElse = -1;
+		try {
+			// information needed to handleChars between "if" statement end to
+			// the "else"...
+			positionOfElse = getFirstTokenOffset(lastPosition, ifStatement.getFalseStatement().getStart(), stElse,
+					true);
+		} catch (Exception e) {
+			Logger.logException(e);
+			return lastPosition;
+		}
+		if (positionOfElse > lastPosition) {
+			handleChars(lastPosition, positionOfElse + 4); // 4 =
+															// "else".length()
 			appendToBuffer("else"); //$NON-NLS-1$
-			handleChars(indexOfElse, indexOfElse);
-			lastPosition = indexOfElse;
+			handleChars(positionOfElse + 4, positionOfElse + 4);
+			lastPosition = positionOfElse + 4;
 		} else {
 			appendToBuffer("else"); //$NON-NLS-1$
 		}

@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.autoEdit;
 
+import java.util.regex.Pattern;
+
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.core.*;
@@ -774,7 +776,7 @@ public class PhpDocAutoIndentStrategy extends DefaultIndentLineAutoEditStrategy 
 		}
 		// replacing all non-spaces/tabs to single-space, in order to get
 		// "char-clean" prefix
-		leadingString = leadingString.replaceAll("[^\\s]", " "); //$NON-NLS-1$ //$NON-NLS-2$
+		leadingString = leadingString.replaceAll("[^\\p{javaWhitespace}]", " "); //$NON-NLS-1$ //$NON-NLS-2$
 
 		return leadingString;
 	}
@@ -798,7 +800,7 @@ public class PhpDocAutoIndentStrategy extends DefaultIndentLineAutoEditStrategy 
 
 	private String indentPattern(String originalPattern, String indentation, String lineDelim) {
 		String delimPlusIndent = lineDelim + indentation;
-		String indentedPattern = originalPattern.replaceAll(lineDelim, delimPlusIndent);
+		String indentedPattern = originalPattern.replaceAll(Pattern.quote(lineDelim), delimPlusIndent);
 
 		return indentedPattern;
 	}

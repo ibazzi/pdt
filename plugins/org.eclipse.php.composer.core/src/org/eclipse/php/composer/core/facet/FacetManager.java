@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2016 PDT Extension Group and others.
+ * Copyright (c) 2012, 2016, 2017 PDT Extension Group and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,13 +7,19 @@
  *
  * Contributors:
  *     PDT Extension Group - initial API and implementation
+ *     Kaloyan Raev - [501269] externalize strings
  *******************************************************************************/
 package org.eclipse.php.composer.core.facet;
 
+import java.io.ByteArrayInputStream;
+
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.php.composer.api.ComposerConstants;
+import org.eclipse.php.composer.api.ComposerPackage;
 import org.eclipse.php.composer.core.log.Logger;
 import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.facet.PHPFacets;
@@ -22,7 +28,6 @@ import org.eclipse.wst.common.project.facet.core.IFacetedProject;
 import org.eclipse.wst.common.project.facet.core.IProjectFacet;
 import org.eclipse.wst.common.project.facet.core.ProjectFacetsManager;
 
-@SuppressWarnings("restriction")
 public class FacetManager {
 
 	public static IFacetedProject installFacets(IProject project, PHPVersion version, IProgressMonitor monitor) {
@@ -35,7 +40,7 @@ public class FacetManager {
 			final IFacetedProject facetedProject = ProjectFacetsManager.create(project, true, monitor);
 
 			if (facetedProject == null) {
-				Logger.log(Logger.ERROR, "Unable to create faceted composer project.");
+				Logger.log(Logger.ERROR, "Unable to create faceted composer project."); //$NON-NLS-1$
 				return null;
 			}
 
@@ -54,6 +59,14 @@ public class FacetManager {
 				facetedProject.installProjectFacet(
 						composerFacet.getVersion(ComposerFacetConstants.COMPOSER_COMPONENT_VERSION_1), composerFacet,
 						monitor);
+			}
+
+			IFile composerJson = project.getFile(ComposerConstants.COMPOSER_JSON);
+			if (!composerJson.exists()) {
+				ComposerPackage composerPackage = new ComposerPackage();
+				composerPackage.setName(project.getName().toLowerCase() + "/" + project.getName().toLowerCase()); //$NON-NLS-1$
+				composerPackage.setDescription(""); //$NON-NLS-1$
+				composerJson.create(new ByteArrayInputStream(composerPackage.toJson().getBytes()), 0, monitor);
 			}
 
 			return facetedProject;

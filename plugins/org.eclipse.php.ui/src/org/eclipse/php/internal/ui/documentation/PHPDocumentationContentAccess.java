@@ -52,7 +52,7 @@ import org.eclipse.text.edits.ReplaceEdit;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class PHPDocumentationContentAccess {
 
-	private static final Pattern INLINE_LINK_PATTERN = Pattern.compile("\\{@link[\\s]+[^\\}]*\\}"); //$NON-NLS-1$
+	private static final Pattern INLINE_LINK_PATTERN = Pattern.compile("\\{@link[\\p{javaWhitespace}]+[^\\}]*\\}"); //$NON-NLS-1$
 
 	private static final String BLOCK_TAG_START = "<dl>"; //$NON-NLS-1$
 	private static final String BLOCK_TAG_END = "</dl>"; //$NON-NLS-1$
@@ -904,7 +904,7 @@ public class PHPDocumentationContentAccess {
 		Matcher m = INLINE_LINK_PATTERN.matcher(fBuf);
 		List<ReplaceEdit> replaceLinks = new ArrayList<ReplaceEdit>();
 		while (m.find()) {
-			String[] strs = m.group().split("[\\s]+", 3); //$NON-NLS-1$
+			String[] strs = m.group().split("[\\p{javaWhitespace}]+", 3); //$NON-NLS-1$
 			String url = removeLastRightCurlyBrace(strs[1]);
 			String link = "";//$NON-NLS-1$
 			if (url.toLowerCase().startsWith("http")) { //$NON-NLS-1$
@@ -1141,6 +1141,16 @@ public class PHPDocumentationContentAccess {
 		}
 	}
 
+	private void handleVarTag(PHPDocTag tag) {
+		if (!tag.isValidVarTag()) {
+			return;
+		}
+		fBuf.append(PARAM_NAME_START);
+		fBuf.append(tag.getSingleTypeReference().getName());
+		fBuf.append(PARAM_NAME_END);
+		fBuf.append(tag.getTrimmedDescText());
+	}
+
 	private void handleContentElements(PHPDocTag tag) {
 		fBuf.append(tag.getValue());
 	}
@@ -1215,6 +1225,9 @@ public class PHPDocumentationContentAccess {
 			if (tag.getTagKind() == TagKind.INHERITDOC) {
 				continue;
 			} else if (tag.getTagKind() == TagKind.VAR) {
+				if (!tag.isValidVarTag()) {
+					continue;
+				}
 				// https://bugs.eclipse.org/bugs/show_bug.cgi?id=454140
 				// only print @var tags having empty variable name or
 				// having variable name matching the field description
@@ -1225,13 +1238,15 @@ public class PHPDocumentationContentAccess {
 								tag.getVariableReference().getName().equals('$' + fMember.getElementName()))) {
 					continue;
 				}
-				handleBlockTagTitle("Type"); //$NON-NLS-1$
+				handleBlockTagTitle(PHPDocumentationMessages.JavaDoc2HTMLTextReader_var_section);
 			} else {
 				handleBlockTagTitle(tag.getTagKind().getName());
 			}
 			fBuf.append(BlOCK_TAG_ENTRY_START);
 			if (tag.getTagKind() == TagKind.LINK) {
 				handleLinkTag(tag);
+			} else if (tag.getTagKind() == TagKind.VAR) {
+				handleVarTag(tag);
 			} else {
 				handleContentElements(tag);
 			}

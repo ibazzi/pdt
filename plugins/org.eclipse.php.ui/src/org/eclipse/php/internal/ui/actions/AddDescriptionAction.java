@@ -14,6 +14,7 @@ package org.eclipse.php.internal.ui.actions;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.ast.ASTNode;
@@ -221,7 +222,8 @@ public class AddDescriptionAction extends Action implements IObjectActionDelegat
 
 	private String indentPattern(String originalPattern, String indentation, String lineDelim) {
 		String delimPlusIndent = lineDelim + indentation;
-		String indentedPattern = originalPattern.replaceAll(lineDelim, delimPlusIndent) + delimPlusIndent;
+		String indentedPattern = originalPattern.replaceAll(Pattern.quote(lineDelim), delimPlusIndent)
+				+ delimPlusIndent;
 
 		return indentedPattern;
 	}
@@ -298,7 +300,7 @@ public class AddDescriptionAction extends Action implements IObjectActionDelegat
 		}
 		// replacing all non-spaces/tabs to single-space, in order to get
 		// "char-clean" prefix
-		leadingString = leadingString.replaceAll("[^\\s]", " "); //$NON-NLS-1$ //$NON-NLS-2$
+		leadingString = leadingString.replaceAll("[^\\p{javaWhitespace}]", " "); //$NON-NLS-1$ //$NON-NLS-2$
 
 		return leadingString;
 	}
@@ -357,7 +359,7 @@ public class AddDescriptionAction extends Action implements IObjectActionDelegat
 			ITextRegion region = sdRegion.getFirstRegion();
 			if (region.getType() == PHPRegionContext.PHP_OPEN) {
 				// File's content starts with '<?PHP' tag
-				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStartOffset());
 				if (region != null && region.getType() == PHPRegionContext.PHP_CONTENT) {
 					phpScriptRegion = (IPhpScriptRegion) region;
 					try {
@@ -373,7 +375,7 @@ public class AddDescriptionAction extends Action implements IObjectActionDelegat
 				}
 			} else if (region.getType() == DOMRegionContext.XML_DECLARATION_OPEN) {
 				// File's content starts with HTML code
-				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStart());
+				region = sdRegion.getRegionAtCharacterOffset(region.getEnd() + sdRegion.getStartOffset());
 				if (region != null) {
 					phpScriptRegion = null;
 					textRegion = (ITextRegion) region;

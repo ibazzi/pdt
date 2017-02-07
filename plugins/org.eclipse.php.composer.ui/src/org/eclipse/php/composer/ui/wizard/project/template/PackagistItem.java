@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2016 PDT Extension Group and others.
+ * Copyright (c) 2012, 2016, 2017 PDT Extension Group and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     PDT Extension Group - initial API and implementation
+ *     Kaloyan Raev - [501269] externalize strings
  *******************************************************************************/
 package org.eclipse.php.composer.ui.wizard.project.template;
 
@@ -15,14 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.equinox.internal.p2.ui.discovery.wizards.AbstractDiscoveryItem;
 import org.eclipse.equinox.internal.p2.ui.discovery.wizards.DiscoveryResources;
 import org.eclipse.jface.layout.GridDataFactory;
+import org.eclipse.php.composer.api.ComposerConstants;
 import org.eclipse.php.composer.api.ComposerPackage;
 import org.eclipse.php.composer.api.MinimalPackage;
 import org.eclipse.php.composer.api.RepositoryPackage;
 import org.eclipse.php.composer.api.collection.Versions;
 import org.eclipse.php.composer.api.entities.JsonValue;
+import org.eclipse.php.composer.api.entities.Version;
 import org.eclipse.php.composer.api.packages.AsyncPackagistDownloader;
 import org.eclipse.php.composer.api.packages.PackageListenerInterface;
 import org.eclipse.php.composer.core.log.Logger;
@@ -117,22 +121,22 @@ public class PackagistItem extends AbstractDiscoveryItem<PackageFilterItem> {
 	protected void createStatsPart() {
 
 		favorButton = new Button(this, SWT.PUSH);
-		favorButton.setToolTipText("Favorites on packagist.org");
+		favorButton.setToolTipText(Messages.PackagistItem_FavoritesToolTipText);
 		favorButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false));
 		favorButton.setImage(ComposerUIPluginImages.STAR.createImage());
 
 		GridDataFactory.swtDefaults().align(SWT.CENTER, SWT.CENTER).span(1, 2).applyTo(favorButton);
 
 		downloadButton = new Button(this, SWT.TOGGLE);
-		downloadButton.setToolTipText("Select this package for your new project.");
+		downloadButton.setToolTipText(Messages.PackagistItem_DownloadToolTipText);
 
 		if (filterItem.isChecked()) {
 			downloadButton.setSelection(true);
 		}
 
 		GridDataFactory.swtDefaults().align(SWT.BEGINNING, SWT.CENTER).span(1, 2).applyTo(downloadButton);
-		JsonValue downloads = item.get("downloads");
-		JsonValue favorites = item.get("favers");
+		JsonValue downloads = item.get("downloads"); //$NON-NLS-1$
+		JsonValue favorites = item.get("favers"); //$NON-NLS-1$
 		if (downloads != null && favorites != null) {
 			downloadButton.setText(downloads.getAsString());
 			downloadButton.setImage(ComposerUIPluginImages.DOWNLOAD.createImage());
@@ -163,7 +167,7 @@ public class PackagistItem extends AbstractDiscoveryItem<PackageFilterItem> {
 			public void widgetSelected(SelectionEvent e) {
 				try {
 					final IWebBrowser browser = PlatformUI.getWorkbench().getBrowserSupport().createBrowser(null);
-					browser.openURL(new URL(item.getAsString("url")));
+					browser.openURL(new URL(item.getAsString("url"))); //$NON-NLS-1$
 				} catch (Exception e1) {
 					Logger.logException(e1);
 				}
@@ -182,10 +186,31 @@ public class PackagistItem extends AbstractDiscoveryItem<PackageFilterItem> {
 	}
 
 	protected void loadVersionsFromCache() {
-		versionCombo.setItems(filterItem.getVersions());
-		versionCombo.select(0);
-		versionCombo.setVisible(true);
-		filterItem.setSelectedVersion(versionCombo.getText());
+		if (!versionCombo.isDisposed()) {
+			String[] versions = filterItem.getVersions();
+			versionCombo.setItems(versions);
+			int index = 0;
+			for (String version : versions) {
+				if (StringUtils.equals(version, filterItem.getSelectedVersion())) {
+					versionCombo.select(index);
+					break;
+				}
+				index++;
+			}
+			if (index == versions.length && versions.length > 0) {
+				versionCombo.select(0);
+			}
+			versionCombo.setVisible(true);
+			if (versionCombo.getSelectionIndex() != -1) {
+				filterItem.setSelectedVersion(versionCombo.getText());
+			} else {
+				// at this point filterItem.getSelectedVersion() should always
+				// return null, but let's do it by security
+				filterItem.setSelectedVersion(null);
+			}
+		} else {
+			filterItem.setSelectedVersion(null);
+		}
 
 		for (PackageFilterChangedListener listener : listeners) {
 			listener.filterChanged(filterItem);
@@ -194,7 +219,7 @@ public class PackagistItem extends AbstractDiscoveryItem<PackageFilterItem> {
 
 	protected void loadVersionCombo() {
 
-		versionCombo.setItems(new String[] { "Loading versions..." });
+		versionCombo.setItems(new String[] { Messages.PackagistItem_LoadingVersionsMessage });
 		versionCombo.select(0);
 
 		AsyncPackagistDownloader dl = new AsyncPackagistDownloader();
@@ -214,14 +239,22 @@ public class PackagistItem extends AbstractDiscoveryItem<PackageFilterItem> {
 			public void packageLoaded(RepositoryPackage repositoryPackage) {
 				Versions versions = repositoryPackage.getVersions();
 				final List<String> versionNames = new ArrayList<String>();
+				String selectVersion = null;
 				for (Entry<String, ComposerPackage> version : versions) {
+					Version detailedVersion = versions.getDetailedVersion(version.getValue().getVersion());
+					if (selectVersion == null && detailedVersion != null
+							&& detailedVersion.getStability() == ComposerConstants.STABLE) {
+						selectVersion = version.getValue().getVersion();
+					}
 					versionNames.add(version.getValue().getVersion());
 				}
+				final String selectedVersion = selectVersion;
 
 				getDisplay().asyncExec(new Runnable() {
 					@Override
 					public void run() {
 						filterItem.setVersions(versionNames.toArray(new String[versionNames.size()]));
+						filterItem.setSelectedVersion(selectedVersion);
 						loadVersionsFromCache();
 					}
 				});

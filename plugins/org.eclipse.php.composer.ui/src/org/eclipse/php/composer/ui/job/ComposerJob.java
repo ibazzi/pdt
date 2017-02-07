@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2016 PDT Extension Group and others.
+ * Copyright (c) 2012, 2016, 2017 PDT Extension Group and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     PDT Extension Group - initial API and implementation
+ *     Kaloyan Raev - [501269] externalize strings
  *******************************************************************************/
 package org.eclipse.php.composer.ui.job;
 
@@ -50,7 +51,7 @@ abstract public class ComposerJob extends Job {
 	public ScriptLauncherManager manager;
 
 	protected static final IStatus ERROR_STATUS = new Status(Status.ERROR, ComposerPlugin.ID,
-			"Error running composer, see log for details");
+			Messages.ComposerJob_ErrorMessage);
 
 	public ComposerJob(String name) {
 		super(name);
@@ -77,6 +78,7 @@ abstract public class ComposerJob extends Job {
 
 	@Override
 	protected IStatus run(final IProgressMonitor monitor) {
+		boolean callDoOnLauncherRunException = false;
 		try {
 
 			this.monitor = monitor;
@@ -84,10 +86,14 @@ abstract public class ComposerJob extends Job {
 			try {
 				launcher = manager.getLauncher(ComposerEnvironmentFactory.FACTORY_ID, getProject());
 			} catch (ExecutableNotFoundException e) {
+				callDoOnLauncherRunException = true;
+				doOnLauncherRunException(e);
 				// inform the user of the missing executable
 				Display.getDefault().asyncExec(new MissingExecutableRunner());
 				return Status.OK_STATUS;
 			} catch (ScriptNotFoundException e) {
+				callDoOnLauncherRunException = true;
+				doOnLauncherRunException(e);
 				// run the downloader
 				Display.getDefault().asyncExec(new DownloadRunner());
 				return Status.OK_STATUS;
@@ -119,6 +125,10 @@ abstract public class ComposerJob extends Job {
 				monitor.worked(1);
 			}
 		} catch (Exception e) {
+			if (!callDoOnLauncherRunException) {
+				callDoOnLauncherRunException = true;
+				doOnLauncherRunException(e);
+			}
 			Logger.logException(e);
 			return ERROR_STATUS;
 		} finally {
@@ -126,6 +136,9 @@ abstract public class ComposerJob extends Job {
 		}
 
 		return Status.OK_STATUS;
+	}
+
+	protected void doOnLauncherRunException(Exception e) {
 	}
 
 	abstract protected void launch(ScriptLauncher launcher) throws ExecuteException, IOException, InterruptedException;
@@ -146,12 +159,12 @@ abstract public class ComposerJob extends Job {
 			Shell shell = Display.getCurrent().getActiveShell();
 
 			if (shell == null) {
-				Logger.debug("Unable to get shell for message dialog.");
+				Logger.debug("Unable to get shell for message dialog."); //$NON-NLS-1$
 				return;
 			}
 
-			if (MessageDialog.openConfirm(shell, "composer.phar not found",
-					"composer.phar can not be found. Download it now?")) {
+			if (MessageDialog.openConfirm(shell, Messages.ComposerJob_DownloadDialogTitle,
+					Messages.ComposerJob_DownloadDialogMessage)) {
 				DownloadJob job = new DownloadJob(getProject());
 				job.addJobChangeListener(new JobChangeAdapter() {
 					@Override
