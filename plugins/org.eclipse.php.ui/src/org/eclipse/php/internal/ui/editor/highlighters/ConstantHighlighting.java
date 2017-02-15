@@ -68,7 +68,9 @@ public class ConstantHighlighting extends AbstractSemanticHighlighting {
 
 		@Override
 		public boolean visit(StaticConstantAccess access) {
-			highlight(access.getConstant());
+			if (!access.getConstant().getName().equalsIgnoreCase("class")) {
+				highlight(access.getConstant());
+			}
 			return true;
 		}
 
@@ -94,7 +96,8 @@ public class ConstantHighlighting extends AbstractSemanticHighlighting {
 
 	@Override
 	protected void initDefaultPreferences() {
-		getStyle().setEnabledByDefault(true).setDefaultTextColor(0, 0, 192).setItalicByDefault(true);
+		getStyle().setEnabledByDefault(true).setBoldByDefault(true).setDefaultTextColor(0, 0, 192)
+				.setItalicByDefault(true);
 	}
 
 	public String getDisplayName() {

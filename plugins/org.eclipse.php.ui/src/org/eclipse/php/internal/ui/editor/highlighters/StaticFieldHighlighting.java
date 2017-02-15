@@ -26,7 +26,9 @@ public class StaticFieldHighlighting extends AbstractSemanticHighlighting {
 
 		@Override
 		public boolean visit(StaticConstantAccess classConstantAccess) {
-			highlight(classConstantAccess.getConstant());
+			if (!classConstantAccess.getConstant().getName().equalsIgnoreCase("class")) {
+				highlight(classConstantAccess.getConstant());
+			}
 			return true;
 		}
 
