@@ -145,7 +145,7 @@ public class LineStyleProviderForPHP extends AbstractLineStyleProvider implement
 		// Variables
 		fColorTypes.put(PHPRegionTypes.PHP_VARIABLE, PreferenceConstants.EDITOR_VARIABLE_COLOR);
 		fColorTypes.put(PHPRegionTypes.PHP_ENCAPSED_VARIABLE, PreferenceConstants.EDITOR_VARIABLE_COLOR);
-		fColorTypes.put(PHPRegionTypes.PHP_THIS, PreferenceConstants.EDITOR_VARIABLE_COLOR);
+		fColorTypes.put(PHPRegionTypes.PHP_THIS, PreferenceConstants.EDITOR_KEYWORD_COLOR);
 
 		// Strings
 		fColorTypes.put(PHPRegionTypes.PHP_CONSTANT_ENCAPSED_STRING, PreferenceConstants.EDITOR_STRING_COLOR);
