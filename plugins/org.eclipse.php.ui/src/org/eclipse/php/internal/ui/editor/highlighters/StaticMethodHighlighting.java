@@ -10,30 +10,16 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.highlighters;
 
-import org.eclipse.dltk.ast.Modifiers;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.internal.core.ast.nodes.ASTNode;
+import org.eclipse.php.internal.core.ast.nodes.Expression;
+import org.eclipse.php.internal.core.ast.nodes.FunctionInvocation;
+import org.eclipse.php.internal.core.ast.nodes.Variable;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
 public class StaticMethodHighlighting extends AbstractSemanticHighlighting {
 
 	protected class StaticMethodApply extends AbstractSemanticApply {
-
-		@Override
-		public boolean visit(FunctionDeclaration functionDeclaration) {
-			ASTNode parent = functionDeclaration.getParent();
-			while (parent.getType() == ASTNode.BLOCK || parent.getType() == ASTNode.FUNCTION_DECLARATION) {
-				parent = parent.getParent();
-			}
-			if (parent.getType() == ASTNode.METHOD_DECLARATION) {
-				MethodDeclaration methodDeclaration = (MethodDeclaration) parent;
-				if ((methodDeclaration.getModifier() & Modifiers.AccStatic) != 0) {
-					highlight(functionDeclaration.getFunctionName());
-				}
-
-			}
-			return true;
-		}
 
 		@Override
 		public boolean visit(FunctionInvocation functionInvocation) {
