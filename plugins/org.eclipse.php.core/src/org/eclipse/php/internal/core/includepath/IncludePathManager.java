@@ -50,65 +50,17 @@ public class IncludePathManager {
 					if ((delta.getFlags() & IModelElementDelta.F_BUILDPATH_CHANGED) != 0) {
 						IScriptProject scriptProject = element.getScriptProject();
 						IProject project = scriptProject.getProject();
-						IncludePath[] includePathEntries = getIncludePaths(project);
-						List<IncludePath> newEntries = new LinkedList<IncludePath>(Arrays.asList(includePathEntries));
+						List<IncludePath> newEntries = new LinkedList<IncludePath>();
 
 						IBuildpathEntry[] rawBuildpath = scriptProject.getRawBuildpath();
 
-						// This is a workaround to the lack of information about
-						// buildpath changes in delta:
-						boolean changed = false;
-
-						// Calculate added entries:
-						Set<IPath> addedModels = new HashSet<IPath>();
-						getAddedModels(delta, addedModels);
 						for (IBuildpathEntry entry : rawBuildpath) {
-							boolean added = false;
-							for (IncludePath includePath : includePathEntries) {
-								if (includePath.isBuildpath() && entry.equals(includePath.getEntry())
-										|| !addedModels.contains(entry.getPath())) {
-									added = false;
-									break;
-								}
-							}
-							if (added && isBuildpathAllowed(entry)) {
+							if (isBuildpathAllowed(entry)) {
 								newEntries.add(new IncludePath(entry, scriptProject));
-								changed = true;
 							}
 						}
 
-						// Calculate removed entries:
-						List<IncludePath> entriesToRemove = new LinkedList<IncludePath>();
-						for (IncludePath includePath : includePathEntries) {
-							boolean removed = true;
-							for (IBuildpathEntry entry : rawBuildpath) {
-								if (includePath.isBuildpath()) {
-									if (entry.equals(includePath.getEntry())) {
-										removed = false;
-										break;
-									}
-								} else {
-									removed = false;
-								}
-								/*
-								 * else { if
-								 * (entry.getPath().isPrefixOf(((IResource)
-								 * includePath.getEntry()).getFullPath())) {
-								 * removed = false; break; } }
-								 */
-							}
-							if (removed) {
-								entriesToRemove.add(includePath);
-							}
-						}
-						for (IncludePath includePath : entriesToRemove) {
-							newEntries.remove(includePath);
-							changed = true;
-						}
-
-						if (changed) {
-							setIncludePath(project, newEntries.toArray(new IncludePath[newEntries.size()]));
-						}
+						setIncludePath(project, newEntries.toArray(new IncludePath[newEntries.size()]));
 
 					} else {
 						IModelElementDelta[] children = delta.getAffectedChildren();
@@ -123,14 +75,6 @@ public class IncludePathManager {
 				}
 			}
 
-			private void getAddedModels(IModelElementDelta delta, Set<IPath> addedModels) {
-				for (int i = 0; i < delta.getAddedChildren().length; i++) {
-					addedModels.add(delta.getAddedChildren()[i].getElement().getPath());
-				}
-				for (int i = 0; i < delta.getAffectedChildren().length; i++) {
-					getAddedModels(delta.getAffectedChildren()[i], addedModels);
-				}
-			}
 		});
 	}
 
@@ -247,10 +191,11 @@ public class IncludePathManager {
 	}
 
 	public static boolean isBuildpathAllowed(IBuildpathEntry entry) {
-		return ((entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER
-				&& !entry.getPath().toString().equals(LanguageModelInitializer.CONTAINER_PATH))
-				|| entry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY
-				|| entry.getEntryKind() == IBuildpathEntry.BPE_PROJECT);
+		if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER
+				&& entry.getPath().toString().equals(LanguageModelInitializer.CONTAINER_PATH)) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
