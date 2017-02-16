@@ -84,6 +84,7 @@ public class PHPPluginImages {
 
 	public static final String IMG_TEMPLATE = NAME_PREFIX + "phptpldata16.png"; //$NON-NLS-1$
 	public static final String IMG_OBJS_EXTJAR = NAME_PREFIX + "jar_l_obj.png"; //$NON-NLS-1$
+	public static final String IMG_OBJS_EXTSRC = NAME_PREFIX + "cf_obj.png"; //$NON-NLS-1$
 
 	public static final String IMG_CORRECTION_MULTI_FIX = NAME_PREFIX + "correction_multi_fix.gif"; //$NON-NLS-1$
 
@@ -133,6 +134,8 @@ public class PHPPluginImages {
 
 	public static final ImageDescriptor DESC_OBJS_LIBRARY = createManaged(T_OBJ, IMG_OBJS_LIBRARY);
 	public static final ImageDescriptor DESC_OBJS_PHP_PROJECT = createManaged(T_OBJ, IMG_OBJS_PHP_PROJECT);
+	public static final ImageDescriptor DESC_OBJS_EXTJAR = createManaged(T_OBJ, IMG_OBJS_EXTJAR);
+	public static final ImageDescriptor DESC_OBJS_EXTSRC = createManaged(T_OBJ, IMG_OBJS_EXTSRC);
 	public static final ImageDescriptor DESC_OBJS_TRAIT = createManaged(T_OBJ, IMG_OBJS_TRAIT);
 
 	public static final ImageDescriptor DESC_DLCL_CONFIGURE_ANNOTATIONS = create(T_DLCL, "configure_annotations.gif"); //$NON-NLS-1$

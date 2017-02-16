@@ -18,7 +18,6 @@ import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.IScriptFolder;
 import org.eclipse.dltk.internal.ui.wizards.buildpath.BPListElement;
 import org.eclipse.dltk.internal.ui.wizards.buildpath.BPListLabelProvider;
-import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.dltk.ui.ScriptElementImageDescriptor;
 import org.eclipse.dltk.ui.ScriptElementImageProvider;
@@ -45,7 +44,10 @@ public class PHPIPListLabelProvider extends BPListLabelProvider {
 	protected ImageDescriptor getCPListElementBaseImage(BPListElement cpentry) {
 
 		if (cpentry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
-			return DLTKPluginImages.getDescriptor(DLTKPluginImages.IMG_OBJS_LIBRARY);
+			if (cpentry.isExternalFolder()) {
+				return PHPPluginImages.DESC_OBJS_EXTSRC;
+			}
+			return PHPPluginImages.DESC_OBJS_EXTJAR;
 		} else if (cpentry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
 			// handling Folder special case - need to decide if it's in the
 			// build path or not.

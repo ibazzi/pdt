@@ -18,6 +18,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.core.environment.EnvironmentPathUtils;
+import org.eclipse.dltk.internal.core.ArchiveProjectFragment;
 import org.eclipse.dltk.internal.core.ExternalProjectFragment;
 import org.eclipse.dltk.internal.ui.navigator.ScriptExplorerContentProvider;
 import org.eclipse.dltk.internal.ui.navigator.ScriptExplorerLabelProvider;
@@ -45,8 +46,16 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 	@Override
 	public Image getImage(Object element) {
 		IModelElement modelElement = null;
+		if (element instanceof ArchiveProjectFragment) {
+			return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_EXTJAR);
+		}
 		if (element instanceof ExternalProjectFragment) {
-			return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_LIBRARY);
+			ExternalProjectFragment fragment = (ExternalProjectFragment) element;
+			String name = LanguageModelInitializer.getPathName(EnvironmentPathUtils.getLocalPath(fragment.getPath()));
+			if (name != null) {
+				return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_LIBRARY);
+			}
+			return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_EXTSRC);
 		}
 
 		if (element instanceof IncludePath) {
@@ -60,7 +69,10 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 
 				}
 				// A library
-				if (entryKind == IBuildpathEntry.BPE_LIBRARY || entryKind == IBuildpathEntry.BPE_CONTAINER) {
+				if (entryKind == IBuildpathEntry.BPE_LIBRARY) {
+					return this.getImage(getProjectFragment((IncludePath) element));
+				}
+				if (entryKind == IBuildpathEntry.BPE_CONTAINER) {
 					return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_LIBRARY);
 				}
 			}
@@ -137,18 +149,18 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 	 */
 	@Override
 	public String getText(Object element) {
-		String label = doGetText(element);
+		StyledString label = doGetText(element);
 		if (label != null) {
-			return label;
+			return label.getString();
 		}
 		return super.getText(element);
 	}
 
 	@Override
 	public StyledString getStyledText(Object element) {
-		String label = doGetText(element);
+		StyledString label = doGetText(element);
 		if (label != null) {
-			return new StyledString(label);
+			return label;
 		}
 		StyledString text = super.getStyledText(element);
 		if (element instanceof IScriptFolder) {
@@ -157,21 +169,15 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 		return text;
 	}
 
-	private String doGetText(Object element) {
+	private StyledString doGetText(Object element) {
+		String text = null;
 		if (element instanceof ExternalProjectFragment) {
 			ExternalProjectFragment fragment = (ExternalProjectFragment) element;
 			String name = LanguageModelInitializer.getPathName(EnvironmentPathUtils.getLocalPath(fragment.getPath()));
 			if (name != null) {
-				return name;
+				return new StyledString(name);
 			}
-			return fragment.toStringWithAncestors();
 		}
-		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=295256
-		if (element instanceof IProjectFragment) {
-			IProjectFragment fragment = (IProjectFragment) element;
-			return fragment.getElementName();
-		}
-		// end
 		if (element instanceof IncludePath) {
 			Object entry = ((IncludePath) element).getEntry();
 
@@ -179,39 +185,38 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 			if (entry instanceof IBuildpathEntry) {
 				IBuildpathEntry iBuildpathEntry = (IBuildpathEntry) entry;
 				if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_PROJECT) {
-					return iBuildpathEntry.getPath().lastSegment();
-				}
-				if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
-					return getEntryDescription(element, iBuildpathEntry);
+					text = iBuildpathEntry.getPath().lastSegment();
+				} else if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+					text = getEntryDescription(element, iBuildpathEntry);
+				} else if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
+					return getStyledText(getProjectFragment((IncludePath) element));
 				} else {
 					String result = LabelProviderUtil.getVariableName(iBuildpathEntry.getPath(),
 							iBuildpathEntry.getEntryKind());
 					if (result == null) {
 						IPath localPath = EnvironmentPathUtils.getLocalPath(iBuildpathEntry.getPath());
-						return localPath.toOSString();
+						text = localPath.toOSString();
 					}
-					return result;
 				}
+			} else if (entry instanceof ExternalProjectFragment) {
+				text = ((ExternalProjectFragment) entry).toStringWithAncestors();
+			} else if (entry instanceof IResource) {
+				text = (((IResource) entry).getFullPath().toString()).substring(1);
 			}
-			if (entry instanceof ExternalProjectFragment) {
-				return ((ExternalProjectFragment) entry).toStringWithAncestors();
-			}
-
-			if (entry instanceof IResource) {
-				return (((IResource) entry).getFullPath().toString()).substring(1);
-			}
-
-			return null;
 		}
 
-		if (element != null) {
+		if (text == null && element != null) {
 			for (ILabelProvider provider : TreeContentProviderRegistry.getInstance().getLabelProviders()) {
 				String label = provider.getText(element);
 
 				if (label != null) {
-					return label;
+					text = label;
+					break;
 				}
 			}
+		}
+		if (text != null) {
+			return new StyledString(text);
 		}
 		return null;
 	}
@@ -234,6 +239,18 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 			return buildpathContainer.getDescription();
 		}
 		return iBuildpathEntry.getPath().toOSString();
+	}
+
+	private IProjectFragment getProjectFragment(IncludePath includePath) {
+		IScriptProject project = DLTKCore.create(includePath.getProject());
+		IBuildpathEntry entry = null;
+		if (includePath.getEntry() instanceof IBuildpathEntry) {
+			entry = (IBuildpathEntry) includePath.getEntry();
+		}
+		if (entry == null) {
+			return null;
+		}
+		return project.getProjectFragment(entry.getPath());
 	}
 
 }
