@@ -207,7 +207,13 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 							}
 						}
 					} else {
-						returnChildren.addAll(Arrays.asList(super.getChildren(parentElement)));
+						Object[] children = super.getChildren(parentElement);
+						List<Object> list = new ArrayList<Object>();
+						for (Object obj : children) {
+							if (!(obj instanceof ArchiveProjectFragment))
+								list.add(obj);
+						}
+						returnChildren.addAll(list);
 					}
 
 					// Adding External libraries to the treeview :
