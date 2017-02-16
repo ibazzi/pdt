@@ -123,6 +123,7 @@ public class PHPPluginImages {
 	public static final ImageDescriptor DESC_OVR_ABSTRACT = DLTKPluginImages.DESC_OVR_ABSTRACT;
 	public static final ImageDescriptor DESC_OVR_FINAL = DLTKPluginImages.DESC_OVR_FINAL;
 	public static final ImageDescriptor DESC_OVR_STATIC = DLTKPluginImages.DESC_OVR_STATIC;
+	public static final ImageDescriptor DESC_OVR_LIBRARY = create(T_OVR, "library_ovr.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_OBJ_OVERRIDES = create(T_OBJ, "over_co.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OBJ_IMPLEMENTS = create(T_OBJ, "implm_co.png"); //$NON-NLS-1$
