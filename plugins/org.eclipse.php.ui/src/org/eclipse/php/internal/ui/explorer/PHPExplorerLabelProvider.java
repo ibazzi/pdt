@@ -65,6 +65,9 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 			// An included PHP project
 			if (entry instanceof IBuildpathEntry) {
 				int entryKind = ((IBuildpathEntry) entry).getEntryKind();
+				if (entryKind == IBuildpathEntry.BPE_SOURCE) {
+					return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_PHPFOLDER_ROOT);
+				}
 				if (entryKind == IBuildpathEntry.BPE_PROJECT) {
 					return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_PHP_PROJECT);
 
@@ -191,6 +194,8 @@ public class PHPExplorerLabelProvider extends ScriptExplorerLabelProvider {
 					text = getEntryDescription(element, iBuildpathEntry);
 				} else if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY) {
 					return getStyledText(getProjectFragment((IncludePath) element));
+				} else if (iBuildpathEntry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
+					text = iBuildpathEntry.getPath().toString().substring(1);
 				} else {
 					String result = LabelProviderUtil.getVariableName(iBuildpathEntry.getPath(),
 							iBuildpathEntry.getEntryKind());
