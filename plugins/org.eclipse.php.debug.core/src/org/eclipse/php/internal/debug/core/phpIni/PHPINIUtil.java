@@ -19,10 +19,7 @@ import java.util.List;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.internal.filesystem.local.LocalFile;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.*;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.core.environment.EnvironmentPathUtils;
 import org.eclipse.php.internal.core.includepath.IncludePath;
@@ -31,6 +28,8 @@ import org.eclipse.php.internal.debug.core.Logger;
 import org.eclipse.php.internal.debug.core.PHPDebugPlugin;
 
 public class PHPINIUtil {
+	public static final String PHP_INI_MODIFIER_EXTENSION_ID = "org.eclipse.php.debug.core.phpIniModifier";
+	private static List<IPHPINIModifier> phpIniModifiers;
 	private static final String[] fgArchiveExtensions = { "zip", "phar" }; //$NON-NLS-1$
 	private static final String PHP_INI_FILE = "php.ini"; //$NON-NLS-1$
 	private static final String INCLUDE_PATH = "include_path"; //$NON-NLS-1$
@@ -38,6 +37,35 @@ public class PHPINIUtil {
 	private static final String ZEND_EXTENSION_TS = "zend_extension_ts"; //$NON-NLS-1$
 	private static final String MEMORY_LIMIT = "memory_limit"; //$NON-NLS-1$
 	private static final String DATE_TIMEZONE = "date.timezone"; //$NON-NLS-1$
+
+	private static void registerPhpIniModifier() {
+		if (phpIniModifiers != null)
+			return;
+		phpIniModifiers = new ArrayList<>();
+		IConfigurationElement[] config = Platform.getExtensionRegistry()
+				.getConfigurationElementsFor(PHP_INI_MODIFIER_EXTENSION_ID);
+		try {
+			for (IConfigurationElement e : config) {
+				final Object o = e.createExecutableExtension("class"); //$NON-NLS-1$
+				if (o instanceof IPHPINIModifier) {
+					ISafeRunnable runnable = new ISafeRunnable() {
+						public void run() throws Exception {
+							IPHPINIModifier modifier = (IPHPINIModifier) o;
+							Assert.isNotNull(modifier);
+							phpIniModifiers.add(modifier);
+						}
+
+						public void handleException(Throwable exception) {
+							Logger.logException(exception);
+						}
+					};
+					SafeRunner.run(runnable);
+				}
+			}
+		} catch (CoreException ex) {
+			Logger.logException(ex);
+		}
+	}
 
 	private static void modifyIncludePath(File phpIniFile, String[] includePath) {
 		try {
@@ -179,6 +207,10 @@ public class PHPINIUtil {
 				}
 			}
 			modifyIncludePath(tempIniFile, includePath.toArray(new String[includePath.size()]));
+			registerPhpIniModifier();
+			for (IPHPINIModifier modifier : phpIniModifiers) {
+				modifier.modify(tempIniFile, project);
+			}
 		}
 		return tempIniFile;
 	}
