@@ -14,8 +14,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.dltk.core.DLTKCore;
 import org.eclipse.dltk.core.IModelElement;
-import org.eclipse.dltk.core.IProjectFragment;
 import org.eclipse.dltk.core.IScriptProject;
+import org.eclipse.dltk.internal.core.ArchiveProjectFragment;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -39,7 +39,7 @@ public class BuildpathIndicatorLabelDecorator implements ILightweightLabelDecora
 				IScriptProject scriptProject = DLTKCore.create(project);
 				if (scriptProject != null && scriptProject.isOnBuildpath(resource)) {
 					IModelElement modelElement = scriptProject.getProjectFragment(resource);
-					if (modelElement instanceof IProjectFragment) {
+					if (modelElement instanceof ArchiveProjectFragment) {
 						return PHPPluginImages.DESC_OVR_LIBRARY;
 					}
 				}
