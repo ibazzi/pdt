@@ -25,6 +25,7 @@
    <extension-point id="phpDebugStepFilters" name="PHP Debug Step Filters" schema="schema/phpDebugStepFilters.exsd"/>
    <extension-point id="phpLaunchDelegateListener" name="phpLaunchDelegateListener" schema="schema/phpLaunchDelegateListener.exsd"/>
    <extension-point id="phpLocalFileSearchFilters" name="PHP Local File Search Results Filters" schema="schema/phpLocalFileSearchFilters.exsd"/>
+   <extension-point id="phpIniModifier" name="PHP INI Modifier" schema="schema/phpIniModifier.exsd"/>
     
    <extension
          point="org.eclipse.debug.core.sourceLocators">
