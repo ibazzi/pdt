@@ -21,6 +21,7 @@ import org.eclipse.core.internal.filesystem.local.LocalFile;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.core.environment.EnvironmentPathUtils;
@@ -29,9 +30,8 @@ import org.eclipse.php.internal.core.util.PHPSearchEngine;
 import org.eclipse.php.internal.debug.core.Logger;
 import org.eclipse.php.internal.debug.core.PHPDebugPlugin;
 
-@SuppressWarnings("restriction")
 public class PHPINIUtil {
-
+	private static final String[] fgArchiveExtensions = { "zip", "phar" }; //$NON-NLS-1$
 	private static final String PHP_INI_FILE = "php.ini"; //$NON-NLS-1$
 	private static final String INCLUDE_PATH = "include_path"; //$NON-NLS-1$
 	private static final String ZEND_EXTENSION = "zend_extension"; //$NON-NLS-1$
@@ -45,6 +45,9 @@ public class PHPINIUtil {
 			m.removeAllEntries(INCLUDE_PATH);
 			StringBuilder valueBuf = new StringBuilder("."); //$NON-NLS-1$
 			for (String path : includePath) {
+				if (isArchivePath(path)) {
+					path = "phar://" + path;
+				}
 				valueBuf.append(File.pathSeparatorChar).append(path);
 			}
 			m.addEntry(INCLUDE_PATH, valueBuf.toString());
@@ -52,6 +55,23 @@ public class PHPINIUtil {
 		} catch (IOException e) {
 			PHPDebugPlugin.log(e);
 		}
+	}
+
+	public static boolean isArchivePath(String path) {
+		String ext = new Path(path).getFileExtension();
+		if (ext != null && ext.length() != 0) {
+			return isArchiveFileExtension(ext);
+		}
+		return false;
+	}
+
+	public static boolean isArchiveFileExtension(String ext) {
+		for (int i = 0; i < fgArchiveExtensions.length; i++) {
+			if (ext.equalsIgnoreCase(fgArchiveExtensions[i])) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void modifyDebuggerExtensionPath(File phpIniFile, String extensionPath) {
