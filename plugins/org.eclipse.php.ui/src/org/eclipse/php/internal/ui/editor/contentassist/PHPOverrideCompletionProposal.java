@@ -11,47 +11,180 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.contentassist;
 
+import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.dltk.core.*;
-import org.eclipse.dltk.internal.ui.text.hover.CompletionHoverControlCreator;
-import org.eclipse.dltk.ui.PreferenceConstants;
-import org.eclipse.dltk.ui.text.ScriptTextTools;
-import org.eclipse.dltk.ui.text.completion.ScriptOverrideCompletionProposal;
-import org.eclipse.jface.internal.text.html.BrowserInformationControl;
-import org.eclipse.jface.text.*;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
-import org.eclipse.jface.text.contentassist.ContextInformation;
+import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.jface.text.contentassist.ICompletionProposalExtension4;
-import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
-import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.core.PHPCorePlugin;
+import org.eclipse.php.internal.core.ast.rewrite.*;
+import org.eclipse.php.internal.core.corext.dom.NodeFinder;
+import org.eclipse.php.internal.core.format.FormatterUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.php.internal.ui.corext.codemanipulation.StubUtility;
+import org.eclipse.php.internal.ui.text.correction.ASTResolving;
+import org.eclipse.text.edits.MalformedTreeException;
 
-public class PHPOverrideCompletionProposal extends ScriptOverrideCompletionProposal
-		implements ICompletionProposalExtension4 {
-	/**
-	 * The control creator.
-	 */
-	private IInformationControlCreator fCreator;
+public class PHPOverrideCompletionProposal extends PHPTypeCompletionProposal implements ICompletionProposalExtension4 {
+
+	private String fMethodName;
 
 	public PHPOverrideCompletionProposal(IScriptProject jproject, ISourceModule cu, String methodName,
+			String[] paramTypes, int start, int length, String displayName, String completionProposal) {
+		this(jproject, cu, methodName, paramTypes, start, length, new StyledString(displayName), completionProposal);
+	}
+
+	/**
+	 * @since 5.5
+	 */
+	public PHPOverrideCompletionProposal(IScriptProject jproject, ISourceModule cu, String methodName,
 			String[] paramTypes, int start, int length, StyledString displayName, String completionProposal) {
-		super(jproject, cu, methodName, paramTypes, start, length, displayName.toString(), completionProposal);
-		setStyledDisplayString(displayName);
+		super(completionProposal, cu, start, length, null, displayName, 0, null);
+		Assert.isNotNull(jproject);
+		Assert.isNotNull(methodName);
+		Assert.isNotNull(paramTypes);
+		Assert.isNotNull(cu);
+
+		fMethodName = methodName;
+
+		StringBuffer buffer = new StringBuffer();
+		buffer.append(completionProposal);
+
+		setReplacementString(buffer.toString());
 	}
 
 	@Override
-	public void apply(IDocument document, char trigger, int offset) {
-		UseStatementInjector injector = new UseStatementInjector(this);
-		offset = injector.inject(document, getTextViewer(), offset);
+	public CharSequence getPrefixCompletionText(IDocument document, int completionOffset) {
+		return fMethodName;
+	}
 
-		super.apply(document, trigger, offset);
+	protected MethodDeclaration getMethodDeclaration(AST ast, ASTRewrite rewrite, ImportRewrite imports, int offset,
+			ITypeBinding declaringType) throws CoreException {
+		IMethodBinding methodToOverride = Bindings.findMethodInHierarchy(declaringType, fMethodName);
+		if (methodToOverride == null && declaringType.isInterface()) {
+			methodToOverride = Bindings.findMethodInType(ast.resolveWellKnownType("java.lang.Object"), //$NON-NLS-1$
+					fMethodName);
+		}
 
-		calculateCursorPosition(document, offset);
+		if (methodToOverride != null) {
+			NamespaceDeclaration namespace = imports.getProgram().getNamespaceDeclaration(offset);
+			return StubUtility.createImplementationStub(fSourceModule, namespace, rewrite, imports,
+					(IMethod) methodToOverride.getPHPElement(), declaringType.isInterface());
+		}
+		return null;
+	}
+
+	protected Program getRecoveredAST(IDocument document, int offset, Document recoveredDocument) {
+		try {
+			// Program ast = SharedASTProvider.getAST(fSourceModule,
+			// SharedASTProvider.WAIT_YES, null);
+			// if (ast != null) {
+			// recoveredDocument.set(document.get());
+			// return ast;
+			// }
+
+			char[] content = document.get().toCharArray();
+
+			// clear prefix to avoid compile errors
+			int index = offset - 1;
+			while (index >= 0 && Character.isJavaIdentifierPart(content[index])) {
+				content[index] = ' ';
+				index--;
+			}
+
+			recoveredDocument.set(new String(content));
+
+			final ASTParser parser = ASTParser.newParser(fSourceModule);
+			parser.setSource(content);
+			return (Program) parser.createAST(new NullProgressMonitor());
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+		return null;
+	}
+
+	/*
+	 * @see
+	 * JavaTypeCompletionProposal#updateReplacementString(IDocument,char,int,
+	 * ImportRewrite)
+	 */
+	@Override
+	protected boolean updateReplacementString(IDocument document, char trigger, int offset, ImportRewrite importRewrite)
+			throws CoreException, BadLocationException {
+		Document recoveredDocument = new Document();
+		Program unit = getRecoveredAST(document, offset, recoveredDocument);
+		if (importRewrite == null) {
+			importRewrite = ImportRewrite.create(unit, true);
+		}
+
+		ITypeBinding declaringType = null;
+		ASTNode node = NodeFinder.perform(unit, offset, 1);
+		node = ASTResolving.findParentType(node);
+		ListRewrite rewriter = null;
+		ASTRewrite rewrite = ASTRewrite.create(unit.getAST());
+		if (node instanceof AnonymousClassDeclaration) {
+			declaringType = ((AnonymousClassDeclaration) node).resolveTypeBinding();
+			rewriter = rewrite.getListRewrite(((AnonymousClassDeclaration) node).getBody(), Block.STATEMENTS_PROPERTY);
+		} else if (node instanceof TypeDeclaration) {
+			TypeDeclaration declaration = (TypeDeclaration) node;
+			declaringType = declaration.resolveTypeBinding();
+			rewriter = rewrite.getListRewrite(((TypeDeclaration) node).getBody(), Block.STATEMENTS_PROPERTY);
+		}
+		if (declaringType != null && rewriter != null) {
+			MethodDeclaration stub = getMethodDeclaration(node.getAST(), rewrite, importRewrite, offset, declaringType);
+			if (stub != null) {
+				int indentWidth = FormatterUtils.getFormatterCommonPrferences().getIndentationSize(document);
+				int tabWidth = FormatterUtils.getFormatterCommonPrferences().getTabSize(document);
+
+				rewriter.insertFirst(stub, null);
+
+				ITrackedNodePosition position = rewrite.track(stub);
+				try {
+					rewrite.rewriteAST(recoveredDocument, fSourceModule.getScriptProject().getOptions(true))
+							.apply(recoveredDocument);
+
+					String generatedCode = recoveredDocument.get(position.getStartPosition(), position.getLength());
+					int generatedIndent = IndentManipulation.measureIndentUnits(
+							getIndentAt(recoveredDocument, position.getStartPosition(), tabWidth, indentWidth),
+							tabWidth, indentWidth);
+
+					String indent = getIndentAt(document, getReplacementOffset(), tabWidth, indentWidth);
+					setReplacementString(IndentManipulation.changeIndent(generatedCode, generatedIndent, tabWidth,
+							indentWidth, indent, TextUtilities.getDefaultLineDelimiter(document)));
+
+					int replacementLength = getReplacementLength();
+					if (document.get(getReplacementOffset() + replacementLength, 1).equals(")")) { //$NON-NLS-1$
+						setReplacementLength(replacementLength + 1);
+					}
+
+				} catch (MalformedTreeException exception) {
+					PHPUiPlugin.log(exception);
+				} catch (BadLocationException exception) {
+					PHPUiPlugin.log(exception);
+				}
+			}
+		}
+		return true;
+	}
+
+	protected static String getIndentAt(IDocument document, int offset, int tabWidth, int indentWidth) {
+		try {
+			IRegion region = document.getLineInformationOfOffset(offset);
+			return IndentManipulation.extractIndentString(document.get(region.getOffset(), region.getLength()),
+					tabWidth, indentWidth);
+		} catch (BadLocationException e) {
+			return ""; //$NON-NLS-1$
+		}
 	}
 
 	@Override
@@ -114,89 +247,4 @@ public class PHPOverrideCompletionProposal extends ScriptOverrideCompletionPropo
 		} catch (BadLocationException e) {
 		}
 	}
-
-	@Override
-	public IContextInformation getContextInformation() {
-		String displayString = getDisplayString();
-
-		// * ZSTD-335
-		IModelElement modelElement = getModelElement();
-		if (modelElement instanceof IMethod) {
-			IMethod method = (IMethod) modelElement;
-			IParameter[] parameters;
-			try {
-				parameters = method.getParameters();
-				if (parameters != null) {
-					StringBuilder sb = new StringBuilder();
-					for (int i = 0; i < parameters.length; i++) {
-						IParameter parameter = parameters[i];
-
-						if (parameter.getType() != null) {
-							if (PHPFlags.isNullable(parameter.getFlags())) {
-								sb.append('?');
-							}
-							sb.append(parameter.getType()).append(" "); //$NON-NLS-1$
-						}
-						sb.append(parameter.getName());
-						if (parameter.getDefaultValue() != null) {
-							sb.append("=").append(parameter.getDefaultValue()); //$NON-NLS-1$
-						}
-						sb.append(", "); //$NON-NLS-1$
-					}
-					String infoDisplayString = sb.toString();
-					if (infoDisplayString.length() > 0) {
-						infoDisplayString = infoDisplayString.substring(0, infoDisplayString.length() - 2);
-						return new ContextInformation(displayString, infoDisplayString);
-					}
-
-				}
-			} catch (ModelException e) {
-				PHPUiPlugin.log(e);
-			}
-		}
-
-		String infoDisplayString = displayString;
-
-		int i = infoDisplayString.indexOf('(');
-		if (i != -1) {
-			infoDisplayString = infoDisplayString.substring(i + 1);
-		}
-		i = infoDisplayString.indexOf(')');
-		if (i != -1) {
-			infoDisplayString = infoDisplayString.substring(0, i);
-		}
-		if (infoDisplayString.length() == 0) {
-			return null;
-		}
-		return new ContextInformation(displayString, infoDisplayString);
-	}
-
-	@Override
-	protected boolean isCamelCaseMatching() {
-		return true;
-	}
-
-	@Override
-	protected ScriptTextTools getTextTools() {
-		return PHPUiPlugin.getDefault().getTextTools();
-	}
-
-	@Override
-	public IInformationControlCreator getInformationControlCreator() {
-		if (fCreator == null) {
-			fCreator = new CompletionHoverControlCreator(new IInformationControlCreator() {
-				@Override
-				public IInformationControl createInformationControl(Shell parent) {
-					if (BrowserInformationControl.isAvailable(parent)) {
-						return new BrowserInformationControl(parent, PreferenceConstants.APPEARANCE_DOCUMENTATION_FONT,
-								true);
-					} else {
-						return new DefaultInformationControl(parent, true);
-					}
-				}
-			}, true);
-		}
-		return fCreator;
-	}
-
 }

@@ -21,6 +21,7 @@ import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.core.ModelManager;
 import org.eclipse.php.core.codeassist.*;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.contexts.CompletionContextResolver;
 import org.eclipse.php.internal.core.codeassist.strategies.CompletionStrategyFactory;
@@ -146,10 +147,15 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 		relevance += subRelevance;
 
 		noProposal = false;
+		int kind = 0;
+		if (field.getParent() instanceof IMethod) {
+			kind = CompletionProposal.LOCAL_VARIABLE_REF;
+		} else {
+			kind = CompletionProposal.FIELD_REF;
+		}
+		if (!requestor.isIgnored(kind)) {
 
-		if (!requestor.isIgnored(CompletionProposal.FIELD_REF)) {
-
-			CompletionProposal proposal = createProposal(CompletionProposal.FIELD_REF, actualCompletionPosition);
+			CompletionProposal proposal = createProposal(kind, actualCompletionPosition);
 			proposal.setName(field.getElementName());
 
 			String completion = field.getElementName() + suffix;
@@ -253,11 +259,14 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 
 		noProposal = false;
 
-		if (!requestor.isIgnored(CompletionProposal.METHOD_DECLARATION)) {
+		int completionKind = CompletionProposal.METHOD_REF;
+		if (ProposalExtraInfo.isMagicMethodOverload(extraInfo) || ProposalExtraInfo.isMethodOverride(extraInfo)) {
+			completionKind = CompletionProposal.METHOD_DECLARATION;
+		}
 
-			CompletionProposal proposal = createProposal(CompletionProposal.METHOD_DECLARATION,
-					actualCompletionPosition);
-			proposal.setExtraInfo(extraInfo);
+		if (!requestor.isIgnored(completionKind)) {
+
+			CompletionProposal proposal = createProposal(completionKind, actualCompletionPosition);
 			// show method parameter names:
 			String[] params = null;
 			try {
@@ -276,11 +285,30 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 			proposal.setName(elementName);
 
 			int relevance = relevanceMethod + subRelevance;
-			proposal.setCompletion((completionName + suffix));
 
 			try {
 				proposal.setIsConstructor(elementName.equals("__construct") //$NON-NLS-1$
 						|| method.isConstructor());
+				if (proposal.isConstructor()) {
+					CompletionProposal typeProposal = createProposal(CompletionProposal.TYPE_REF,
+							actualCompletionPosition);
+					typeProposal.setModelElement(method.getParent());
+					typeProposal.setName(elementName);
+					typeProposal.setCompletion(completionName);
+					typeProposal.setFlags(((IMember) method.getParent()).getFlags());
+					typeProposal.setReplaceRange(replaceRange.getOffset(),
+							replaceRange.getOffset() + replaceRange.getLength());
+					typeProposal.setRelevance(relevanceClass + subRelevance);
+					proposal.setCompletion(suffix);
+					proposal.setReplaceRange(replaceRange.getOffset() + replaceRange.getLength(),
+							replaceRange.getOffset() + replaceRange.getLength());
+					proposal.setExtraInfo(typeProposal);
+				} else {
+					proposal.setCompletion((completionName + suffix));
+					proposal.setReplaceRange(replaceRange.getOffset(),
+							replaceRange.getOffset() + replaceRange.getLength());
+					proposal.setExtraInfo(extraInfo);
+				}
 				proposal.setFlags(method.getFlags());
 			} catch (ModelException e) {
 				if (DEBUG) {
@@ -288,7 +316,6 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 				}
 			}
 
-			proposal.setReplaceRange(replaceRange.getOffset(), replaceRange.getOffset() + replaceRange.getLength());
 			proposal.setRelevance(relevance);
 
 			this.requestor.accept(proposal);
@@ -346,7 +373,7 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 			}
 
 			String elementName = type.getElementName();
-			String completionName = elementName;
+			String completionName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
 
 			proposal.setModelElement(type);
 			proposal.setName(elementName);

@@ -68,6 +68,6 @@ public class UseNameStrategy extends GlobalTypesStrategy {
 
 	@Override
 	protected int getExtraInfo() {
-		return ProposalExtraInfo.TYPE_ONLY;
+		return ProposalExtraInfo.TYPE_ONLY | ProposalExtraInfo.FULL_NAME;
 	}
 }

@@ -77,6 +77,6 @@ public class NamespaceUseNameStrategy extends AbstractCompletionStrategy {
 	}
 
 	protected int getExtraInfo() {
-		return ProposalExtraInfo.TYPE_ONLY | ProposalExtraInfo.NO_INSERT_USE;
+		return ProposalExtraInfo.TYPE_ONLY | ProposalExtraInfo.NO_INSERT_USE | ProposalExtraInfo.CLASS_IN_NAMESPACE;
 	}
 }

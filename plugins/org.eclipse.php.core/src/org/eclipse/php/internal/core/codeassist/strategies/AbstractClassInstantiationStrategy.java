@@ -10,6 +10,7 @@ import org.eclipse.dltk.internal.core.ModelElement;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.codeassist.contexts.AbstractCompletionContext;
@@ -64,8 +65,24 @@ public abstract class AbstractClassInstantiationStrategy extends GlobalTypesStra
 			if (!concreteContext.getCompletionRequestor().isContextInformationMode()) {
 				// here we use fake method,and do the real work in class
 				// ParameterGuessingProposal
-				IMethod ctorMethod = FakeConstructor.createFakeConstructor(null, type, type.equals(enclosingClass));
-				reporter.reportMethod(ctorMethod, suffix, replaceRange);
+				IMethod ctorMethod = type.getMethod("__construct");
+				boolean isAccessable = false;
+				if (ctorMethod.exists()) {
+					try {
+						if (PHPFlags.isPublic(ctorMethod.getFlags())) {
+							isAccessable = true;
+						}
+					} catch (ModelException e) {
+						e.printStackTrace();
+					}
+				} else {
+					ctorMethod = null;
+					isAccessable = true;
+				}
+				if (isAccessable) {
+					ctorMethod = FakeConstructor.createFakeConstructor(ctorMethod, type, type.equals(enclosingClass));
+					reporter.reportMethod(ctorMethod, suffix, replaceRange);
+				}
 			} else {
 				// if this is context information mode,we use this,
 				// because the number of types' length is very small
