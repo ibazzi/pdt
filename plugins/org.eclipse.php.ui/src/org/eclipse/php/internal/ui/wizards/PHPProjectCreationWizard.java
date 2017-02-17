@@ -37,7 +37,6 @@ public class PHPProjectCreationWizard extends NewElementWizard implements INewWi
 
 	protected PHPProjectWizardFirstPage fFirstPage;
 	protected PHPProjectWizardSecondPage fSecondPage;
-	protected PHPProjectWizardThirdPage fThirdPage;
 	protected PHPProjectWizardSecondPage fLastPage;
 	protected IConfigurationElement fConfigElement;
 
@@ -73,12 +72,6 @@ public class PHPProjectCreationWizard extends NewElementWizard implements INewWi
 		fSecondPage.setDescription(PHPUIMessages.PHPProjectCreationWizard_Page2Description);
 		addPage(fSecondPage);
 
-		// Third page (Include Path)
-		fThirdPage = new PHPProjectWizardThirdPage(fFirstPage);
-		fThirdPage.setTitle(PHPUIMessages.PHPProjectCreationWizard_Page3Title);
-		fThirdPage.setDescription(PHPUIMessages.PHPProjectCreationWizard_Page3Description);
-		addPage(fThirdPage);
-
 		fLastPage = fSecondPage;
 	}
 
@@ -88,8 +81,6 @@ public class PHPProjectCreationWizard extends NewElementWizard implements INewWi
 			fFirstPage.performFinish(monitor); // use the full progress monitor
 		if (fSecondPage != null)
 			fSecondPage.performFinish(monitor); // use the full progress monitor
-		if (fThirdPage != null)
-			fThirdPage.performFinish(monitor); // use the full progress monitor
 	}
 
 	@Override
