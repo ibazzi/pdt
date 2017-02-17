@@ -35,7 +35,6 @@ import org.eclipse.dltk.ui.viewsupport.ImageDisposer;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.php.internal.core.Logger;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.buildpath.BuildPathUtils;
 import org.eclipse.php.internal.core.includepath.IIncludepathListener;
@@ -81,8 +80,8 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 
 		@Override
 		public void dispose() {
-			if (fSourceContainerPage instanceof PHPIncludePathSourcePage) {
-				PHPSourceContainerWorkbookPage page = (PHPSourceContainerWorkbookPage) fSourceContainerPage;
+			if (fSourceContainerPage instanceof PHPBuildPathSourcePage) {
+				PHPSourceContainerWorkbookPage page = (PHPBuildPathSourcePage) fSourceContainerPage;
 				page.unregisterAddedElementListener(this);
 			}
 			IncludePathManager.getInstance().unregisterIncludepathListener(this);
@@ -156,7 +155,7 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 		item.setText(NewWizardMessages.BuildPathsBlock_tab_source);
 		item.setImage(DLTKPluginImages.get(DLTKPluginImages.IMG_OBJS_PACKFRAG_ROOT));
 
-		fSourceContainerPage = new PHPIncludePathSourcePage(fBuildPathList);
+		fSourceContainerPage = new PHPBuildPathSourcePage(fBuildPathList);
 		((PHPSourceContainerWorkbookPage) fSourceContainerPage)
 				.registerAddedElementListener((IChangeListener) composite);
 
@@ -218,51 +217,30 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 	}
 
 	public void configureScriptProject(IProgressMonitor monitor) throws CoreException, OperationCanceledException {
-		updateBuildPath();
+		removeEtnries();
 		flush(fBuildPathList.getElements(), getScriptProject(), monitor);
 		initializeTimeStamps();
 		updateUI();
 	}
 
-	/**
-	 * The purpose of this method is to adapt the build path according to the
-	 * entries added to the include path. If the user added to the include path
-	 * source folders that are not in (or contained in) the build path, he will
-	 * not get code completion and other functionality for this sources. THe
-	 * user is prompted and asked if he wants to add the relevant sources to the
-	 * build path as well see bug#255930
-	 */
-	private void updateBuildPath() {
-		PHPIncludePathSourcePage includePathSourcePage = (PHPIncludePathSourcePage) fSourceContainerPage;
-
-		boolean shouldAddToBuildPath = includePathSourcePage.shouldAddToBuildPath();
-		if (!shouldAddToBuildPath) {
-			return;
-		}
-
-		// get the source elements that the user added in the source tab
-		List<BPListElement> addedElements = includePathSourcePage.getAddedElements();
-		List<IBuildpathEntry> buildPathEntries = new ArrayList<IBuildpathEntry>();
-
-		// in case there are any, the user is prompted with a question
-		if (addedElements.size() > 0) {
-			for (BPListElement listElement : addedElements) {
-				if (!BuildPathUtils.isContainedInBuildpath(listElement.getPath(), fCurrScriptProject)) {
-					buildPathEntries.add(listElement.getBuildpathEntry());
+	private void removeEtnries() {
+		PHPBuildPathSourcePage buildPathSourcePage = (PHPBuildPathSourcePage) fSourceContainerPage;
+		List<BPListElement> removedElements = buildPathSourcePage.getRemovedElements();
+		if (removedElements.size() > 0) {
+			for (BPListElement element : removedElements) {
+				try {
+					if (BuildPathUtils.isContainedInBuildpath(element.getBuildpathEntry().getPath(),
+							fCurrScriptProject)) {
+						BuildPathUtils.removeEntryFromBuildPath(fCurrScriptProject, element.getBuildpathEntry());
+					}
+				} catch (ModelException e) {
+					PHPCorePlugin.log(e);
 				}
-			}
-
-			// if the user chose to, the relevant entries are added to the
-			// buildpath
-			try {
-				BuildPathUtils.addEntriesToBuildPath(fCurrScriptProject, buildPathEntries);
-			} catch (ModelException e) {
-				Logger.logException("Failed adding entries to build path", e); //$NON-NLS-1$
 			}
 		}
 	}
 
-	/*
+	/**
 	 * Creates the script project and sets the configured build path and output
 	 * location. If the project already exists only build paths are updated.
 	 */
@@ -274,7 +252,6 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 		monitor.setTaskName(NewWizardMessages.BuildPathsBlock_operationdesc_Script);
 		monitor.beginTask("", buildpathEntries.size() * 4 + 4); //$NON-NLS-1$
 		try {
-			IProject project = javaProject.getProject();
 			monitor.worked(1);
 
 			if (monitor.isCanceled()) {
@@ -282,21 +259,14 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 			}
 
 			List<IBuildpathEntry> newBuildPathEntries = new ArrayList<IBuildpathEntry>();
-			List<IBuildpathEntry> newIncludePathEntries = new ArrayList<IBuildpathEntry>();
 
 			// go over the dialog entries. collect all of the source entries for
 			// the include path array
 			// and the rest for the build path array
 			for (Iterator<IBuildpathEntry> iter = buildpathEntries.iterator(); iter.hasNext();) {
 				BPListElement entry = (BPListElement) iter.next();
-				newIncludePathEntries.add(entry.getBuildpathEntry());
-				if (entry.getEntryKind() != IBuildpathEntry.BPE_SOURCE) {
-					newBuildPathEntries.add(entry.getBuildpathEntry());
-					// https://bugs.eclipse.org/bugs/show_bug.cgi?id=307982
-					// Add project in build path,press ok,then edit the
-					// project's access rules will throw exception.
-					BuildPathUtils.removeEntryFromBuildPath(javaProject, entry.getBuildpathEntry());
-				}
+				newBuildPathEntries.add(entry.getBuildpathEntry());
+				BuildPathUtils.removeEntryFromBuildPath(javaProject, entry.getBuildpathEntry());
 
 				IResource res = entry.getResource();
 				if (res instanceof IFolder && entry.getLinkTarget() == null && !res.exists()) {
@@ -306,11 +276,8 @@ public class PHPIncludePathsBlock extends AbstractIncludepathsBlock {
 				}
 			}
 			if (newBuildPathEntries.size() > 0) {
-				// BuildPathUtils.removeEntryFromBuildPath(scriptProject,
-				// buildpathEntry)
 				BuildPathUtils.addEntriesToBuildPath(javaProject, newBuildPathEntries);
 			}
-			IncludePathManager.getInstance().addEntriesToIncludePath(project, newIncludePathEntries);
 
 		} finally {
 			monitor.done();

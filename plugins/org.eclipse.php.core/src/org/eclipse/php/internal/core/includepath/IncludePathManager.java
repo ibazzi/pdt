@@ -233,11 +233,7 @@ public class IncludePathManager {
 
 		// if it's a library, remove it also from build path
 		IScriptProject scriptProject = DLTKCore.create(project);
-		if ((buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_LIBRARY
-				|| buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER
-				|| buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_PROJECT)) {
-			BuildPathUtils.removeEntryFromBuildPath(scriptProject, buildpathEntry);
-		}
+		BuildPathUtils.removeEntryFromBuildPath(scriptProject, buildpathEntry);
 	}
 
 	/**
@@ -251,14 +247,7 @@ public class IncludePathManager {
 
 		List<IncludePath> includePathEntries = new ArrayList<IncludePath>();
 		for (IBuildpathEntry buildpathEntry : entries) {
-			if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
-				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(buildpathEntry.getPath());
-				if (resource != null) {
-					includePathEntries.add(new IncludePath(resource, project));
-				}
-			} else {
-				includePathEntries.add(new IncludePath(buildpathEntry, project));
-			}
+			includePathEntries.add(new IncludePath(buildpathEntry, project));
 		}
 		// update the include path for this project
 		setIncludePath(project, includePathEntries.toArray(new IncludePath[includePathEntries.size()]));
@@ -275,14 +264,7 @@ public class IncludePathManager {
 
 		List<IncludePath> includePathEntries = new ArrayList<IncludePath>();
 		for (IBuildpathEntry buildpathEntry : entries) {
-			if (buildpathEntry.getEntryKind() == IBuildpathEntry.BPE_SOURCE) {
-				IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(buildpathEntry.getPath());
-				if (resource != null) {
-					includePathEntries.add(new IncludePath(resource, project));
-				}
-			} else {
-				includePathEntries.add(new IncludePath(buildpathEntry, project));
-			}
+			includePathEntries.add(new IncludePath(buildpathEntry, project));
 		}
 		includePathEntries.addAll(Arrays.asList(IncludePathManager.getInstance().getIncludePaths(project)));
 

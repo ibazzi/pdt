@@ -57,6 +57,10 @@ public class IncludepathRenameIParentParticipant extends IncludepathRenamePartic
 	protected void gatherChanges(IResource resource, List changes, String destProjectName)
 			throws CoreException, OperationCanceledException {
 
+		if (!(resource instanceof IProject)) {
+			return;
+		}
+
 		IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 		for (int i = 0; i < projects.length; i++) {
 			if (!projects[i].isAccessible()) {

@@ -22,7 +22,7 @@ import org.eclipse.dltk.ui.util.IStatusChangeListener;
 import org.eclipse.dltk.ui.wizards.BuildpathsBlock;
 import org.eclipse.php.internal.ui.IPHPHelpContextIds;
 import org.eclipse.php.internal.ui.Logger;
-import org.eclipse.php.internal.ui.preferences.includepath.PHPBuildPathsBlock;
+import org.eclipse.php.internal.ui.preferences.includepath.PHPIncludePathsBlock;
 import org.eclipse.php.internal.ui.util.BusyIndicatorRunnableContext;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.PlatformUI;
@@ -42,7 +42,7 @@ public class PHPProjectWizardThirdPage extends PHPProjectWizardSecondPage {
 
 	@Override
 	protected BuildpathsBlock createBuildpathBlock(IStatusChangeListener listener) {
-		PHPBuildPathsBlock buildPathsBlock = new PHPBuildPathsBlock(new BusyIndicatorRunnableContext(), listener, 0,
+		PHPIncludePathsBlock buildPathsBlock = new PHPIncludePathsBlock(new BusyIndicatorRunnableContext(), listener, 0,
 				useNewSourcePage(), null);
 		return buildPathsBlock;
 	}
