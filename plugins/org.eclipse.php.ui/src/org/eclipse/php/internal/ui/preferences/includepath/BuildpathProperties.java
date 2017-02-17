@@ -29,7 +29,7 @@ public class BuildpathProperties extends BuildPathsPropertyPage implements IWork
 
 	@Override
 	protected BuildpathsBlock createBuildPathBlock(IWorkbenchPreferenceContainer pageContainer) {
-		return new PHPBuildPathsBlock(new BusyIndicatorRunnableContext(), this, getSettings().getInt(INDEX), false,
+		return new PHPIncludePathsBlock(new BusyIndicatorRunnableContext(), this, getSettings().getInt(INDEX), false,
 				pageContainer);
 	}
 

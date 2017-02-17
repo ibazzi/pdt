@@ -28,8 +28,6 @@ import org.eclipse.php.internal.ui.phar.wizard.PharUIUtil;
 import org.eclipse.php.internal.ui.util.LabelProviderUtil;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.ui.ISharedImages;
-import org.eclipse.ui.PlatformUI;
 
 public class PHPIPListLabelProvider extends BPListLabelProvider {
 	private String fInvalidLabel;
@@ -99,8 +97,6 @@ public class PHPIPListLabelProvider extends BPListLabelProvider {
 				else
 					return PHPPluginImages.DESC_OBJS_PHPFOLDER_ROOT;
 			}
-		} else {
-			return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER);
 		}
 		return null;
 	}

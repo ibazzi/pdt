@@ -35,6 +35,7 @@ import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.window.Window;
+import org.eclipse.php.internal.ui.PHPUIMessages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.widgets.Composite;
@@ -170,7 +171,7 @@ public class PHPSourceContainerWorkbookPage extends BuildPathBasePage {
 
 		fFoldersList = new TreeListDialogField(adapter, buttonLabels, new PHPIPListLabelProvider());
 		fFoldersList.setDialogFieldListener(adapter);
-		fFoldersList.setLabelText(NewWizardMessages.SourceContainerWorkbookPage_folders_label);
+		fFoldersList.setLabelText(PHPUIMessages.IncludePathSourcePage_Folders_Label);
 
 		fFoldersList.setViewerComparator(new BPListElementSorter());
 		fFoldersList.enableButton(getIDX_EDIT(), false);

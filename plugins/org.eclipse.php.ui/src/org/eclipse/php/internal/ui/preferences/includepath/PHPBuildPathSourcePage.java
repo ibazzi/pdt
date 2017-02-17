@@ -22,22 +22,16 @@ import org.eclipse.dltk.internal.ui.wizards.buildpath.BPListElement;
 import org.eclipse.dltk.internal.ui.wizards.buildpath.BPListElementAttribute;
 import org.eclipse.dltk.internal.ui.wizards.dialogfields.ListDialogField;
 import org.eclipse.php.internal.core.includepath.IncludePathManager;
-import org.eclipse.php.internal.ui.PHPUIMessages;
 import org.eclipse.ui.internal.IChangeListener;
 
 public class PHPBuildPathSourcePage extends PHPSourceContainerWorkbookPage {
 
 	private List<BPListElement> fRemovedElements = new ArrayList<BPListElement>();
-	private boolean removeFromIncludePath = false;
 
 	private List<IChangeListener> removedElementListeners = new ArrayList<IChangeListener>(1);
 
 	public List<BPListElement> getRemovedElements() {
 		return fRemovedElements;
-	}
-
-	public boolean shouldRemoveFromIncludePath() {
-		return removeFromIncludePath;
 	}
 
 	public PHPBuildPathSourcePage(ListDialogField buildpathList) {
@@ -92,9 +86,6 @@ public class PHPBuildPathSourcePage extends PHPSourceContainerWorkbookPage {
 			}
 			if (fRemovedElements.size() > 0) {
 				fFoldersList.removeElements(fRemovedElements);
-				removeFromIncludePath = IncludePathUtils.openConfirmationDialog(getShell(),
-						PHPUIMessages.IncludePath_RemoveEntryTitle,
-						PHPUIMessages.IncludePath_RemoveEntryFromIncludePathMessage); //
 				for (IChangeListener listener : removedElementListeners) {
 					listener.update(true);
 				}
