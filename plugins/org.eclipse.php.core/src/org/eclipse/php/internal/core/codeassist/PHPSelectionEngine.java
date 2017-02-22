@@ -52,6 +52,7 @@ import org.eclipse.php.internal.core.documentModel.parser.PHPRegionContext;
 import org.eclipse.php.internal.core.documentModel.parser.regions.IPhpScriptRegion;
 import org.eclipse.php.internal.core.documentModel.parser.regions.PHPRegionTypes;
 import org.eclipse.php.internal.core.documentModel.partitioner.PHPPartitionTypes;
+import org.eclipse.php.internal.core.documentModel.provisional.contenttype.ContentTypeIdForPHP;
 import org.eclipse.php.internal.core.model.PerFileModelAccessCache;
 import org.eclipse.php.internal.core.model.PhpModelAccess;
 import org.eclipse.php.internal.core.typeinference.IModelAccessCache;
@@ -128,10 +129,12 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 					} else {
 						document = StructuredModelManager.getModelManager().createStructuredDocumentFor(file);
 					}
-				} else {
-					document = StructuredModelManager.getModelManager().createNewStructuredDocumentFor(file);
-					document.set(sourceUnit.getSourceContents());
 				}
+			}
+			if (document == null) {
+				document = StructuredModelManager.getModelManager()
+						.createStructuredDocumentFor(ContentTypeIdForPHP.ContentTypeID_PHP);
+				document.set(sourceUnit.getSourceContents());
 			}
 		} catch (Exception e) {
 			PHPCorePlugin.log(e);
