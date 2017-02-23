@@ -342,7 +342,8 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 				for (PHPDocBlock block : blocks) {
 					PHPDocTag[] tags = block.getTags(PHPDocTag.TagKind.PARAM);
 					for (PHPDocTag tag : tags) {
-						if (tag.getVariableReference().getName().equals(parameter.getName())) {
+						if (tag.getVariableReference() != null
+								&& tag.getVariableReference().getName().equals(parameter.getName())) {
 							type.typeName = tag.getSingleTypeReference().getName();
 							type.offset = tag.getSingleTypeReference().start();
 							return type;
