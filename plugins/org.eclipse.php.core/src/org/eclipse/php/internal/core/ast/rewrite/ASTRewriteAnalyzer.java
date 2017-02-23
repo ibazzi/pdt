@@ -3004,6 +3004,7 @@ public final class ASTRewriteAnalyzer extends AbstractVisitor {
 
 		try {
 			pos = getRightParenthesesStartPosition(pos) + 1;
+			pos = doVisit(functionDeclaration, FunctionDeclaration.RETURN_TYPE_PROPERTY, pos);
 		} catch (CoreException e) {
 		}
 		// Body
