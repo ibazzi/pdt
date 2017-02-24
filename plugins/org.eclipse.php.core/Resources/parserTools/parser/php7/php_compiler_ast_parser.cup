@@ -2291,6 +2291,8 @@ method_body:body
 			if ((methodDeclaration.getModifiers() & Modifiers.AccAbstract) != 0) {
 				parser.reportError(new ASTError(methodDeclaration.getNameStart(), methodDeclaration.getNameEnd(), PhpProblemIdentifier.BodyForAbstractMethod), Messages.BodyForAbstractMethod);
 			}
+		} else if(statement instanceof InterfaceDeclaration) {
+			parser.reportError(new ASTError(methodDeclaration.getNameStart(), methodDeclaration.getNameEnd(), PhpProblemIdentifier.BodyForAbstractMethod), Messages.BodyForAbstractMethod);
 		}
 	}
 :}
