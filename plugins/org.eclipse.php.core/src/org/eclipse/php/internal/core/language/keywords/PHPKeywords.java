@@ -110,15 +110,23 @@ public class PHPKeywords {
 
 	private static final Map<PHPVersion, PHPKeywords> instances = new HashMap<PHPVersion, PHPKeywords>();
 	private Collection<KeywordData> keywordData;
+	private List<String> keywordName;
 
 	private PHPKeywords(IPHPKeywordsInitializer keywordsInitializer) {
 		keywordData = new TreeSet<KeywordData>();
+		keywordName = new ArrayList<>();
 		keywordsInitializer.initialize(keywordData);
 		keywordsInitializer.initializeSpecific(keywordData);
+		for (KeywordData kd : keywordData) {
+			keywordName.add(kd.name);
+		}
 	}
 
 	public static PHPKeywords getInstance(IProject project) {
-		PHPVersion version = ProjectOptions.getPHPVersion(project);
+		return getInstance(ProjectOptions.getPHPVersion(project));
+	}
+
+	public static PHPKeywords getInstance(PHPVersion version) {
 		synchronized (instances) {
 			if (!instances.containsKey(version)) {
 				PHPKeywords instance;
@@ -148,6 +156,10 @@ public class PHPKeywords {
 			}
 		}
 		return instances.get(version);
+	}
+
+	public List<String> getKeywords() {
+		return keywordName;
 	}
 
 	/**

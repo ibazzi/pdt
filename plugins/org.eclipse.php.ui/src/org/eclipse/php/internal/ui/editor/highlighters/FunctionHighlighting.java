@@ -13,6 +13,7 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 import java.util.List;
 
 import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.internal.core.language.keywords.PHPKeywords;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -45,11 +46,15 @@ public class FunctionHighlighting extends AbstractSemanticHighlighting {
 		}
 
 		private void highlightFunctionName(Expression functionName) {
+			PHPKeywords keywords = PHPKeywords.getInstance(functionName.getAST().apiLevel());
 			if (functionName instanceof NamespaceName) {
 				List<Identifier> segments = ((NamespaceName) functionName).segments();
 				Identifier segment = segments.get(segments.size() - 1);
-				highlight(segment);
-			} else {
+				if (!keywords.getKeywords().contains(segment.getName())) {
+					highlight(segment);
+				}
+			} else if (functionName instanceof Identifier
+					&& !keywords.getKeywords().contains(((Identifier) functionName).getName())) {
 				highlight(functionName);
 			}
 		}
