@@ -16,6 +16,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.resources.IMarker;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.dltk.compiler.problem.DefaultProblem;
+import org.eclipse.dltk.compiler.problem.DefaultProblemIdentifier;
+import org.eclipse.dltk.compiler.problem.IProblem;
+import org.eclipse.dltk.compiler.problem.IProblemIdentifier;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ISourceReference;
 import org.eclipse.dltk.core.ModelException;
@@ -25,7 +32,9 @@ import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.ast.locator.Locator;
 import org.eclipse.php.internal.core.ast.match.ASTMatcher;
 import org.eclipse.php.internal.core.ast.scanner.AstLexer;
+import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
 import org.eclipse.php.internal.core.ast.visitor.Visitor;
+import org.eclipse.php.internal.core.compiler.ast.parser.PhpProblemIdentifier;
 import org.eclipse.text.edits.TextEdit;
 
 /**
@@ -46,6 +55,8 @@ public class Program extends ASTNode {
 	 * Comments array of the php program
 	 */
 	private final ASTNode.NodeList<Comment> comments = new ASTNode.NodeList<Comment>(COMMENTS_PROPERTY);
+
+	private List<UseStatement> useStatements;
 
 	/**
 	 * The structural property of this node type.
@@ -652,5 +663,58 @@ public class Program extends ASTNode {
 			PHPCorePlugin.log(e);
 		}
 		return null;
+	}
+
+	public IProblem[] getProblems() {
+		try {
+			if (getSourceModule() == null) {
+				return null;
+			}
+
+			IResource resource = getSourceModule().getUnderlyingResource();
+			if (resource != null) {
+				IMarker[] markers = resource.findMarkers(PhpProblemIdentifier.MARKER_TYPE_ID, true,
+						IResource.DEPTH_ONE);
+				IProblem[] problems = new DefaultProblem[markers.length];
+				for (int i = 0; i < markers.length; ++i) {
+					IProblemIdentifier id = DefaultProblemIdentifier.decode(markers[i].getAttribute("id", ""));
+					String message = markers[i].getAttribute(IMarker.MESSAGE, "");
+					int start = markers[i].getAttribute(IMarker.CHAR_START, 0);
+					int end = markers[i].getAttribute(IMarker.CHAR_END, 0);
+					int line = markers[i].getAttribute(IMarker.LINE_NUMBER, 0);
+					problems[i] = new DefaultProblem(resource.getName(), message, id, null, null, start, end, line, 0);
+				}
+				return problems;
+			}
+		} catch (CoreException e) {
+		}
+		return null;
+	}
+
+	static class UseStatementVisitor extends ApplyAll {
+		private List<UseStatement> useStatements = new ArrayList<UseStatement>();
+
+		@Override
+		protected boolean apply(ASTNode node) {
+			if (node instanceof UseStatement) {
+				useStatements.add((UseStatement) node);
+				return false;
+			}
+			return true;
+		}
+
+		public List<UseStatement> getUseStatements() {
+			return useStatements;
+		}
+
+	}
+
+	public List<UseStatement> getUseStatements() {
+		if (useStatements == null) {
+			UseStatementVisitor visitor = new UseStatementVisitor();
+			accept(visitor);
+			useStatements = visitor.getUseStatements();
+		}
+		return useStatements;
 	}
 }
