@@ -61,6 +61,11 @@ import org.eclipse.php.internal.core.util.text.TextSequence;
 
 public class PHPModelUtils {
 
+	/**
+	 * User-readable string for separating list items (e.g. ", ").
+	 */
+	public final static String COMMA_STRING = ", "; //$NON-NLS-1$
+	public static final String PHP_EXTENSION_NAME = ".php";
 	public static final String ENCLOSING_TYPE_SEPARATOR = new String(
 			new char[] { NamespaceReference.NAMESPACE_SEPARATOR }); // $NON-NLS-1$
 
@@ -179,6 +184,14 @@ public class PHPModelUtils {
 			}
 		}
 		return defaultClassName;
+	}
+
+	public static String extractNamespaceName(String elementName) {
+		int index = elementName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+		if (index != -1) {
+			return elementName.substring(0, index);
+		}
+		return null;
 	}
 
 	/**
@@ -1248,7 +1261,7 @@ public class PHPModelUtils {
 	@NonNull
 	public static IType[] getNamespaceType(String namespace, String prefix, boolean exactName,
 			ISourceModule sourceModule, IModelAccessCache cache, IProgressMonitor monitor, boolean isType)
-					throws ModelException {
+			throws ModelException {
 
 		IType[] namespaces = getNamespaces(sourceModule, namespace, cache, monitor);
 		Collection<IType> result = new LinkedList<IType>();
@@ -2134,6 +2147,10 @@ public class PHPModelUtils {
 		return result;
 	}
 
+	public static String getClassNameByFilename(ISourceModule module) {
+		return module.getElementName().replace(PHP_EXTENSION_NAME, "");
+	}
+
 	@Nullable
 	public static String getClassNameForNewStatement(TextSequence newClassStatementText, PHPVersion phpVersion) {
 		if (phpVersion.isGreaterThan(PHPVersion.PHP5_3)) {
@@ -2350,6 +2367,28 @@ public class PHPModelUtils {
 			}
 		}
 		return elements;
+	}
+
+	public static void getMethodLabel(IMethod method, StringBuffer buf) {
+		try {
+			buf.append(method.getElementName());
+			buf.append('(');
+			final IParameter[] params = method.getParameters();
+			for (int i = 0, nParams = params.length; i < nParams; i++) {
+				if (i > 0) {
+					buf.append(COMMA_STRING);
+				}
+				if (params[i].getType() != null) {
+					buf.append(params[i].getType());
+				} else {
+					buf.append(params[i].getName());
+				}
+			}
+			buf.append(')');
+
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
 	}
 
 }
