@@ -133,7 +133,7 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private void addExistingImports(Program root) {
-		List<UseStatement> decls = ImportRewrite.getUseStatements(root);
+		List<UseStatement> decls = root.getUseStatements();
 		if (decls.isEmpty()) {
 			return;
 		}
@@ -348,7 +348,7 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private static boolean isImplicitImport(String qualifier, ISourceModule cu) {
-		IType currentType = null;
+		IType currentNamespace = null;
 		try {
 			IType[] types = cu.getAllTypes();
 
@@ -356,14 +356,13 @@ public final class ImportRewriteAnalyzer {
 				return false;
 			}
 			if (PHPFlags.isNamespace(types[0].getFlags())) {
-				currentType = types[1];
+				currentNamespace = types[0];
 			} else {
-				currentType = types[0];
+				currentNamespace = null;
 			}
 		} catch (ModelException e) {
 			return false;
 		}
-		IType currentNamespace = PHPModelUtils.getCurrentNamespace(currentType);
 		String packageName;
 		if (currentNamespace == null) {
 			packageName = "global namespace";
@@ -373,11 +372,7 @@ public final class ImportRewriteAnalyzer {
 		if (qualifier.equals(packageName)) {
 			return true;
 		}
-		String mainTypeName = PHPModelUtils.getClassNameByFilename(cu);
-		if (packageName.length() == 0) {
-			return qualifier.equals(mainTypeName);
-		}
-		return qualifier.equals(packageName + NamespaceReference.NAMESPACE_DELIMITER + mainTypeName);
+		return false;
 	}
 
 	public void addImport(String fullTypeName, boolean isStatic) {
@@ -437,7 +432,7 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private IRegion evaluateReplaceRange(Program root) {
-		List<UseStatement> imports = ImportRewrite.getUseStatements(root);
+		List<UseStatement> imports = root.getUseStatements();
 		if (!imports.isEmpty()) {
 			UseStatement first = (UseStatement) imports.get(0);
 			UseStatement last = (UseStatement) imports.get(imports.size() - 1);

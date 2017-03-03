@@ -12,13 +12,10 @@ import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ModelException;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.PHPVersion;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
 import org.eclipse.php.internal.core.ast.nodes.ASTParser;
 import org.eclipse.php.internal.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.ast.nodes.UseStatement;
 import org.eclipse.php.internal.core.ast.nodes.UseStatementPart;
-import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
@@ -228,7 +225,7 @@ public final class ImportRewrite {
 		List<String> existingImport = null;
 		if (restoreExistingImports) {
 			existingImport = new ArrayList<String>();
-			List<UseStatement> imports = getUseStatements(astRoot);
+			List<UseStatement> imports = astRoot.getUseStatements();
 			for (int i = 0; i < imports.size(); i++) {
 				UseStatement useStatement = imports.get(i);
 				for (UseStatementPart part : useStatement.parts()) {
@@ -648,30 +645,6 @@ public final class ImportRewrite {
 			}
 		}
 		return res.toArray(new String[res.size()]);
-	}
-
-	static class UseStatementVisitor extends ApplyAll {
-		private List<UseStatement> useStatements = new ArrayList<UseStatement>();
-
-		@Override
-		protected boolean apply(ASTNode node) {
-			if (node instanceof UseStatement) {
-				useStatements.add((UseStatement) node);
-				return false;
-			}
-			return true;
-		}
-
-		public List<UseStatement> getUseStatements() {
-			return useStatements;
-		}
-
-	}
-
-	public static List<UseStatement> getUseStatements(Program node) {
-		UseStatementVisitor visitor = new UseStatementVisitor();
-		node.accept(visitor);
-		return visitor.getUseStatements();
 	}
 
 }
