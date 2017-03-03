@@ -8,37 +8,32 @@
  * Contributors:
  *     PDT Extension Group - initial API and implementation
  *     Kaloyan Raev - [501269] externalize strings
+ *     Kaloyan Raev - [511744] Wizard freezes if no PHP executable is configured
  *******************************************************************************/
 package org.eclipse.php.composer.ui.job;
 
 import java.io.IOException;
-
-import javax.inject.Inject;
+import java.util.Objects;
 
 import org.apache.commons.exec.ExecuteException;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.core.runtime.jobs.JobChangeAdapter;
-import org.eclipse.e4.core.contexts.ContextInjectionFactory;
-import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.php.composer.core.ComposerPlugin;
 import org.eclipse.php.composer.core.launch.ExecutableNotFoundException;
 import org.eclipse.php.composer.core.launch.ScriptLauncher;
-import org.eclipse.php.composer.core.launch.ScriptLauncherManager;
 import org.eclipse.php.composer.core.launch.ScriptNotFoundException;
 import org.eclipse.php.composer.core.launch.environment.ComposerEnvironmentFactory;
-import org.eclipse.php.composer.core.launch.execution.ExecutionResponseAdapter;
+import org.eclipse.php.composer.core.launch.environment.Environment;
 import org.eclipse.php.composer.core.log.Logger;
 import org.eclipse.php.composer.ui.ComposerUIPlugin;
-import org.eclipse.php.composer.ui.handler.ConsoleResponseHandler;
 import org.eclipse.php.composer.ui.job.runner.ComposerFailureMessageRunner;
 import org.eclipse.php.composer.ui.job.runner.MissingExecutableRunner;
+import org.eclipse.php.composer.ui.terminal.ComposerLauncher;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
 
 abstract public class ComposerJob extends Job {
 
@@ -47,21 +42,22 @@ abstract public class ComposerJob extends Job {
 	private boolean cancelling = false;
 	private ScriptLauncher launcher;
 
-	@Inject
-	public ScriptLauncherManager manager;
-
 	protected static final IStatus ERROR_STATUS = new Status(Status.ERROR, ComposerPlugin.ID,
 			Messages.ComposerJob_ErrorMessage);
 
 	public ComposerJob(String name) {
 		super(name);
-
-		ContextInjectionFactory.inject(this, ComposerUIPlugin.getDefault().getEclipseContext());
 	}
 
 	public ComposerJob(IProject project, String name) {
 		this(name);
 		this.setProject(project);
+	}
+
+	@Override
+	public boolean belongsTo(Object family) {
+		return Objects.equals(ComposerUIPlugin.FAMILY_COMPOSER, family) || Objects.equals(project, family)
+				|| (project != null && Objects.equals(project.getName(), family));
 	}
 
 	@Override
@@ -80,39 +76,46 @@ abstract public class ComposerJob extends Job {
 	protected IStatus run(final IProgressMonitor monitor) {
 		boolean callDoOnLauncherRunException = false;
 		try {
-
 			this.monitor = monitor;
 
-			try {
-				launcher = manager.getLauncher(ComposerEnvironmentFactory.FACTORY_ID, getProject());
-			} catch (ExecutableNotFoundException e) {
-				callDoOnLauncherRunException = true;
-				doOnLauncherRunException(e);
-				// inform the user of the missing executable
-				Display.getDefault().asyncExec(new MissingExecutableRunner());
-				return Status.OK_STATUS;
-			} catch (ScriptNotFoundException e) {
-				callDoOnLauncherRunException = true;
-				doOnLauncherRunException(e);
-				// run the downloader
-				Display.getDefault().asyncExec(new DownloadRunner());
-				return Status.OK_STATUS;
-			}
+			boolean tryAgain = false;
+			do {
+				try {
+					Environment env = new ComposerEnvironmentFactory().getEnvironment(getProject());
+					if (env == null) {
+						throw new ExecutableNotFoundException(Messages.ComposerJob_CannotFindExe);
+					}
 
-			launcher.addResponseListener(new ConsoleResponseHandler());
-			launcher.addResponseListener(new ExecutionResponseAdapter() {
-				public void executionFailed(final String response, final Exception exception) {
-					Display.getDefault().asyncExec(new ComposerFailureMessageRunner(response, monitor));
-				}
+					launcher = new ComposerLauncher(env, getProject());
 
-				@Override
-				public void executionMessage(String message) {
-					if (monitor != null && message != null) {
-						monitor.subTask(message);
-						monitor.worked(1);
+					tryAgain = false;
+				} catch (ExecutableNotFoundException e) {
+					// inform the user of the missing executable
+					MissingExecutableRunner runner = new MissingExecutableRunner();
+					Display.getDefault().syncExec(runner);
+					if (runner.getReturnCode() == Window.OK) {
+						tryAgain = true;
+					} else {
+						callDoOnLauncherRunException = true;
+						doOnLauncherRunException(e);
+						return Status.OK_STATUS;
+					}
+				} catch (ScriptNotFoundException e) {
+					callDoOnLauncherRunException = true;
+					doOnLauncherRunException(e);
+					if (tryAgain) {
+						Display.getDefault().asyncExec(
+								new ComposerFailureMessageRunner(Messages.ComposerJob_DownloadErrorMessage, monitor));
+						return Status.OK_STATUS;
+					} else {
+						// run the downloader
+						DownloadJob job = new DownloadJob(getProject());
+						job.schedule();
+						job.join();
+						tryAgain = true;
 					}
 				}
-			});
+			} while (tryAgain);
 
 			monitor.beginTask(getName(), IProgressMonitor.UNKNOWN);
 			monitor.worked(1);
@@ -151,31 +154,4 @@ abstract public class ComposerJob extends Job {
 		this.project = project;
 	}
 
-	private class DownloadRunner implements Runnable {
-
-		@Override
-		public void run() {
-
-			Shell shell = Display.getCurrent().getActiveShell();
-
-			if (shell == null) {
-				Logger.debug("Unable to get shell for message dialog."); //$NON-NLS-1$
-				return;
-			}
-
-			if (MessageDialog.openConfirm(shell, Messages.ComposerJob_DownloadDialogTitle,
-					Messages.ComposerJob_DownloadDialogMessage)) {
-				DownloadJob job = new DownloadJob(getProject());
-				job.addJobChangeListener(new JobChangeAdapter() {
-					@Override
-					public void done(IJobChangeEvent event) {
-						// re-schedule the original job
-						ComposerJob.this.schedule();
-					}
-				});
-				job.setUser(true);
-				job.schedule();
-			}
-		}
-	}
 }

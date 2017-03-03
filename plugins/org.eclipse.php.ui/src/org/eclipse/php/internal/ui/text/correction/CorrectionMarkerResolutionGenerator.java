@@ -129,7 +129,7 @@ public class CorrectionMarkerResolutionGenerator implements IMarkerResolutionGen
 	private static boolean internalHasResolutions(IMarker marker) {
 		IProblemIdentifier problemId = DefaultProblemIdentifier.getProblemId(marker);
 		ISourceModule cu = getSourceModule(marker);
-		return cu != null
+		return cu != null && problemId != null
 				&& PHPCorrectionProcessor.hasCorrections(cu, problemId, MarkerUtilities.getMarkerType(marker));
 	}
 

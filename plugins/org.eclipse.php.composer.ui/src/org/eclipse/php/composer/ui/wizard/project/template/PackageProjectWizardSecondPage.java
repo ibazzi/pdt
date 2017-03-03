@@ -8,6 +8,7 @@
  * Contributors:
  *     PDT Extension Group - initial API and implementation
  *     Kaloyan Raev - [501269] externalize strings
+ *     Kaloyan Raev - [511744] Wizard freezes if no PHP executable is configured
  *******************************************************************************/
 package org.eclipse.php.composer.ui.wizard.project.template;
 
@@ -20,6 +21,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jface.window.IShellProvider;
 import org.eclipse.php.composer.api.ComposerPackage;
@@ -43,6 +45,8 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 
 	private PackageFilterViewer filter;
 
+	private boolean projectJobFailed = false;
+
 	public PackageProjectWizardSecondPage(AbstractWizardFirstPage mainPage, String title) {
 		super(mainPage, title);
 		setPageComplete(false);
@@ -51,6 +55,8 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 	@Override
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);
+
+		filter.getControl().setFocus();
 
 		if (filter.getSelectedPackage() == null || filter.getSelectedPackage().getSelectedVersion() == null) {
 			setPageComplete(false);
@@ -84,7 +90,7 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 	}
 
 	@Override
-	protected void beforeFinish(IProgressMonitor monitor) throws Exception {
+	protected void beforeFinish(IProgressMonitor monitor) {
 
 		PackageFilterItem filterItem = filter.getSelectedPackage();
 		final CountDownLatch latch = new CountDownLatch(1);
@@ -117,6 +123,7 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 			@Override
 			public void jobFailed() {
 				latch.countDown();
+				projectJobFailed = true;
 			}
 		});
 
@@ -136,10 +143,14 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 		}
 
 		monitor.worked(1);
+
+		if (projectJobFailed) {
+			throw new OperationCanceledException();
+		}
 	}
 
 	@Override
-	protected void finishPage(IProgressMonitor monitor) throws Exception {
+	protected void finishPage(IProgressMonitor monitor) {
 		try {
 			PackageProjectWizardFirstPage page = (PackageProjectWizardFirstPage) firstPage;
 			if (page.doesOverrideComposer()) {
@@ -160,13 +171,8 @@ public class PackageProjectWizardSecondPage extends AbstractWizardSecondPage
 
 	@Override
 	public void filterChanged(PackageFilterItem item) {
-
-		if (item != null && item.getSelectedVersion() != null) {
-			setPageComplete(true);
-			return;
-		}
-
-		setPageComplete(false);
+		boolean canFinish = item != null && item.isChecked() && item.getSelectedVersion() != null;
+		setPageComplete(canFinish);
 	}
 
 	@Override

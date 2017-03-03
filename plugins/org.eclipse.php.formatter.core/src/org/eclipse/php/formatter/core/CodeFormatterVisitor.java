@@ -126,7 +126,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	private int stWhile = -1;
 	private int stElse = -1;
 	private int stElseIf = -1;
-	private boolean isInsideFun;
 
 	private Stack<Integer> chainStack = new Stack<Integer>();
 	private Integer peek;
@@ -141,8 +140,8 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	// this is for never indent at first line
 	private boolean doNotIndent = false;
 	boolean inComment = false;
-	private int indentLengthForComment;
-	private String indentStringForComment;
+	private int indentLengthForComment = -1;
+	private String indentStringForComment = null;
 	private boolean blockEnd;
 	private boolean recordCommentIndentVariables = false;
 	// for block comment,multiline comment at the end of break statement of case
@@ -479,7 +478,10 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 		if (isIndentationAdded) {
 			indentationLevel--;
-			indentationLevelDescending = true;
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=511502
+			if (action.getType() == ASTNode.BLOCK) {
+				indentationLevelDescending = true;
+			}
 		}
 	}
 
@@ -613,7 +615,16 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 				// add empty lines
 				if (emptyLines > 0 && newLinesInBuffer < emptyLines + 1) {
-					for (int line = newLinesInBuffer; line < emptyLines + 1; line++) {
+					// If newLinesInBuffer is = 0, it *could* mean that the
+					// buffer was already (partly or completely) flushed (so
+					// there are big chances that we already inserted a
+					// newline), increase newLinesInBuffer by one to only insert
+					// emptyLines - 1 newlines.
+					// If newLinesInBuffer is > 0, first newline from buffer is
+					// ignored because it either ends a non-empty line or some
+					// formatter preference already forced the insertion of a
+					// newline.
+					for (int line = newLinesInBuffer == 0 ? 1 : newLinesInBuffer; line < emptyLines + 1; line++) {
 						insertNewLine();
 					}
 					if (inComment) {
@@ -893,34 +904,11 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 						}
 					}
 				} else {
-					if (indentationLevelDescending) {
-						IRegion reg = document.getLineInformation(commentStartLine - 1);
-						char previousChar = document.getChar(reg.getOffset() + reg.getLength() - 1);
-						int indentationSize = preferences.indentationSize;
-
-						// add empty lines
-						if (previousChar != '{') {
-							for (int line = 0; line < preferences.blank_line_preserve_empty_lines; line++) {
-								insertNewLine();
-							}
-							if (isInsideFun) {
-								indentationSize++;
-							}
-						}
-						// End fixing.
-
-						// add single indentationChar * indentationSize
-						// Because the comment is the previous indentation level
-						for (int i = 0; i < indentationSize; i++) {
-							appendToBuffer(preferences.indentationChar);
-							lineWidth += (preferences.indentationChar == CodeFormatterPreferences.SPACE_CHAR) ? 0 : 3;
-						}
-					}
-
 					if (getBufferFirstChar(0) == '\0') {
 						if (position >= 0) {
-							replaceBuffer.setLength(0);
-							lineWidth = 0;
+							if (getBufferFirstChar(position + lineSeparator.length()) == '\0') {
+								replaceBuffer.replace(position, replaceBuffer.length(), ""); //$NON-NLS-1$
+							}
 							insertNewLine();
 						} else {
 							replaceBuffer.setLength(0);
@@ -954,7 +942,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 				if (indentOnFirstColumn) {
 					if (previousCommentIsSingleLine && indentStringForComment != null) {
 						appendToBuffer(indentStringForComment);
-						// adjust lineWidth,because indentLengthForComment may
+						// adjust lineWidth, because indentLengthForComment may
 						// contain '\t'
 						lineWidth = indentLengthForComment;
 						resetCommentIndentVariables = false;
@@ -981,8 +969,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 					if (startLine == commentStartLine) {
 						initCommentIndentVariables(offset, startLine, comment, endWithNewLineIndent);
-						// adjust lineWidth,because indentLengthForComment may
-						// contain '\t'
 						lineWidth = indentLengthForComment;
 					}
 					if (startAtFirstColumn && this.preferences.never_indent_line_comments_on_first_column) {
@@ -1479,6 +1465,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		}
 		inComment = false;
 		ignoreEmptyLineSetting = oldIgnoreEmptyLineSetting;
+		resetCommentIndentVariables();
 		handleCharsWithoutComments(start, end);
 	}
 
@@ -1965,7 +1952,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	}
 
 	/**
-	 * add the indentation text in the
+	 * indent and add the indentation level to the indentation level list
 	 * 
 	 */
 	private void indent() {
@@ -2196,6 +2183,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		}
 
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=468155
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=439568
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
 		// https://bugs.eclipse.org/bugs/attachment.cgi?id=245293
 		// if (arrayAccess.getArrayType() == ArrayAccess.VARIABLE_ARRAY) {
@@ -2205,6 +2193,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		// }
 		// handleChars(lastPosition, arrayAccess.getEnd());
 
+		indentationLevelDescending = true;
 		handleChars(lastPosition, arrayAccess.getEnd() - 1);
 		lineWidth++;// we need to add the closing bracket/curly
 
@@ -2268,6 +2257,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		}
 
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=468155
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=439568
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=440209
 		// https://bugs.eclipse.org/bugs/attachment.cgi?id=245293
 		// if (arrayCreation.isHasArrayKey()) {
@@ -2277,6 +2267,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 		// }
 		// handleChars(lastPosition, arrayCreation.getEnd());
 
+		indentationLevelDescending = true;
 		handleChars(lastPosition, arrayCreation.getEnd() - 1);
 		lineWidth++;// we need to add the closing bracket/parenthesis
 
@@ -2438,8 +2429,9 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 		int lastStatementEndOffset;
 		if (isUnbracketedNamespace) {
-			lastStatementEndOffset = block.getStart() - 1;
+			lastStatementEndOffset = block.getStart();
 		} else {
+			// start after curly position
 			lastStatementEndOffset = block.getStart() + 1;
 		}
 
@@ -3422,7 +3414,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	}
 
 	public boolean visit(FunctionDeclaration functionDeclaration) {
-		isInsideFun = true;
 		StringBuilder buffer = new StringBuilder();
 		buffer.append(getDocumentString(functionDeclaration.getStart(), functionDeclaration.getStart() + 8));// append
 																												// 'function'
@@ -3499,7 +3490,6 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 			handleSemicolon(lastPosition, functionDeclaration.getEnd());
 		}
 
-		isInsideFun = false;
 		return false;
 	}
 
@@ -4832,7 +4822,7 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 				indentationLevelDescending = true;
 			}
 		} else {
-			handleSemicolon(lastPosition, namespaceDeclaration.getBody().getStart() - 1);
+			handleSemicolon(lastPosition, namespaceDeclaration.getBody().getStart());
 			namespaceDeclaration.getBody().accept(this);
 		}
 		return false;
