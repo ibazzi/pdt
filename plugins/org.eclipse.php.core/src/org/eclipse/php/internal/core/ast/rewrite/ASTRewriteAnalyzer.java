@@ -2693,6 +2693,7 @@ public final class ASTRewriteAnalyzer extends AbstractVisitor {
 			return rewriteRequiredNodeVisit(classDeclaration, ClassDeclaration.NAME_PROPERTY,
 					ClassDeclaration.BODY_PROPERTY);
 		} catch (Exception e) {
+			e.printStackTrace();
 			handleException(e);
 		}
 		return false;
@@ -2748,17 +2749,9 @@ public final class ASTRewriteAnalyzer extends AbstractVisitor {
 			case RewriteEvent.REMOVED:
 				superClass = (Identifier) event.getOriginalValue();
 				// locate the end offset of the deletion
-				int deletionEnd;
-				if (classDeclaration.interfaces().size() > 0) {
-					deletionEnd = getScanner().getTokenStartOffset(
-							SymbolsProvider.getSymbol(SymbolsProvider.IMPLEMENTS_ID, scanner.getPHPVersion()),
-							classDeclaration.getStart());
-				} else {
-					deletionEnd = classDeclaration.getBody().getStart();
-				}
+				int deletionEnd = getExtendedEnd(superClass);
 				int deletionStart = classDeclaration.getName().getEnd();
-				doTextRemove(deletionStart, deletionEnd - deletionStart, editGroup);
-				doTextInsert(deletionStart, " ", editGroup); //$NON-NLS-1$
+				doTextRemoveAndVisit(deletionStart, deletionEnd - deletionStart, superClass, getEditGroup(event));
 				break;
 			case RewriteEvent.REPLACED:
 				rewriteRequiredNode(classDeclaration, ClassDeclaration.SUPER_CLASS_PROPERTY);

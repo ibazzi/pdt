@@ -40,6 +40,17 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 			throws CoreException {
 		PhpProblemIdentifier id = PhpProblemIdentifier.getProblem(problem.getProblemIdentifier());
 		switch (id) {
+		case UnusedImport:
+		case DuplicateImport:
+		case UnnecessaryImport:
+			ReorgCorrectionsSubProcessor.removeImportStatementProposals(context, problem, proposals);
+			break;
+		case ImportNotFound:
+			ReorgCorrectionsSubProcessor.removeImportStatementProposals(context, problem, proposals);
+			break;
+		case ClassExtendFinalClass:
+			ModifierCorrectionSubProcessor.addNonAccessibleReferenceProposal(context, problem, proposals, ModifierCorrectionSubProcessor.TO_NON_FINAL, IProposalRelevance.REMOVE_FINAL_MODIFIER);
+			break;
 		case AbstractMethodInAbstractClass:
 		case BodyForAbstractMethod:
 			ModifierCorrectionSubProcessor.addAbstractMethodProposals(context, problem, proposals);
@@ -49,6 +60,15 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 			break;
 		case MethodRequiresBody:
 			ModifierCorrectionSubProcessor.addMethodRequiresBodyProposals(context, problem, proposals);
+			break;
+		case UndefinedType:
+			UnresolvedElementsSubProcessor.getTypeProposals(context, problem, proposals);
+			break;
+		case AbstractMethodMustBeImplemented:
+			LocalCorrectionsSubProcessor.addUnimplementedMethodsProposals(context, problem, proposals);
+			break;
+		case SuperclassMustBeAClass:
+			LocalCorrectionsSubProcessor.getInterfaceExtendsClassProposals(context, problem, proposals);
 			break;
 		default:
 			return;
@@ -63,6 +83,14 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 		case AbstractMethodsInConcreteClass:
 		case BodyForAbstractMethod:
 		case MethodRequiresBody:
+		case AbstractMethodMustBeImplemented:
+		case ClassExtendFinalClass:
+		case DuplicateImport:
+		case ImportNotFound:
+		case SuperclassMustBeAClass:
+		case UndefinedType:
+		case UnnecessaryImport:
+		case UnusedImport:
 			return true;
 		default:
 			break;
