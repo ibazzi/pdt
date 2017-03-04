@@ -11,8 +11,14 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.actions;
 
+import org.eclipse.dltk.core.search.IDLTKSearchConstants;
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.dltk.ui.IDLTKUILanguageToolkit;
 import org.eclipse.php.internal.ui.PHPUILanguageToolkit;
+import org.eclipse.php.internal.ui.dialogs.OpenTypeSelectionDialog;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.dialogs.SelectionDialog;
 
 /**
  * Open type in hierarchy action.
@@ -32,5 +38,14 @@ public class OpenTypeAction extends org.eclipse.dltk.ui.actions.OpenTypeAction {
 	@Override
 	protected IDLTKUILanguageToolkit getUILanguageToolkit() {
 		return PHPUILanguageToolkit.getInstance();
+	}
+
+	protected SelectionDialog createDialog() {
+		final Shell parent = DLTKUIPlugin.getActiveWorkbenchShell();
+		OpenTypeSelectionDialog dialog = new OpenTypeSelectionDialog(parent, true,
+				PlatformUI.getWorkbench().getProgressService(), null, IDLTKSearchConstants.TYPE);
+		dialog.setTitle(getOpenTypeDialogTitle());
+		dialog.setMessage(getOpenTypeDialogMessage());
+		return dialog;
 	}
 }

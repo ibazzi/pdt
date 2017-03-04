@@ -23,7 +23,6 @@ import org.eclipse.dltk.core.search.TypeNameMatch;
 import org.eclipse.dltk.internal.corext.util.History;
 import org.eclipse.dltk.internal.corext.util.QualifiedTypeNameHistory;
 import org.eclipse.dltk.internal.ui.editor.EditorUtility;
-import org.eclipse.dltk.internal.ui.util.TypeNameMatchLabelProvider;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.operation.IRunnableContext;
@@ -40,7 +39,7 @@ import org.eclipse.php.internal.ui.corext.codemanipulation.OrganizeUseStatements
 import org.eclipse.php.internal.ui.corext.codemanipulation.OrganizeUseStatementsOperation.IChooseImportQuery;
 import org.eclipse.php.internal.ui.dialogs.MultiElementListSelectionDialog;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
-import org.eclipse.php.internal.ui.util.PHPTypeNameMatchLabelProvider;
+import org.eclipse.php.internal.ui.util.TypeNameMatchLabelProvider;
 import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.ui.*;
 import org.eclipse.ui.progress.IProgressService;
@@ -205,7 +204,7 @@ public class OrganizeUseStatementsAction extends SelectionDispatchAction {
 		// remember selection
 		ISelection sel = editor.getSelectionProvider().getSelection();
 		TypeNameMatch[] result = null;
-		ILabelProvider labelProvider = new PHPTypeNameMatchLabelProvider(TypeNameMatchLabelProvider.SHOW_FULLYQUALIFIED,
+		ILabelProvider labelProvider = new TypeNameMatchLabelProvider(TypeNameMatchLabelProvider.SHOW_FULLYQUALIFIED,
 				PHPUILanguageToolkit.getInstance());
 
 		MultiElementListSelectionDialog dialog = new MultiElementListSelectionDialog(getShell(), labelProvider) {
