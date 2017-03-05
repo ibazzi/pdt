@@ -609,6 +609,7 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 									return types;
 								}
 							}
+							return PHPModelUtils.getTypes(name, sourceModule, offset, null);
 						}
 					}
 				}
