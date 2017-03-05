@@ -121,7 +121,7 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private static String getQualifier(String decl) {
-		String namesapceName = PHPModelUtils.extractNamespaceName(decl);
+		String namesapceName = PHPModelUtils.extractNameSpaceName(decl);
 		if (namesapceName == null) {
 			return "global namespace";
 		}

@@ -73,7 +73,7 @@ public class UnresolvedElementsSubProcessor {
 			int relevance, int maxProposals) {
 		ImportRewrite importRewrite = null;
 		String simpleName = PHPModelUtils.extractElementName(fullName);
-		String packName = PHPModelUtils.extractNamespaceName(fullName);
+		String packName = PHPModelUtils.extractNameSpaceName(fullName);
 		if (packName == null) {
 			packName = "";
 		}

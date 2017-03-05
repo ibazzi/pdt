@@ -186,14 +186,6 @@ public class PHPModelUtils {
 		return defaultClassName;
 	}
 
-	public static String extractNamespaceName(String elementName) {
-		int index = elementName.lastIndexOf(NamespaceReference.NAMESPACE_SEPARATOR);
-		if (index != -1) {
-			return elementName.substring(0, index);
-		}
-		return null;
-	}
-
 	/**
 	 * Extracts the namespace name from the specified element name and resolves
 	 * it using USE statements that present in the file.
