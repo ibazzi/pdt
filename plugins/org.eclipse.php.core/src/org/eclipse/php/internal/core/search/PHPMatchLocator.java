@@ -23,14 +23,18 @@ import org.eclipse.dltk.ast.expressions.Expression;
 import org.eclipse.dltk.compiler.env.lookup.Scope;
 import org.eclipse.dltk.compiler.util.HashtableOfIntValues;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.core.search.IDLTKSearchScope;
 import org.eclipse.dltk.core.search.SearchMatch;
 import org.eclipse.dltk.core.search.SearchPattern;
+import org.eclipse.dltk.core.search.indexing.IIndexConstants;
 import org.eclipse.dltk.core.search.matching.MatchLocator;
 import org.eclipse.dltk.core.search.matching.PatternLocator;
+import org.eclipse.dltk.internal.core.search.matching.InternalSearchPattern;
 import org.eclipse.dltk.internal.core.search.matching.MatchingNodeSet;
 import org.eclipse.dltk.internal.core.search.matching.MethodPattern;
 import org.eclipse.dltk.internal.core.search.matching.OrPattern;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.internal.core.compiler.ast.nodes.ClassInstanceCreation;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceDeclaration;
 import org.eclipse.php.internal.core.compiler.ast.nodes.PHPCallExpression;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
@@ -233,72 +237,97 @@ public class PHPMatchLocator extends MatchLocator {
 				reference, pattern);
 	}
 
+	@Override
+	public void initialize(SearchPattern pattern, IDLTKSearchScope scope) {
+		super.initialize(pattern, scope);
+		PatternLocator patternLocator = patternLocator(pattern);
+		if (patternLocator != null) {
+			this.patternLocator = patternLocator;
+		}
+	}
+
+	private PatternLocator patternLocator(SearchPattern pattern) {
+		switch (((InternalSearchPattern) pattern).kind) {
+		case IIndexConstants.METHOD_PATTERN:
+			return new PHPMethodLocator((MethodPattern) pattern);
+		}
+		return null;
+	}
+
 	public SearchMatch newMethodReferenceMatch(IModelElement enclosingElement, int accuracy, int offset, int length,
 			boolean isConstructor, boolean isSynthetic, ASTNode reference, SearchPattern pattern) {
-		if (pattern instanceof MethodPattern && (reference instanceof PHPCallExpression)) {
-			PHPCallExpression pce = (PHPCallExpression) reference;
-			ISourceModule module = (ISourceModule) enclosingElement.getAncestor(IModelElement.SOURCE_MODULE);
-			if (module != null) {
-				try {
-					MethodPattern methodPattern = (MethodPattern) pattern;
-					IModelElement[] elements = module.codeSelect(pce.getCallName().sourceStart(), 0);
-					if (elements == null || elements.length == 0) {
-						return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length, isConstructor,
-								isSynthetic, reference);
-					} else {
-						for (int i = 0; i < elements.length; i++) {
-							if (pattern.focus != null) {
-								if (pattern.focus.equals(elements[i])) {
-									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
-											isConstructor, isSynthetic, reference);
-								}
-							} else {
-								if (methodPattern.declaringSimpleName != null
-										&& elements[i].getAncestor(IModelElement.TYPE) != null
-										&& PHPFlags.isClass(
-												((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags())
-										&& new String(methodPattern.declaringSimpleName)
-												.equalsIgnoreCase(((IType) elements[i].getParent()).getElementName())) {
-
-									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
-											isConstructor, isSynthetic, reference);
-								} else if (methodPattern.declaringSimpleName == null && (elements[i]
-										.getAncestor(IModelElement.TYPE) == null
-										|| elements[i].getAncestor(IModelElement.TYPE) != null && !PHPFlags.isClass(
-												((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags()))) {
-
-									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
-											isConstructor, isSynthetic, reference);
-								} else if (methodPattern.declaringSimpleName == null && methodPattern.selector != null
-										&& new String(methodPattern.selector).equals(elements[i].getElementName())) {
-
-									return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
-											isConstructor, isSynthetic, reference);
-								}
-
-								// if (new String(methodPattern.selector)
-								// .equals(elements[i].getElementName())) {
-								// return super.newMethodReferenceMatch(
-								// enclosingElement, accuracy, offset,
-								// length, isConstructor, isSynthetic,
-								// reference);
-								// }
-
-							}
-						}
-					}
-
-				} catch (ModelException e) {
-					e.printStackTrace();
-				}
-			}
-		} else if (pattern instanceof OrPattern) {
+		if (pattern instanceof OrPattern) {
 			for (SearchPattern searchPattern : ((OrPattern) pattern).getPatterns()) {
 				if (searchPattern instanceof MethodPattern) {
 					return newMethodReferenceMatch(enclosingElement, accuracy, offset, length, isConstructor,
 							isSynthetic, reference, searchPattern);
 				}
 
+			}
+		}
+		if (!(pattern instanceof MethodPattern))
+			return null;
+		IModelElement[] elements = null;
+		MethodPattern methodPattern = (MethodPattern) pattern;
+		ISourceModule module = (ISourceModule) enclosingElement.getAncestor(IModelElement.SOURCE_MODULE);
+		int elementOffset = 0;
+		if (reference instanceof ClassInstanceCreation) {
+			ClassInstanceCreation cic = (ClassInstanceCreation) reference;
+			elementOffset = cic.getClassName().sourceStart();
+		} else if (reference instanceof PHPCallExpression) {
+			PHPCallExpression pce = (PHPCallExpression) reference;
+			elementOffset = pce.getCallName().sourceStart();
+		}
+		if (module != null) {
+			try {
+				elements = module.codeSelect(elementOffset, 0);
+				if (elements == null || elements.length == 0) {
+					return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length, isConstructor,
+							isSynthetic, reference);
+				} else {
+					for (int i = 0; i < elements.length; i++) {
+						if (pattern.focus != null) {
+							if (pattern.focus.equals(elements[i])) {
+								return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+										isConstructor, isSynthetic, reference);
+							}
+						} else {
+							if (methodPattern.declaringSimpleName != null
+									&& elements[i].getAncestor(IModelElement.TYPE) != null
+									&& PHPFlags
+											.isClass(((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags())
+									&& new String(methodPattern.declaringSimpleName)
+											.equalsIgnoreCase(((IType) elements[i].getParent()).getElementName())) {
+
+								return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+										isConstructor, isSynthetic, reference);
+							} else if (methodPattern.declaringSimpleName == null && (elements[i]
+									.getAncestor(IModelElement.TYPE) == null
+									|| elements[i].getAncestor(IModelElement.TYPE) != null && !PHPFlags.isClass(
+											((IType) elements[i].getAncestor(IModelElement.TYPE)).getFlags()))) {
+
+								return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+										isConstructor, isSynthetic, reference);
+							} else if (methodPattern.declaringSimpleName == null && methodPattern.selector != null
+									&& new String(methodPattern.selector).equals(elements[i].getElementName())) {
+
+								return super.newMethodReferenceMatch(enclosingElement, accuracy, offset, length,
+										isConstructor, isSynthetic, reference);
+							}
+
+							// if (new String(methodPattern.selector)
+							// .equals(elements[i].getElementName())) {
+							// return super.newMethodReferenceMatch(
+							// enclosingElement, accuracy, offset,
+							// length, isConstructor, isSynthetic,
+							// reference);
+							// }
+
+						}
+					}
+				}
+			} catch (ModelException e) {
+				e.printStackTrace();
 			}
 		}
 		return null;
