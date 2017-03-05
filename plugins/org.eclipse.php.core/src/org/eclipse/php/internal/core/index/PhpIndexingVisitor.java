@@ -30,9 +30,11 @@ import org.eclipse.dltk.ast.references.SimpleReference;
 import org.eclipse.dltk.ast.references.TypeReference;
 import org.eclipse.dltk.ast.references.VariableReference;
 import org.eclipse.dltk.ast.statements.Statement;
+import org.eclipse.dltk.compiler.env.IModuleSource;
 import org.eclipse.dltk.core.Flags;
 import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
+import org.eclipse.dltk.core.IType;
 import org.eclipse.dltk.core.index2.IIndexingRequestor;
 import org.eclipse.dltk.core.index2.IIndexingRequestor.DeclarationInfo;
 import org.eclipse.dltk.core.index2.IIndexingRequestor.ReferenceInfo;
@@ -42,6 +44,7 @@ import org.eclipse.php.internal.core.Constants;
 import org.eclipse.php.internal.core.Logger;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.core.PHPCorePlugin;
+import org.eclipse.php.internal.core.codeassist.PHPSelectionEngine;
 import org.eclipse.php.internal.core.compiler.ReturnDetector;
 import org.eclipse.php.internal.core.compiler.ast.nodes.*;
 import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag.TagKind;
@@ -106,15 +109,18 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 	private static IConfigurationElement[] extensionElements = Platform.getExtensionRegistry()
 			.getConfigurationElementsFor(PHPCorePlugin.ID, EXTENSION_POINT);
 
+	protected PHPSelectionEngine engine = new PHPSelectionEngine();
 	protected NamespaceDeclaration fCurrentNamespace;
 	protected Map<String, UsePart> fLastUseParts = new HashMap<String, UsePart>();
-	protected String fCurrentQualifier;
+	protected List<FullyQualifiedReference> fUseStatementFullyQualifiedReference = new ArrayList<FullyQualifiedReference>();
+	protected String fCurrentQualifier = "";
 	protected Map<String, Integer> fCurrentQualifierCounts = new HashMap<String, Integer>();
 	protected String fCurrentParent;
 	protected Stack<ASTNode> fNodes = new Stack<ASTNode>();
 
 	public PhpIndexingVisitor(IIndexingRequestor requestor, ISourceModule module) {
 		this.requestor = requestor;
+		this.sourceModule = module;
 
 		List<PhpIndexingVisitorExtension> extensions = new ArrayList<PhpIndexingVisitorExtension>(
 				extensionElements.length);
@@ -261,7 +267,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 			resolveMagicMembers(type);
 
 			fCurrentNamespace = null; // there are no nested namespaces
-			fCurrentQualifier = null;
+			fCurrentQualifier = "";
 			fLastUseParts.clear();
 			if (namespaceDecl.isGlobal()) {
 				return visitGeneral(type);
@@ -336,7 +342,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		modifiers = markAsDeprecated(modifiers, method);
 
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 		if (method instanceof PHPMethodDeclaration) {
 			TypeReference returnType = ((PHPMethodDeclaration) method).getReturnType();
@@ -499,6 +505,10 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 							type.getNameEnd() - type.getNameStart(), type.getName(), metadata.toString(),
 							encodeDocInfo(type), null, null));
 		} else {
+			if (fCurrentNamespace != null) {
+				type.setEnclosingTypeName(fCurrentNamespace.getName());
+			}
+
 			Declaration parentDeclaration = null;
 			if (!declarations.empty()) {
 				parentDeclaration = declarations.peek();
@@ -524,7 +534,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 
 			String[] superClasses = processSuperClasses(type);
 			StringBuilder metadata = new StringBuilder();
-			metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+			metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 			metadata.append(QUALIFIER_SEPERATOR);
 			for (int i = 0; i < superClasses.length; ++i) {
 				metadata.append(superClasses[i]);
@@ -555,46 +565,49 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		Iterator<ASTNode> iterator = superClassNames.iterator();
 		while (iterator.hasNext()) {
 			ASTNode nameNode = iterator.next();
-			String name;
 			if (nameNode instanceof FullyQualifiedReference) {
-				FullyQualifiedReference fullyQualifiedName = (FullyQualifiedReference) nameNode;
-				name = fullyQualifiedName.getFullyQualifiedName();
-				if (fullyQualifiedName.getNamespace() != null) {
-					String namespace = fullyQualifiedName.getNamespace().getName();
-					String subnamespace = ""; //$NON-NLS-1$
-					if (namespace.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR
-							&& namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
-						int firstNSLocation = namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
-						subnamespace = namespace.substring(firstNSLocation);
-						namespace = namespace.substring(0, firstNSLocation);
-					}
-					if (name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
-						name = name.substring(1);
-					} else if (fLastUseParts.containsKey(namespace)) {
-						name = new StringBuilder(fLastUseParts.get(namespace).getNamespace().getFullyQualifiedName())
-								.append(subnamespace).append(NamespaceReference.NAMESPACE_SEPARATOR)
-								.append(fullyQualifiedName.getName()).toString();
-					} else if (fCurrentNamespace != null) {
-						name = new StringBuilder(fCurrentNamespace.getName())
-								.append(NamespaceReference.NAMESPACE_SEPARATOR).append(name).toString();
-					}
-				} else if (fLastUseParts.containsKey(name)) {
-					name = fLastUseParts.get(name).getNamespace().getFullyQualifiedName();
-					if (name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
-						name = name.substring(1);
-					}
-				} else {
-					if (fCurrentNamespace != null) {
-						name = new StringBuilder(fCurrentNamespace.getName())
-								.append(NamespaceReference.NAMESPACE_SEPARATOR).append(name).toString();
-					}
-				}
-				result.add(name);
+				result.add(getFullyQualifiedName((FullyQualifiedReference) nameNode));
 			} else if (nameNode instanceof SimpleReference) {
 				result.add(((SimpleReference) nameNode).getName());
 			}
 		}
 		return (String[]) result.toArray(new String[result.size()]);
+	}
+
+	private String getFullyQualifiedName(FullyQualifiedReference fullyQualifiedName) {
+		String name = fullyQualifiedName.getFullyQualifiedName();
+		if (fullyQualifiedName.getNamespace() != null) {
+			String namespace = fullyQualifiedName.getNamespace().getName();
+			String subnamespace = "";
+			if (namespace.length() > 0 && namespace.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR
+					&& namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
+				int firstNSLocation = namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR);
+				subnamespace = namespace.substring(firstNSLocation);
+				namespace = namespace.substring(0, firstNSLocation);
+			}
+			if (name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+				name = name.substring(1);
+			} else if (fLastUseParts.containsKey(namespace)) {
+				name = new StringBuilder(fLastUseParts.get(namespace).getNamespace().getFullyQualifiedName())
+						.append(subnamespace).append(NamespaceReference.NAMESPACE_SEPARATOR)
+						.append(fullyQualifiedName.getName()).toString();
+			} else if (fCurrentNamespace != null) {
+				name = new StringBuilder(fCurrentNamespace.getName()).append(NamespaceReference.NAMESPACE_SEPARATOR)
+						.append(name).toString();
+			}
+		} else if (fLastUseParts.containsKey(name)) {
+			name = fLastUseParts.get(name).getNamespace().getFullyQualifiedName();
+			if (name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+				name = name.substring(1);
+			}
+		} else {
+			if (fCurrentNamespace != null) {
+				name = new StringBuilder(fCurrentNamespace.getName()).append(NamespaceReference.NAMESPACE_SEPARATOR)
+						.append(name).toString();
+			}
+		}
+		return name;
+
 	}
 
 	/**
@@ -673,6 +686,15 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		}
 	}
 
+	private QulifierResolver resolveReferenceType(ASTNode node) {
+		IModelElement element = null;
+		IModelElement[] elements = engine.select((IModuleSource) sourceModule, node.sourceStart(), node.sourceEnd());
+		if (elements.length > 0) {
+			element = elements[0];
+		}
+		return new QulifierResolver(element);
+	}
+
 	private String removeParenthesis(final String[] split) {
 		final String name = split[1];
 		return name.endsWith("()") ? name.substring(0, name.length() - 2) //$NON-NLS-1$
@@ -683,6 +705,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		Collection<UsePart> parts = declaration.getParts();
 		for (UsePart part : parts) {
 			String name = null;
+			fUseStatementFullyQualifiedReference.add(part.getNamespace());
 			if (part.getAlias() != null) {
 				name = part.getAlias().getName();
 			} else {
@@ -694,7 +717,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 			}
 			fLastUseParts.put(name, part);
 		}
-		return visitGeneral(declaration);
+		return false;
 	}
 
 	public boolean visit(FieldDeclaration decl) throws Exception {
@@ -719,7 +742,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		int modifiers = markAsDeprecated(decl.getModifiers(), decl);
 
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 
 		modifyDeclaration(decl, new DeclarationInfo(IModelElement.FIELD, modifiers, decl.sourceStart(),
@@ -742,18 +765,18 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 				deferredDeclarations.add(constantDecl);
 				return visitGeneral(call);
 			}
-
 			visit((FieldDeclaration) constantDecl);
-
 		} else {
 			int argsCount = 0;
 			CallArgumentsList args = call.getArgs();
 			if (args != null && args.getChilds() != null) {
 				argsCount = args.getChilds().size();
 			}
-
-			modifyReference(call, new ReferenceInfo(IModelElement.METHOD, call.sourceStart(),
-					call.sourceEnd() - call.sourceStart(), call.getName(), Integer.toString(argsCount), null));
+			QulifierResolver resolver = resolveReferenceType(call);
+			modifyReference(call,
+					new ReferenceInfo(IModelElement.METHOD, call.sourceStart(), call.sourceEnd() - call.sourceStart(),
+							call.getName(), Integer.toString(argsCount), resolver.getNamespace(),
+							resolver.getTypeName()));
 		}
 
 		return visitGeneral(call);
@@ -768,7 +791,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 					new ReferenceInfo(IModelElement.METHOD, filePath.sourceStart(),
 							filePath.sourceEnd() - filePath.sourceStart(), "include", Integer //$NON-NLS-1$
 									.toString(1),
-							null));
+							null, null));
 
 			String fullPath = ASTUtils.stripQuotes(((Scalar) filePath).getValue());
 			int idx = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
@@ -802,7 +825,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		int offset = constantName.sourceStart();
 		int length = constantName.sourceEnd();
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 		modifyDeclaration(declaration,
 				new DeclarationInfo(IModelElement.FIELD, modifiers, offset, length, offset, length,
@@ -874,8 +897,18 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 	}
 
 	public boolean visit(TypeReference reference) throws Exception {
+		String qualifier = "";
+		if (fUseStatementFullyQualifiedReference.contains(reference)) {
+			NamespaceReference namespace = ((FullyQualifiedReference) reference).getNamespace();
+			qualifier = namespace == null ? null : namespace.getName();
+		} else if (reference instanceof FullyQualifiedReference) {
+			qualifier = PHPModelUtils.extractNameSpaceName(getFullyQualifiedName((FullyQualifiedReference) reference));
+			if (qualifier == null) {
+				qualifier = "";
+			}
+		}
 		modifyReference(reference, new ReferenceInfo(IModelElement.TYPE, reference.sourceStart(),
-				reference.sourceEnd() - reference.sourceStart(), reference.getName(), null, null));
+				reference.sourceEnd() - reference.sourceStart(), reference.getName(), null, qualifier, null));
 		return visitGeneral(reference);
 	}
 
@@ -939,6 +972,12 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		}
 		if (node instanceof StaticConstantAccess) {
 			return visit((StaticConstantAccess) node);
+		}
+		if (node instanceof StaticFieldAccess) {
+			return visit((StaticFieldAccess) node);
+		}
+		if (node instanceof ClassInstanceCreation) {
+			return visit((ClassInstanceCreation) node);
 		}
 
 		for (PhpIndexingVisitorExtension visitor : extensions) {
@@ -1004,8 +1043,12 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 			if (!name.startsWith(DOLLAR)) {
 				name = DOLLAR + name;
 			}
-			modifyReference(access, new ReferenceInfo(IModelElement.FIELD, simpleReference.sourceStart(),
-					simpleReference.sourceEnd() - simpleReference.sourceStart(), name, null, null));
+
+			QulifierResolver resolver = resolveReferenceType(access.getDispatcher());
+			modifyReference(access,
+					new ReferenceInfo(IModelElement.FIELD, simpleReference.sourceStart(),
+							simpleReference.sourceEnd() - simpleReference.sourceStart(), name, null,
+							resolver.getNamespace(), resolver.getTypeName()));
 		}
 
 		return visitGeneral(access);
@@ -1017,11 +1060,80 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 			final ConstantReference constantReference = access.getConstant();
 			final String name = constantReference.getName();
 
-			modifyReference(access, new ReferenceInfo(IModelElement.FIELD, constantReference.sourceStart(),
-					constantReference.sourceEnd() - constantReference.sourceStart(), name, null, null));
+			QulifierResolver resolver = resolveReferenceType(access.getDispatcher());
+			modifyReference(access,
+					new ReferenceInfo(IModelElement.FIELD, constantReference.sourceStart(),
+							constantReference.sourceEnd() - constantReference.sourceStart(), name, null,
+							resolver.getNamespace(), resolver.getTypeName()));
 		}
 
 		return visitGeneral(access);
+	}
+
+	public boolean visit(StaticFieldAccess access) throws Exception {
+		// This is constant field access:
+		if (access.getField() instanceof SimpleReference) {
+			SimpleReference simpleReference = (SimpleReference) access.getField();
+
+			String name = simpleReference.getName();
+			if (!name.startsWith(DOLLAR)) {
+				name = DOLLAR + name;
+			}
+
+			QulifierResolver resolver = resolveReferenceType(access.getDispatcher());
+			modifyReference(access,
+					new ReferenceInfo(IModelElement.FIELD, simpleReference.sourceStart(),
+							simpleReference.sourceEnd() - simpleReference.sourceStart(), name, null,
+							resolver.getNamespace(), resolver.getTypeName()));
+		}
+
+		return visitGeneral(access);
+	}
+
+	public boolean visit(ClassInstanceCreation creation) throws Exception {
+		int argsCount = 0;
+		CallArgumentsList args = creation.getCtorParams();
+		if (args != null && args.getChilds() != null) {
+			argsCount = args.getChilds().size();
+		}
+		QulifierResolver resolver = resolveReferenceType(creation.getClassName());
+		modifyReference(creation,
+				new ReferenceInfo(IModelElement.METHOD, creation.sourceStart(),
+						creation.sourceEnd() - creation.sourceStart(), "__construct", Integer.toString(argsCount),
+						resolver.getNamespace(), resolver.getTypeName()));
+		return visitGeneral(creation);
+	}
+
+	private class QulifierResolver {
+
+		private IType type;
+
+		public QulifierResolver(IModelElement element) {
+			IModelElement parent = element;
+			while (parent != null && !(parent instanceof IType)) {
+				parent = parent.getParent();
+			}
+			if (parent instanceof IType) {
+				type = (IType) parent;
+			} else {
+				type = null;
+			}
+		}
+
+		public String getNamespace() {
+			if (type != null && type.getParent() instanceof IType) {
+				return type.getParent().getElementName();
+			}
+			return null;
+		}
+
+		public String getTypeName() {
+			if (type != null) {
+				return type.getElementName();
+			}
+			return null;
+		}
+
 	}
 
 }

@@ -17,6 +17,7 @@ import org.eclipse.dltk.ast.parser.ISourceParser;
 import org.eclipse.dltk.ast.parser.ISourceParserFactory;
 import org.eclipse.dltk.compiler.env.IModuleSource;
 import org.eclipse.dltk.compiler.problem.IProblemReporter;
+import org.eclipse.dltk.internal.core.ExternalSourceModule;
 import org.eclipse.php.internal.core.CoreMessages;
 import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.project.ProjectOptions;
@@ -36,8 +37,15 @@ public class PHPSourceParserFactory extends AbstractSourceParser implements ISou
 	 * .env.IModuleSource, org.eclipse.dltk.compiler.problem.IProblemReporter)
 	 */
 	public IModuleDeclaration parse(IModuleSource module, IProblemReporter reporter) {
-		final String fileName = module.getFileName();
-		AbstractPHPSourceParser parser = createParser(fileName);
+		PHPVersion phpVersion = ProjectOptions.getPhpVersion(module.getModelElement());
+		final String fileName;
+		if (module instanceof ExternalSourceModule) {
+			fileName = ((ExternalSourceModule) module).getPath().append(((ExternalSourceModule) module).getFullPath())
+					.toString();
+		} else {
+			fileName = module.getFileName();
+		}
+		AbstractPHPSourceParser parser = createParser(fileName, phpVersion);
 		return parser.parse(module, reporter);
 	}
 

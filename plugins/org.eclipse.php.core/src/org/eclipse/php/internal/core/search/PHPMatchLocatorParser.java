@@ -46,7 +46,11 @@ public class PHPMatchLocatorParser extends MatchLocatorParser {
 	}
 
 	protected void processStatement(ASTNode node, PatternLocator locator) {
-		if (node instanceof FieldDeclaration) {
+		if (node instanceof ClassInstanceCreation) {
+			if (locator instanceof PHPMethodLocator) {
+				((PHPMethodLocator) locator).match((ClassInstanceCreation) node, getNodeSet());
+			}
+		} else if (node instanceof FieldDeclaration) {
 			locator.match((FieldDeclaration) node, getNodeSet());
 		} else if (node instanceof ConstantDeclaration) {
 			ConstantDeclaration constDecl = (ConstantDeclaration) node;
