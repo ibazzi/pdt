@@ -113,7 +113,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 	protected NamespaceDeclaration fCurrentNamespace;
 	protected Map<String, UsePart> fLastUseParts = new HashMap<String, UsePart>();
 	protected List<FullyQualifiedReference> fUseStatementFullyQualifiedReference = new ArrayList<FullyQualifiedReference>();
-	protected String fCurrentQualifier = "";
+	protected String fCurrentQualifier;
 	protected Map<String, Integer> fCurrentQualifierCounts = new HashMap<String, Integer>();
 	protected String fCurrentParent;
 	protected Stack<ASTNode> fNodes = new Stack<ASTNode>();
@@ -267,7 +267,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 			resolveMagicMembers(type);
 
 			fCurrentNamespace = null; // there are no nested namespaces
-			fCurrentQualifier = "";
+			fCurrentQualifier = null;
 			fLastUseParts.clear();
 			if (namespaceDecl.isGlobal()) {
 				return visitGeneral(type);
@@ -342,7 +342,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		modifiers = markAsDeprecated(modifiers, method);
 
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 		if (method instanceof PHPMethodDeclaration) {
 			TypeReference returnType = ((PHPMethodDeclaration) method).getReturnType();
@@ -534,7 +534,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 
 			String[] superClasses = processSuperClasses(type);
 			StringBuilder metadata = new StringBuilder();
-			metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+			metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 			metadata.append(QUALIFIER_SEPERATOR);
 			for (int i = 0; i < superClasses.length; ++i) {
 				metadata.append(superClasses[i]);
@@ -742,7 +742,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		int modifiers = markAsDeprecated(decl.getModifiers(), decl);
 
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 
 		modifyDeclaration(decl, new DeclarationInfo(IModelElement.FIELD, modifiers, decl.sourceStart(),
@@ -825,7 +825,7 @@ public class PhpIndexingVisitor extends PhpIndexingVisitorExtension {
 		int offset = constantName.sourceStart();
 		int length = constantName.sourceEnd();
 		StringBuilder metadata = new StringBuilder();
-		metadata.append(!"".equals(fCurrentQualifier) ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
+		metadata.append(fCurrentQualifier != null ? fCurrentQualifierCounts.get(fCurrentQualifier) : 1);
 		metadata.append(QUALIFIER_SEPERATOR);
 		modifyDeclaration(declaration,
 				new DeclarationInfo(IModelElement.FIELD, modifiers, offset, length, offset, length,

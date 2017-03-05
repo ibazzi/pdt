@@ -6,7 +6,7 @@ import java.util.List;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.dltk.compiler.CharOperation;
 import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
@@ -51,7 +51,7 @@ import org.eclipse.text.edits.TextEdit;
  * <li>{@link #setStaticOnDemandImportThreshold(int)} specifies the number of
  * static imports in a group needed for a on-demand import statement (star
  * import)</li>
- *</ul>
+ * </ul>
  * This class is not intended to be subclassed.
  * </p>
  * 
@@ -133,7 +133,7 @@ public final class ImportRewrite {
 	}
 
 	public static final String ENCLOSING_TYPE_SEPARATOR = new String(
-			new char[] { NamespaceReference.NAMESPACE_SEPARATOR }); //$NON-NLS-1$
+			new char[] { NamespaceReference.NAMESPACE_SEPARATOR }); // $NON-NLS-1$
 	private static final char STATIC_PREFIX = 's';
 	private static final char NORMAL_PREFIX = 'n';
 
@@ -286,7 +286,7 @@ public final class ImportRewrite {
 	 * @return the compilation unit for which this import rewrite was created
 	 *         for.
 	 */
-	public ISourceModule getProgram() {
+	public ISourceModule getSourceModule() {
 		return this.compilationUnit;
 	}
 
@@ -538,7 +538,7 @@ public final class ImportRewrite {
 			Program usedAstRoot = this.astRoot;
 			if (usedAstRoot == null) {
 				ASTParser parser = ASTParser.newParser(this.compilationUnit);
-				usedAstRoot = (Program) parser.createAST(new SubProgressMonitor(monitor, 1));
+				usedAstRoot = (Program) parser.createAST(SubMonitor.convert(monitor, 1));
 			}
 
 			ImportRewriteAnalyzer computer = new ImportRewriteAnalyzer(this.compilationUnit, usedAstRoot,
@@ -559,7 +559,7 @@ public final class ImportRewrite {
 				}
 			}
 
-			TextEdit result = computer.getResultingEdits(new SubProgressMonitor(monitor, 1));
+			TextEdit result = computer.getResultingEdits(SubMonitor.convert(monitor, 1));
 			this.createdImports = computer.getCreatedImports();
 			return result;
 		} catch (Exception e) {

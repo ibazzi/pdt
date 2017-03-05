@@ -20,13 +20,12 @@ import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.MultiTextEdit;
 
-@SuppressWarnings("unchecked")
 public final class ImportRewriteAnalyzer {
 
 	private final ISourceModule sourceModule;
-	private final ArrayList packageEntries;
+	private final ArrayList<PackageEntry> packageEntries;
 
-	private final List importsCreated;
+	private final List<String> importsCreated;
 
 	private final IRegion replaceRange;
 
@@ -43,8 +42,8 @@ public final class ImportRewriteAnalyzer {
 
 		this.filterImplicitImports = true;
 
-		this.packageEntries = new ArrayList(20);
-		this.importsCreated = new ArrayList();
+		this.packageEntries = new ArrayList<>(20);
+		this.importsCreated = new ArrayList<>();
 		this.flags = 0;
 
 		this.replaceRange = evaluateReplaceRange(root);
@@ -529,8 +528,8 @@ public final class ImportRewriteAnalyzer {
 		}
 	}
 
-	private void removeAndInsertNew(IBuffer buffer, int contentOffset, int contentEnd, ArrayList stringsToInsert,
-			MultiTextEdit resEdit) {
+	private void removeAndInsertNew(IBuffer buffer, int contentOffset, int contentEnd,
+			ArrayList<String> stringsToInsert, MultiTextEdit resEdit) {
 		int pos = contentOffset;
 		for (int i = 0; i < stringsToInsert.size(); i++) {
 			String curr = (String) stringsToInsert.get(i);
@@ -593,7 +592,7 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private static int getFirstTypeBeginPos(Program root) {
-		List types = root.statements();
+		List<Statement> types = root.statements();
 		if (!types.isEmpty()) {
 			ASTNode node = null;
 			if (types.get(0) instanceof NamespaceDeclaration) {
@@ -705,7 +704,7 @@ public final class ImportRewriteAnalyzer {
 	 */
 	private final static class PackageEntry {
 		private String name;
-		private ArrayList importEntries;
+		private ArrayList<ImportDeclEntry> importEntries;
 		private String group;
 
 		/**
@@ -725,7 +724,7 @@ public final class ImportRewriteAnalyzer {
 		 */
 		public PackageEntry(String name, String group) {
 			this.name = name;
-			this.importEntries = new ArrayList(5);
+			this.importEntries = new ArrayList<>(5);
 			this.group = group;
 		}
 

@@ -16,17 +16,14 @@ import org.eclipse.dltk.ui.ScriptElementImageDescriptor;
 import org.eclipse.dltk.ui.ScriptElementImageProvider;
 import org.eclipse.dltk.ui.text.completion.*;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.StyledString;
-import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.core.PHPVersion;
-import org.eclipse.php.internal.core.codeassist.*;
+import org.eclipse.php.internal.core.codeassist.AliasField;
+import org.eclipse.php.internal.core.codeassist.CompletionFlag;
+import org.eclipse.php.internal.core.codeassist.IPHPCompletionRequestor;
+import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.project.PHPNature;
-import org.eclipse.php.internal.core.project.ProjectOptions;
-import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.swt.graphics.Image;
 
@@ -55,29 +52,15 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 
 	protected ScriptCompletionProposal createScriptCompletionProposal(String completion, int replaceStart, int length,
 			Image image, StyledString displayString, int i) {
-		return new PHPCompletionProposal(completion, replaceStart, length, image, displayString, i);
+		return new PHPCompletionProposal(completion, getSourceModule(), replaceStart, length, image, displayString, i,
+				completion);
 	}
 
 	protected ScriptCompletionProposal createScriptCompletionProposal(String completion, int replaceStart, int length,
 			Image image, StyledString displayString, int i, boolean isInDoc) {
-		return new PHPCompletionProposal(completion, replaceStart, length, image, displayString, i, isInDoc);
+		return new PHPCompletionProposal(completion, getSourceModule(), replaceStart, length, image, displayString, i,
+				isInDoc, completion);
 	}
-
-	// protected CompletionProposalLabelProvider createLabelProvider() {
-	// CompletionProposalLabelProvider labelProvider = new
-	// PHPCompletionProposalLabelProvider();
-	//
-	// // check if there are any adapters extending basic label provider
-	// CompletionProposalLabelProvider extended =
-	// (CompletionProposalLabelProvider) Platform
-	// .getAdapterManager().getAdapter(labelProvider,
-	// CompletionProposalLabelProvider.class);
-	//
-	// if (extended != null)
-	// return extended;
-	//
-	// return labelProvider;
-	// }
 
 	protected IScriptCompletionProposal createPackageProposal(CompletionProposal proposal) {
 		final AbstractScriptCompletionProposal scriptProposal = (AbstractScriptCompletionProposal) super.createPackageProposal(
@@ -170,7 +153,10 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 		if (ProposalExtraInfo.isNotInsertUse(proposal.getExtraInfo())) {
 			Image image = getImage(
 					((PHPCompletionProposalLabelProvider) getLabelProvider()).createMethodImageDescriptor(proposal));
-			scriptProposal = new PHPCompletionProposal(completion, replaceStart, length, image, displayString, 0) {
+
+			String fullName = proposal.getModelElement().getElementName();
+			scriptProposal = new PHPCompletionProposal(completion, getSourceModule(), replaceStart, length, image,
+					displayString, 0, fullName) {
 				public String getReplacementString() {
 					IMethod method = (IMethod) proposal.getModelElement();
 					if (ProposalExtraInfo.isNoInsert(proposal.getExtraInfo())) {
@@ -215,86 +201,16 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 
 		StyledString displayString = ((PHPCompletionProposalLabelProvider) getLabelProvider())
 				.createStyledTypeProposalLabel(typeProposal);
-
-		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(completion, replaceStart, length, image,
-				displayString, 0) {
-			private boolean fReplacementStringComputed = false;
-
-			public String getReplacementString() {
-				if (!fReplacementStringComputed) {
-					String replacementString = computeReplacementString();
-					if (ProposalExtraInfo.isAddQuote(typeProposal.getExtraInfo())) {
-						replacementString = "'" + replacementString + "'"; //$NON-NLS-1$ //$NON-NLS-2$
-					}
-					setReplacementString(replacementString);
-				}
-				return super.getReplacementString();
-			}
-
-			private String computeReplacementString() {
-				fReplacementStringComputed = true;
-				IType type = (IType) typeProposal.getModelElement();
-
-				if (ProposalExtraInfo.isClassInNamespace(typeProposal.getExtraInfo())) {
-					return PHPModelUtils.getFullName(type);
-					// String result = PHPModelUtils.getFullName(type);
-					// if (ProposalExtraInfo.isAddQuote(typeProposal
-					// .getExtraInfo())) {
-					// result = "'" + result + "'";
-					// }
-					// return result;
-				}
-
-				String prefix = ""; //$NON-NLS-1$
-				try {
-					int flags = type.getFlags();
-					IType currentNamespace = PHPModelUtils.getCurrentNamespaceIfAny(getSourceModule(),
-							getReplacementOffset());
-					IType namespace = PHPModelUtils.getCurrentNamespace(type);
-					if (!PHPFlags.isNamespace(flags) && namespace == null && currentNamespace != null
-							&& !ProjectOptions
-									.getPhpVersion(PHPCompletionProposalCollector.this.getScriptProject().getProject())
-									.isLessThan(PHPVersion.PHP5_3)
-							&& PHPCompletionProposalCollector.this.document
-									.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
-						prefix = prefix + NamespaceReference.NAMESPACE_SEPARATOR;
-					}
-				} catch (ModelException e) {
-					PHPUiPlugin.log(e);
-				} catch (BadLocationException e) {
-					PHPUiPlugin.log(e);
-				}
-				String suffix = getSuffix(type);
-				String replacementString = null;
-				if (typeProposal.getModelElement() instanceof AliasType) {
-					replacementString = ((AliasType) typeProposal.getModelElement()).getAlias();
-				} else {
-					replacementString = super.getReplacementString();
-				}
-				return prefix + replacementString + suffix;
-			}
-
-			public String getSuffix(IType type) {
-				String defaultResult = EMPTY_STRING;
-				if (type instanceof AliasType) {
-				}
-				if (ProposalExtraInfo.isTypeOnly(typeProposal.getExtraInfo())
-						|| !PHPModelUtils.hasStaticOrConstMember(type)) {
-					return defaultResult;
-				}
-				String nextWord = null;
-				try {
-					nextWord = document.get(getReplacementOffset() + getReplacementLength(), 2);// "::".length()
-				} catch (BadLocationException e) {
-				}
-				return DOUBLE_COLON.equals(nextWord) ? defaultResult : DOUBLE_COLON;
-			}
-
-			@Override
-			public Object getExtraInfo() {
-				return typeProposal.getExtraInfo();
-			}
-		};
+		String fullName = null;
+		if (typeProposal.getModelElement() instanceof IType) {
+			fullName = ((IType) typeProposal.getModelElement())
+					.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+		} else {
+			fullName = typeProposal.getModelElement().getElementName();
+		}
+		String replacementString = fullName == null || completion.length() == 0 ? completion : fullName;
+		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(replacementString, getSourceModule(),
+				replaceStart, length, image, displayString, 0, fullName);
 
 		scriptProposal.setRelevance(computeRelevance(typeProposal));
 		scriptProposal.setProposalInfo(new TypeProposalInfo(getSourceModule().getScriptProject(), typeProposal));
@@ -310,9 +226,9 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 				.createStyledFieldProposalLabel(proposal);
 		Image image = getImage(
 				((PHPCompletionProposalLabelProvider) getLabelProvider()).createFieldImageDescriptor(proposal));
-
-		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(completion, start, length, image,
-				displayString, 0) {
+		String fullName = proposal.getModelElement().getElementName();
+		ScriptCompletionProposal scriptProposal = new PHPCompletionProposal(completion, getSourceModule(), start,
+				length, image, displayString, 0, fullName) {
 			private boolean fReplacementStringComputed = false;
 
 			public String getReplacementString() {

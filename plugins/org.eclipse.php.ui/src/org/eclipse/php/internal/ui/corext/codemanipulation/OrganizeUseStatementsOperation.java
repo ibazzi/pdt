@@ -250,7 +250,7 @@ public class OrganizeUseStatementsOperation implements IWorkspaceRunnable {
 				if (nUnresolved == 0) {
 					return false;
 				}
-				final IScriptProject project = fImpStructure.getProgram().getScriptProject();
+				final IScriptProject project = fImpStructure.getSourceModule().getScriptProject();
 				IDLTKSearchScope scope = SearchEngine.createSearchScope(project);
 				final ArrayList<TypeNameMatch> typesFound = new ArrayList<>();
 				TypeNameMatchCollector collector = new TypeNameMatchCollector(typesFound);
