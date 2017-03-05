@@ -16,9 +16,9 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.IAdapterFactory;
 import org.eclipse.dltk.core.IModelElement;
-import org.eclipse.dltk.internal.ui.search.DLTKSearchPageScoreComputer;
 import org.eclipse.php.internal.core.documentModel.dom.IImplForPHP;
 import org.eclipse.php.internal.ui.actions.filters.GenericActionFilter;
+import org.eclipse.php.internal.ui.search.PHPSearchPageScoreComputer;
 import org.eclipse.search.ui.ISearchPageScoreComputer;
 import org.eclipse.ui.IActionFilter;
 
@@ -34,7 +34,7 @@ public class PHPElementAdapterFactory implements IAdapterFactory {
 
 	static {
 		adapterType2Object.put(IActionFilter.class, new GenericActionFilter());
-		adapterType2Object.put(ISearchPageScoreComputer.class, new DLTKSearchPageScoreComputer());
+		adapterType2Object.put(ISearchPageScoreComputer.class, new PHPSearchPageScoreComputer());
 	}
 
 	public PHPElementAdapterFactory() {
@@ -63,9 +63,8 @@ public class PHPElementAdapterFactory implements IAdapterFactory {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public Class[] getAdapterList() {
-		Class[] classArray = new Class[adapterType2Object.size()];
+	public Class<?>[] getAdapterList() {
+		Class<?>[] classArray = new Class[adapterType2Object.size()];
 		adapterType2Object.entrySet().toArray(classArray);
 		return classArray;
 	}

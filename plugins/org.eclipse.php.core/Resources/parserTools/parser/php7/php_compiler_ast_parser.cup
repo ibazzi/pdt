@@ -1471,6 +1471,9 @@ unticked_function_declaration_statement ::=
 T_FUNCTION:start is_reference:isReference string_st:functionName
 {:
 	PHPMethodDeclaration functionDeclaration = new PHPMethodDeclaration(startleft, functionNameright, functionNameleft, functionNameright, functionName, 0, null, new Block(functionNameright, functionNameright, null), isReference.booleanValue(), start.doc);
+	if(currentNamespace != null) {
+		functionDeclaration.setDeclaringTypeName(currentNamespace.getName());
+	}
 	parser.addDeclarationStatement(functionDeclaration);
 	parser.declarations.push(functionDeclaration);
 :}
@@ -1523,6 +1526,9 @@ class_entry_type:modifier T_STRING:className
 			new Block(classNameright, classNameright, null), modifier.doc);
 	}
 	classDeclaration.setRecovered(true);
+	if(currentNamespace != null) {
+		classDeclaration.setEnclosingTypeName(currentNamespace.getName());
+	}
 	parser.addDeclarationStatement(classDeclaration);
 	parser.declarations.push(classDeclaration);
 :}
@@ -1568,6 +1574,9 @@ interface_extends_list:interfaces
 {:
 	InterfaceDeclaration interfaceDeclaration = new InterfaceDeclaration(startleft, interfacesright, classNameleft, classNameright, className, interfaces, new Block(interfacesright, interfacesright, null), start);
 	interfaceDeclaration.setRecovered(true);
+	if(currentNamespace != null) {
+		interfaceDeclaration.setEnclosingTypeName(currentNamespace.getName());
+	}
 	parser.declarations.push(interfaceDeclaration);
 :}
 T_CURLY_OPEN:blockStart class_statement_list:statementList class_closure:blockEnd
@@ -2286,7 +2295,11 @@ method_body:body
 	}
 	if (parser.declarations.peek() instanceof TypeDeclaration) {
 		TypeDeclaration type = (TypeDeclaration) parser.declarations.peek();
-		methodDeclaration.setDeclaringTypeName(type.getName());
+		if(!"".equals(type.getEnclosingTypeName())) {
+			methodDeclaration.setDeclaringTypeName(type.getEnclosingTypeName() + NamespaceReference.NAMESPACE_SEPARATOR + type.getName());
+		} else {
+			methodDeclaration.setDeclaringTypeName(type.getName());
+		}
 	}
 	if (body instanceof EmptyStatement) { /* method without body part */
 		Statement statement = parser.declarations.peek();

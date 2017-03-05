@@ -1011,6 +1011,9 @@ unticked_function_declaration_statement ::=
 T_FUNCTION:start is_reference:isReference string_st:functionName
 {:
 	PHPMethodDeclaration functionDeclaration = new PHPMethodDeclaration(startleft, functionNameright, functionNameleft, functionNameright, functionName, 0, null, new Block(functionNameright, functionNameright, null), isReference.booleanValue(), start);
+	if(currentNamespace != null) {
+		functionDeclaration.setDeclaringTypeName(currentNamespace.getName());
+	}
 	parser.addDeclarationStatement(functionDeclaration);
 	parser.declarations.push(functionDeclaration);
 :}
@@ -1049,6 +1052,9 @@ class_entry_type:modifier T_STRING:className
 {:
 	ClassDeclaration classDeclaration = new ClassDeclaration(modifierleft, classNameright, classNameleft, classNameright, modifier.modifier, className, null, null, new Block(classNameright, classNameright, null), modifier.doc);
 	classDeclaration.setRecovered(true);
+	if(currentNamespace != null) {
+		classDeclaration.setEnclosingTypeName(currentNamespace.getName());
+	}
 	parser.addDeclarationStatement(classDeclaration);
 	parser.declarations.push(classDeclaration);
 :}
@@ -1085,6 +1091,9 @@ interface_extends_list:interfaces
 {:
 	InterfaceDeclaration interfaceDeclaration = new InterfaceDeclaration(startleft, interfacesright, classNameleft, classNameright, className, interfaces, new Block(interfacesright, interfacesright, null), start);
 	interfaceDeclaration.setRecovered(true);
+	if(currentNamespace != null) {
+		interfaceDeclaration.setEnclosingTypeName(currentNamespace.getName());
+	}
 	parser.declarations.push(interfaceDeclaration);
 :}
 T_CURLY_OPEN:blockStart class_statement_list:statementList class_closure:blockEnd
@@ -1732,7 +1741,11 @@ method_body:body
 		parser.reportError(new ASTError(methodDeclaration.sourceEnd() - 1, methodDeclaration.sourceEnd()), "syntax error, unfinished method declaration");
 	}
 	TypeDeclaration type = (TypeDeclaration) parser.declarations.peek();
-	methodDeclaration.setDeclaringTypeName(type.getName());
+	if(!"".equals(type.getEnclosingTypeName())) {
+		methodDeclaration.setDeclaringTypeName(type.getEnclosingTypeName() + NamespaceReference.NAMESPACE_SEPARATOR + type.getName());
+	} else {
+		methodDeclaration.setDeclaringTypeName(type.getName());
+	}
 	if (body instanceof EmptyStatement) { /* method without body part */
 		if (type instanceof ClassDeclaration) {
 			ClassDeclaration classDeclaration = (ClassDeclaration) type;
