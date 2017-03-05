@@ -36,6 +36,7 @@ import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite.ImportRewriteCont
 import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.compiler.ast.parser.PhpProblemIdentifier;
+import org.eclipse.php.internal.core.language.keywords.PHPKeywords;
 import org.eclipse.php.internal.core.search.PHPSearchTypeNameMatch;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.corext.util.Messages;
@@ -545,7 +546,7 @@ public class OrganizeUseStatementsOperation implements IWorkspaceRunnable {
 				oldSingleImports.add(part.getName().getName());
 			}
 		}
-		astRoot.accept(new ReferencesCollector(typeReferences));
+		astRoot.accept(new ReferencesCollector(typeReferences, fSourceModule));
 		return true;
 	}
 
@@ -566,9 +567,11 @@ public class OrganizeUseStatementsOperation implements IWorkspaceRunnable {
 
 	static class ReferencesCollector extends ApplyAll {
 		List<Identifier> fTypeReferences;
+		PHPKeywords keywords;
 
-		public ReferencesCollector(List<Identifier> typeReferences) {
+		public ReferencesCollector(List<Identifier> typeReferences, ISourceModule sourceModule) {
 			fTypeReferences = typeReferences;
+			keywords = PHPKeywords.getInstance(sourceModule.getScriptProject().getProject());
 		}
 
 		@Override
@@ -592,7 +595,15 @@ public class OrganizeUseStatementsOperation implements IWorkspaceRunnable {
 		}
 
 		@Override
+		public boolean visit(Scalar scalar) {
+			return false;
+		}
+
+		@Override
 		public boolean visit(Identifier identifier) {
+			if (keywords.getKeywords().contains(identifier.getName())) {
+				return false;
+			}
 			ASTNode parent = identifier.getParent();
 			if (parent instanceof NamespaceName && parent.getParent() instanceof NamespaceDeclaration)
 				return false;
