@@ -17,10 +17,13 @@ import java.net.URL;
 import java.util.HashMap;
 
 import org.eclipse.dltk.core.IModelElement;
+import org.eclipse.dltk.core.IType;
+import org.eclipse.dltk.core.ModelException;
 import org.eclipse.dltk.ui.ScriptElementImageProvider;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
-import org.eclipse.php.internal.ui.util.PHPModelLabelProvider;
+import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
@@ -36,13 +39,28 @@ public class ImagesOnFileSystemRegistry {
 
 	private HashMap fURLMap;
 	private final File fTempDir;
-	private final PHPModelLabelProvider fLabelProvider;
+	private final ScriptElementImageProvider fImageProvider;
 	private int fImageCount;
 
 	public ImagesOnFileSystemRegistry() {
 		fURLMap = new HashMap();
 		fTempDir = getTempDir();
-		fLabelProvider = new PHPModelLabelProvider();
+		fImageProvider = new ScriptElementImageProvider() {
+			@Override
+			public ImageDescriptor getBaseImageDescriptor(IModelElement element, int renderFlags) {
+				// TODO Auto-generated method stub
+				if (element.getElementType() == IModelElement.TYPE) {
+					IType type = (IType) element;
+					try {
+						if (PHPFlags.isTrait(type.getFlags())) {
+							return PHPPluginImages.DESC_OBJS_TRAIT;
+						}
+					} catch (ModelException e) {
+					}
+				}
+				return super.getBaseImageDescriptor(element, renderFlags);
+			}
+		};
 		fImageCount = 0;
 	}
 
@@ -78,7 +96,7 @@ public class ImagesOnFileSystemRegistry {
 	}
 
 	public URL getImageURL(IModelElement element) {
-		ImageDescriptor descriptor = fLabelProvider.getImageDescriptor(element,
+		ImageDescriptor descriptor = fImageProvider.getScriptImageDescriptor(element,
 				ScriptElementImageProvider.OVERLAY_ICONS | ScriptElementImageProvider.SMALL_ICONS);
 		if (descriptor == null)
 			return null;

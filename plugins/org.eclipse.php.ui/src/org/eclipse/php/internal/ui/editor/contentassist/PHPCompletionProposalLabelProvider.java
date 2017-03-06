@@ -29,14 +29,12 @@ import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
 import org.eclipse.php.internal.ui.Logger;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
-import org.eclipse.php.internal.ui.util.PHPModelLabelProvider;
+import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.php.ui.PHPElementLabels;
 
 public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelProvider
 		implements ICompletionProposalLabelProviderExtension {
-	private static final PHPModelLabelProvider fLabelProvider = new PHPModelLabelProvider();
 
 	private static final String ENCLOSING_TYPE_SEPARATOR = String.valueOf(NamespaceReference.NAMESPACE_SEPARATOR);
 
@@ -128,8 +126,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	private boolean showMethodReturnType() {
-		return PHPUiPlugin.getDefault().getPreferenceStore()
-				.getBoolean(PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE);
+		return PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE);
 	}
 
 	public StyledString createTypeProposalLabel(CompletionProposal typeProposal) {
@@ -156,22 +153,16 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		if (proposal.getModelElement() instanceof ArchiveProjectFragment) {
 			return DLTKPluginImages.DESC_OBJS_JAR;
 		}
-		ImageDescriptor imageDescriptor = fLabelProvider.getImageDescriptor(proposal.getModelElement(),
-				PHPModelLabelProvider.DEFAULT_IMAGEFLAGS);
-		if (imageDescriptor != null) {
-			return imageDescriptor;
-		}
 		return super.createImageDescriptor(proposal);
 	}
 
 	@Override
 	public ImageDescriptor createTypeImageDescriptor(CompletionProposal proposal) {
-		ImageDescriptor imageDescriptor = fLabelProvider.getImageDescriptor(proposal.getModelElement(),
-				PHPModelLabelProvider.DEFAULT_IMAGEFLAGS);
-		if (imageDescriptor != null) {
-			return imageDescriptor;
+		if (PHPFlags.isTrait(proposal.getFlags())) {
+			return decorateImageDescriptor(PHPPluginImages.DESC_OBJS_TRAIT, proposal);
+		} else {
+			return super.createTypeImageDescriptor(proposal);
 		}
-		return super.createTypeImageDescriptor(proposal);
 	}
 
 	public StyledString createFieldProposalLabel(CompletionProposal proposal) {
@@ -180,21 +171,11 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 
 	@Override
 	public ImageDescriptor createFieldImageDescriptor(CompletionProposal proposal) {
-		ImageDescriptor imageDescriptor = fLabelProvider.getImageDescriptor(proposal.getModelElement(),
-				PHPModelLabelProvider.DEFAULT_IMAGEFLAGS);
-		if (imageDescriptor != null) {
-			return imageDescriptor;
-		}
 		return super.createFieldImageDescriptor(proposal);
 	}
 
 	@Override
 	public ImageDescriptor createMethodImageDescriptor(CompletionProposal proposal) {
-		ImageDescriptor imageDescriptor = fLabelProvider.getImageDescriptor(proposal.getModelElement(),
-				PHPModelLabelProvider.DEFAULT_IMAGEFLAGS);
-		if (imageDescriptor != null) {
-			return imageDescriptor;
-		}
 		return super.createMethodImageDescriptor(proposal);
 	}
 
