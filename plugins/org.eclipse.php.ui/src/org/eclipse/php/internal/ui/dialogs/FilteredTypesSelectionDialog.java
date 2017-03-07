@@ -35,7 +35,10 @@ import org.eclipse.dltk.launching.IInterpreterInstall;
 import org.eclipse.dltk.launching.IInterpreterInstallType;
 import org.eclipse.dltk.launching.LibraryLocation;
 import org.eclipse.dltk.launching.ScriptRuntime;
-import org.eclipse.dltk.ui.*;
+import org.eclipse.dltk.ui.DLTKUILanguageManager;
+import org.eclipse.dltk.ui.DLTKUIPlugin;
+import org.eclipse.dltk.ui.IDLTKUILanguageToolkit;
+import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.dltk.ui.dialogs.ITypeInfoFilterExtension;
 import org.eclipse.dltk.ui.dialogs.ITypeInfoImageProvider;
 import org.eclipse.dltk.ui.dialogs.ITypeSelectionComponent;
@@ -762,6 +765,7 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 		private BoldStylerProvider fBoldStylerProvider;
 
 		private Styler fBoldQualifierStyler;
+		private ILabelProvider labelProvider;
 
 		/**
 		 * Construct a new <code>TypeItemLabelProvider</code>. F
@@ -783,6 +787,10 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 				fBoldStylerProvider.dispose();
 				fBoldStylerProvider = null;
 			}
+			if (labelProvider != null) {
+				labelProvider.dispose();
+				labelProvider = null;
+			}
 		}
 
 		/*
@@ -795,9 +803,16 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 			if (!(element instanceof TypeNameMatch)) {
 				return super.getImage(element);
 			}
-			TypeNameMatch type = (TypeNameMatch) element;
-			ImageDescriptor iD = ScriptElementImageProvider.getTypeImageDescriptor(type.getModifiers(), false);
-			return DLTKUIPlugin.getImageDescriptorRegistry().get(iD);
+			ImageDescriptor contributedImageDescriptor = fTypeInfoUtil.getContributedImageDescriptor(element);
+			if (contributedImageDescriptor == null) {
+				if (labelProvider == null) {
+					labelProvider = new TypeNameMatchLabelProvider(TypeNameMatchLabelProvider.SHOW_FULLYQUALIFIED,
+							PHPUILanguageToolkit.getInstance());
+				}
+				return labelProvider.getImage((TypeNameMatch) element);
+			} else {
+				return fImageManager.createImage(contributedImageDescriptor);
+			}
 		}
 
 		/*
@@ -1051,6 +1066,15 @@ public class FilteredTypesSelectionDialog extends FilteredItemsSelectionDialog i
 			}
 			result.append(getContainerName(type));
 			return result.toString();
+		}
+
+		public ImageDescriptor getContributedImageDescriptor(Object element) {
+			TypeNameMatch type = (TypeNameMatch) element;
+			if (fProviderExtension != null) {
+				fAdapter.setMatch(type);
+				return fProviderExtension.getImageDescriptor(fAdapter);
+			}
+			return null;
 		}
 
 		private String getContainerName(TypeNameMatch type) {
