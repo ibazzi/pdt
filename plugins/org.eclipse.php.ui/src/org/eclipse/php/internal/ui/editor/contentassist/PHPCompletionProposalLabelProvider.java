@@ -15,6 +15,8 @@ import org.eclipse.core.runtime.Assert;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.core.ArchiveProjectFragment;
 import org.eclipse.dltk.ui.DLTKPluginImages;
+import org.eclipse.dltk.ui.ScriptElementImageDescriptor;
+import org.eclipse.dltk.ui.ScriptElementImageProvider;
 import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.dltk.ui.text.completion.CompletionProposalLabelProvider;
 import org.eclipse.dltk.ui.text.completion.ICompletionProposalLabelProviderExtension;
@@ -28,6 +30,7 @@ import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
+import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
@@ -84,11 +87,11 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 				if (method.isConstructor() || !method.exists()) {
 					return;
 				}
-				nameBuffer.append(getReturnTypeSeparator(), StyledString.DECORATIONS_STYLER);
+				nameBuffer.append(getReturnTypeSeparator());
 				if (PHPFlags.isNullable(method.getFlags())) {
-					nameBuffer.append("?", StyledString.DECORATIONS_STYLER); //$NON-NLS-1$
+					nameBuffer.append("?"); //$NON-NLS-1$
 				}
-				String type = method.getType();
+				String type = PHPModelUtils.extractElementName(method.getType());
 				if (type == null) {
 					if ((method.getFlags() & IPHPModifiers.AccReturn) != 0) {
 						type = "mixed"; //$NON-NLS-1$
@@ -96,7 +99,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 						type = "void"; //$NON-NLS-1$
 					}
 				}
-				nameBuffer.append(type, StyledString.DECORATIONS_STYLER);
+				nameBuffer.append(type);
 			} catch (ModelException e) {
 				Logger.logException(e);
 			}
@@ -117,9 +120,10 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			}
 			String type = element.getType();
 			if (type != null) {
-				nameBuffer.append(getReturnTypeSeparator(), StyledString.DECORATIONS_STYLER);
-				nameBuffer.append(type, StyledString.DECORATIONS_STYLER);
+				nameBuffer.append(getReturnTypeSeparator());
+				nameBuffer.append(type);
 			}
+			appendQualifier(nameBuffer, element.getParent());
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
@@ -191,9 +195,6 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		IModelElement element = proposal.getModelElement();
 		if (element != null && element.getElementType() == IModelElement.FIELD) {
 			appendFieldType(buffer, proposal);
-			if (!proposal.getName().startsWith("$")) { //$NON-NLS-1$
-				appendQualifier(buffer, element.getParent());
-			}
 		}
 
 		return buffer;
@@ -226,6 +227,20 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 	}
 
+	protected ImageDescriptor decorateImageDescriptor(ImageDescriptor descriptor, CompletionProposal proposal) {
+		if (proposal.isConstructor()) {
+			int adornmentFlags = ScriptElementImageProvider.computeAdornmentFlags(proposal.getModelElement(),
+					ScriptElementImageProvider.SMALL_ICONS | ScriptElementImageProvider.OVERLAY_ICONS);
+			if (adornmentFlags == 0) {
+				return descriptor;
+			}
+			adornmentFlags ^= ScriptElementImageDescriptor.CONSTRUCTOR;
+			return new ScriptElementImageDescriptor(descriptor, adornmentFlags, ScriptElementImageProvider.SMALL_SIZE);
+		} else {
+			return super.decorateImageDescriptor(descriptor, proposal);
+		}
+	}
+
 	protected StyledString createStyledMethodProposalLabel(CompletionProposal methodProposal) {
 		StyledString nameBuffer = new StyledString();
 		boolean isAlias = methodProposal.getModelElement() instanceof AliasMethod;
@@ -255,7 +270,6 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 	}
 
 	protected StyledString appendStyledParameterList(StyledString buffer, CompletionProposal methodProposal) {
-		String[] parameterNames = methodProposal.findParameterNames(null);
 		IMethod method = (IMethod) methodProposal.getModelElement();
 		if (method instanceof AliasMethod) {
 			method = (IMethod) ((AliasMethod) method).getMethod();
@@ -273,47 +287,36 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			Logger.logException(e);
 		}
 
-		if (parameterNames != null) {
-			final Integer paramLimit = (Integer) methodProposal
+		if (parameters != null) {
+			Integer paramLimit = (Integer) methodProposal
 					.getAttribute(ScriptCompletionProposalCollector.ATTR_PARAM_LIMIT);
-			if (paramLimit != null) {
-				for (int i = 0; i < parameterNames.length; i++) {
-					if (i >= paramLimit.intValue()) {
-						break;
-					}
-					if (i > 0) {
-						buffer.append(',');
-						buffer.append(' ');
-					}
-					if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {
-						buffer.append(PHPElementLabels.REFERENCE_STRING);
-					}
-					if (isVariadic && i + 1 == parameterNames.length) {
-						buffer.append(ScriptElementLabels.ELLIPSIS_STRING); // $NON-NLS-1$
-					}
-					buffer.append(parameterNames[i]);
-				}
-				return buffer;
+			if (paramLimit == null) {
+				paramLimit = parameters.length;
 			}
+			return appendStyledParameterSignature(buffer, parameters, isVariadic, paramLimit);
 		}
-		return appendStyledParameterSignature(buffer, parameterNames, parameters, isVariadic);
+		return buffer;
 	}
 
-	protected StyledString appendStyledParameterSignature(StyledString buffer, String[] parameterNames,
-			IParameter[] parameters, boolean isVariadic) {
-		if (parameterNames != null) {
-			for (int i = 0; i < parameterNames.length; i++) {
+	protected StyledString appendStyledParameterSignature(StyledString buffer, IParameter[] parameters,
+			boolean isVariadic, int paramLimit) {
+		if (parameters != null) {
+			for (int i = 0; i < paramLimit; i++) {
 				if (i > 0) {
 					buffer.append(',');
+					buffer.append(' ');
+				}
+				if (parameters[i].getType() != null) {
+					buffer.append(parameters[i].getType());
 					buffer.append(' ');
 				}
 				if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {
 					buffer.append(PHPElementLabels.REFERENCE_STRING);
 				}
-				if (isVariadic && i + 1 == parameterNames.length) {
+				if (isVariadic && i + 1 == parameters.length) {
 					buffer.append(ScriptElementLabels.ELLIPSIS_STRING);
 				}
-				buffer.append(parameterNames[i]);
+				buffer.append(parameters[i].getName());
 			}
 		}
 		return buffer;
@@ -353,11 +356,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			Logger.logException(e);
 		}
 		if (!isNamespace) {
-			appendQualifier(nameBuffer, type);
-			if (type.getParent() != null) {
-				nameBuffer.append(" - ", StyledString.DECORATIONS_STYLER); //$NON-NLS-1$
-				nameBuffer.append(type.getParent().getElementName(), StyledString.QUALIFIER_STYLER);
-			}
+			appendQualifier(nameBuffer, type.getParent());
 		}
 
 		return nameBuffer;

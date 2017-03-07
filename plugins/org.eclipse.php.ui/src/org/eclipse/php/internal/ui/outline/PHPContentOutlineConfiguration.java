@@ -17,11 +17,12 @@ import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ISourceReference;
 import org.eclipse.dltk.ui.DLTKPluginImages;
-import org.eclipse.dltk.ui.ProblemsLabelDecorator;
+import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.dltk.ui.ScriptElementImageProvider;
 import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.dltk.ui.viewsupport.AppearanceAwareLabelProvider;
 import org.eclipse.dltk.ui.viewsupport.ScriptUILabelProvider;
+import org.eclipse.dltk.ui.viewsupport.StyledDecoratingModelLabelProvider;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.Separator;
@@ -32,14 +33,12 @@ import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.*;
-import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider.IStyledLabelProvider;
 import org.eclipse.php.internal.ui.PHPUIMessages;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.actions.SortAction;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
 import org.eclipse.php.internal.ui.outline.PHPOutlineContentProvider.UseStatementsNode;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
-import org.eclipse.php.ui.OverrideIndicatorLabelDecorator;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.actions.CompoundContributionItem;
 import org.eclipse.wst.html.ui.views.contentoutline.HTMLContentOutlineConfiguration;
@@ -64,7 +63,7 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 
 	protected PHPOutlineContentProvider fContentProvider = null;
 	protected JFaceNodeContentProvider fContentProviderHTML = null;
-	protected ScriptUILabelProvider fLabelProvider = null;
+	protected ILabelProvider fLabelProvider = null;
 	protected PHPOutlineLabelProvider fLabelProviderHTML = null;
 	private IPropertyChangeListener propertyChangeListener;
 	private ChangeOutlineModeAction changeOutlineModeActionPHP;
@@ -74,6 +73,7 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 	private ScriptUILabelProvider fSimpleLabelProvider;
 	// private ShowGroupsAction fShowGroupsAction;
 	private boolean fShowAttributes = false;
+	protected IPreferenceStore fStore = DLTKUIPlugin.getDefault().getPreferenceStore();
 	private CustomFiltersActionGroup fCustomFiltersActionGroup;
 
 	/** See {@link #MODE_PHP}, {@link #MODE_HTML} */
@@ -141,7 +141,7 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 			System.arraycopy(items, 0, combinedItems, 3, items.length);
 			items = combinedItems;
 		}
-		if (changeOutlineModeActionHTML.isChecked() && sortAction != null) {
+		if (changeOutlineModeActionHTML.isChecked()) {
 			sortAction.setEnabled(false);
 		}
 		return items;
@@ -255,24 +255,24 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 			viewer.setUseHashlookup(true);
 		}
 
+		ILabelProvider provider = null;
 		if (fLabelProvider == null) {
-			fLabelProvider = new PHPAppearanceAwareLabelProvider(AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS
-					| ScriptElementLabels.F_APP_TYPE_SIGNATURE | ScriptElementLabels.ALL_CATEGORY,
-					AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS, null);
-			fLabelProvider.addLabelDecorator(new OverrideIndicatorLabelDecorator());
-			fLabelProvider.addLabelDecorator(new ProblemsLabelDecorator());
+			fLabelProvider = new StyledDecoratingModelLabelProvider(new PHPAppearanceAwareLabelProvider(
+					AppearanceAwareLabelProvider.DEFAULT_TEXTFLAGS | ScriptElementLabels.F_APP_TYPE_SIGNATURE
+							| ScriptElementLabels.ALL_CATEGORY | ScriptElementLabels.COLORIZE,
+					AppearanceAwareLabelProvider.DEFAULT_IMAGEFLAGS, fStore));
 		}
 
-		if (fLabelProviderHTML == null) {
-			fLabelProviderHTML = new PHPOutlineLabelProvider(fLabelProvider);
-			fLabelProviderHTML.fShowAttributes = fShowAttributes;
-		}
 		if (MODE_PHP == mode) {
-			return new PHPStyledDecoratingModelLabelProvider((IStyledLabelProvider) fLabelProvider);
+			provider = fLabelProvider;
 		} else if (MODE_HTML == mode) {
-			return new PHPStyledDecoratingModelLabelProvider((IStyledLabelProvider) fLabelProviderHTML);
+			if (fLabelProviderHTML == null) {
+				fLabelProviderHTML = new PHPOutlineLabelProvider(fLabelProvider);
+				fLabelProviderHTML.fShowAttributes = fShowAttributes;
+			}
+			provider = fLabelProviderHTML;
 		}
-		return (ILabelProvider) viewer.getLabelProvider();
+		return provider;
 	}
 
 	public ISelection getSelection(final TreeViewer viewer, final ISelection selection) {
@@ -374,18 +374,6 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 		}
 	}
 
-	class PHPStyledDecoratingModelLabelProvider extends DecoratingStyledCellLabelProvider implements ILabelProvider {
-
-		public PHPStyledDecoratingModelLabelProvider(IStyledLabelProvider labelProvider) {
-			super(labelProvider, null, null);
-		}
-
-		public String getText(Object element) {
-			return getStyledText(element).toString();
-		}
-
-	}
-
 	class PHPAppearanceAwareLabelProvider extends AppearanceAwareLabelProvider {
 
 		public PHPAppearanceAwareLabelProvider(IPreferenceStore store) {
@@ -399,16 +387,15 @@ public class PHPContentOutlineConfiguration extends HTMLContentOutlineConfigurat
 		}
 
 		public String getText(Object element) {
+			return getStyledText(element).toString();
+		}
+
+		@Override
+		public StyledString getStyledText(Object element) {
 			if (element instanceof IImportContainer) {
-				return PHPUIMessages.PHPContentOutlineConfiguration_2;
+				return new StyledString(PHPUIMessages.PHPContentOutlineConfiguration_2);
 			}
-			if (element instanceof IModelElement) {
-				IModelElement me = (IModelElement) element;
-				if (me.getElementType() == IModelElement.FIELD) {
-					return me.getElementName();
-				}
-			}
-			return super.getText(element);
+			return super.getStyledText(element);
 		}
 	}
 

@@ -12,10 +12,7 @@
 package org.eclipse.php.internal.ui.editor.contentassist;
 
 import org.eclipse.dltk.core.*;
-import org.eclipse.dltk.ui.ScriptElementImageDescriptor;
-import org.eclipse.dltk.ui.ScriptElementImageProvider;
 import org.eclipse.dltk.ui.text.completion.*;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.internal.core.codeassist.AliasField;
@@ -90,26 +87,6 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 			completionProposal = (ScriptCompletionProposal) createTypeProposal(proposal);
 		} else {
 			completionProposal = (ScriptCompletionProposal) super.createScriptCompletionProposal(proposal);
-		}
-		if (proposal.getKind() == CompletionProposal.METHOD_DECLARATION) {
-			IMethod method = (IMethod) proposal.getModelElement();
-			try {
-				if (method.isConstructor()) {
-					// replace method icon with class icon:
-					int flags = proposal.getFlags();
-					ImageDescriptor typeImageDescriptor = ScriptElementImageProvider.getTypeImageDescriptor(flags,
-							false);
-					int adornmentFlags = ScriptElementImageProvider.computeAdornmentFlags(method.getDeclaringType(),
-							ScriptElementImageProvider.SMALL_ICONS | ScriptElementImageProvider.OVERLAY_ICONS);
-					ScriptElementImageDescriptor descriptor = new ScriptElementImageDescriptor(typeImageDescriptor,
-							adornmentFlags, ScriptElementImageProvider.SMALL_SIZE);
-					completionProposal.setImage(getImage(descriptor));
-				}
-			} catch (ModelException e) {
-				if (DLTKCore.DEBUG_COMPLETION) {
-					e.printStackTrace();
-				}
-			}
 		}
 		return completionProposal;
 	}
