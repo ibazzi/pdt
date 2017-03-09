@@ -398,6 +398,9 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 				info.nameSourceStart = arg.getNameStart();
 				info.nameSourceEnd = arg.getNameEnd() - 1;
 				info.declarationStart = arg.sourceStart();
+				if (arg instanceof FormalParameter && ((FormalParameter) arg).getParameterType() != null) {
+					info.type = ((FormalParameter) arg).getParameterType().getName();
+				}
 				fRequestor.enterField(info);
 				fRequestor.exitField(arg.sourceEnd() - 1);
 			}
@@ -800,27 +803,29 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		info.nameSourceStart = var.sourceStart();
 		info.declarationStart = declaration.getDeclarationStart();
 		info.modifiers = markAsDeprecated(info.modifiers, declaration);
-		PHPDocBlock doc = declaration.getPHPDoc();
+		info.type = getFieldType(declaration.getPHPDoc(), declaration.getName());
+		fInfoStack.push(info);
+		fRequestor.enterField(info);
+		return true;
+	}
+
+	private String getFieldType(PHPDocBlock doc, String fieldName) {
 		if (doc != null) {
 			for (PHPDocTag tag : doc.getTags(TagKind.VAR)) {
 				// do it like for
 				// PHPDocumentationContentAccess#handleBlockTags(List tags):
 				// variable name can be optional, but if present keep only
 				// the good ones
-				if (tag.getVariableReference() != null
-						&& !tag.getVariableReference().getName().equals(declaration.getName())) {
+				if (tag.getVariableReference() != null && !tag.getVariableReference().getName().equals(fieldName)) {
 					continue;
 				}
 
 				if (tag.getTypeReferences().size() > 0) {
-					info.type = PHPModelUtils.appendTypeReferenceNames(tag.getTypeReferences());
-					break;
+					return PHPModelUtils.appendTypeReferenceNames(tag.getTypeReferences());
 				}
 			}
 		}
-		fInfoStack.push(info);
-		fRequestor.enterField(info);
-		return true;
+		return null;
 	}
 
 	/**
@@ -944,6 +949,7 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		info.nameSourceEnd = constantName.sourceEnd() - 1;
 		info.nameSourceStart = constantName.sourceStart();
 		info.declarationStart = declaration.sourceStart();
+		info.type = getFieldType(declaration.getPHPDoc(), declaration.getName());
 		info.modifiers = markAsDeprecated(info.modifiers, declaration);
 
 		fInfoStack.push(info);
