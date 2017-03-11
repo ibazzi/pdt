@@ -283,6 +283,9 @@ public class ValidatorVisitor extends PHPASTVisitor {
 		try {
 			TypeReference type = info.getTypeReference();
 			IModelElement[] types = PHPModelUtils.getTypes(name, context.getSourceModule(), type.start(), null);
+			if (types.length == 0) {
+				types = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
+			}
 			if (types.length == 0 && info.isUseStatement()) {
 				types = sourceModule.codeSelect(type.start(), type.end() - type.start());
 			}
