@@ -436,7 +436,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_VARIABLE_DEFAULT_COLOR = ColorHelper.getColorString(106, 62, 62);
+	public static final String EDITOR_VARIABLE_DEFAULT_COLOR = ColorHelper.getColorString(0, 0, 0);
 
 	/**
 	 * A named preference that controls the smart tab behavior.
