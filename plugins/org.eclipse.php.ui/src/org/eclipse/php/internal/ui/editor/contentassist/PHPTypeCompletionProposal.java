@@ -19,12 +19,10 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.IType;
-import org.eclipse.dltk.internal.ui.text.hover.CompletionHoverControlCreator;
-import org.eclipse.dltk.ui.PreferenceConstants;
 import org.eclipse.dltk.ui.text.ScriptTextTools;
 import org.eclipse.dltk.ui.text.completion.ScriptCompletionProposal;
-import org.eclipse.jface.internal.text.html.BrowserInformationControl;
-import org.eclipse.jface.text.*;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.internal.core.PHPCoreConstants;
@@ -33,72 +31,53 @@ import org.eclipse.php.internal.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.util.Signature;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.text.edits.TextEdit;
 
-@Deprecated
-public class PHPCompletionProposal extends ScriptCompletionProposal implements IPHPCompletionProposalExtension {
+/**
+ * If passed compilation unit is not null, the replacement string will be seen
+ * as a qualified type name.
+ */
+public class PHPTypeCompletionProposal extends ScriptCompletionProposal implements IPHPCompletionProposalExtension {
 
-	/**
-	 * The control creator.
-	 */
-	private IInformationControlCreator fCreator;
-	private ISourceModule fSourceModule;
+	protected final ISourceModule fSourceModule;
+
 	/** The unqualified type name. */
 	private final String fUnqualifiedTypeName;
+
 	/** The fully qualified type name. */
 	private final String fFullyQualifiedTypeName;
 
-	@Deprecated
-	public PHPCompletionProposal(String replacementString, int replacementOffset, int replacementLength, Image image,
-			String displayString, int relevance) {
-		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance);
-		fUnqualifiedTypeName = null;
-		fFullyQualifiedTypeName = null;
+	public PHPTypeCompletionProposal(String replacementString, ISourceModule cu, int replacementOffset,
+			int replacementLength, Image image, StyledString displayString, int relevance) {
+		this(replacementString, cu, replacementOffset, replacementLength, image, displayString, relevance, null);
 	}
 
-	@Deprecated
-	public PHPCompletionProposal(String replacementString, int replacementOffset, int replacementLength, Image image,
-			String displayString, int relevance, boolean indoc) {
-		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance, indoc);
-		fUnqualifiedTypeName = null;
-		fFullyQualifiedTypeName = null;
+	public PHPTypeCompletionProposal(String replacementString, ISourceModule cu, int replacementOffset,
+			int replacementLength, Image image, String displayString, int relevance, String fullyQualifiedTypeName) {
+		this(replacementString, cu, replacementOffset, replacementLength, image, new StyledString(displayString),
+				relevance, null);
 	}
 
-	public PHPCompletionProposal(String replacementString, ISourceModule sourceModule, int replacementOffset,
+	/**
+	 * @since 5.5
+	 */
+	public PHPTypeCompletionProposal(String replacementString, ISourceModule cu, int replacementOffset,
 			int replacementLength, Image image, StyledString displayString, int relevance,
 			String fullyQualifiedTypeName) {
-		this(replacementString, sourceModule, replacementOffset, replacementLength, image, displayString, relevance,
-				false, fullyQualifiedTypeName);
+		this(replacementString, cu, replacementOffset, replacementLength, image, displayString, relevance, false,
+				fullyQualifiedTypeName);
 	}
 
-	public PHPCompletionProposal(String replacementString, ISourceModule sourceModule, int replacementOffset,
+	public PHPTypeCompletionProposal(String replacementString, ISourceModule sourceModule, int replacementOffset,
 			int replacementLength, Image image, StyledString displayString, int relevance, boolean indoc,
 			String fullyQualifiedTypeName) {
 		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance, indoc);
 		this.fSourceModule = sourceModule;
 		fFullyQualifiedTypeName = fullyQualifiedTypeName;
 		fUnqualifiedTypeName = fullyQualifiedTypeName != null ? Signature.getSimpleName(fullyQualifiedTypeName) : null;
-	}
-
-	protected boolean isValidPrefix(String prefix) {
-		String word = getDisplayString();
-		if (word.startsWith("$") && !prefix.startsWith("$")) { //$NON-NLS-1$ //$NON-NLS-2$
-			word = word.substring(1);
-		}
-		boolean result = isPrefix(prefix, word);
-		if (!result && ProposalExtraInfo.isClassInNamespace(getExtraInfo())) {
-			result = isPrefix(prefix, fUnqualifiedTypeName) || isPrefix(prefix, fFullyQualifiedTypeName);
-		}
-		return result;
-	}
-
-	protected boolean isSmartTrigger(char trigger) {
-		return trigger == '$';
 	}
 
 	public void apply(IDocument document, char trigger, int offset) {
@@ -139,9 +118,7 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 		if (impRewrite != null && fFullyQualifiedTypeName != null) {
 			String replacementString = getReplacementString();
 			String qualifiedType = fFullyQualifiedTypeName;
-			if (qualifiedType.indexOf(NamespaceReference.NAMESPACE_DELIMITER) != -1
-					&& replacementString.startsWith(qualifiedType)
-					&& !replacementString.endsWith(String.valueOf(';'))) {
+			if (replacementString.startsWith(qualifiedType) && !replacementString.endsWith(String.valueOf(';'))) {
 				IType[] types = impRewrite.getSourceModule().getTypes();
 				if (types.length > 0 && types[0].getSourceRange().getOffset() <= offset) {
 					// ignore positions above type.
@@ -151,6 +128,31 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 			}
 		}
 		return false;
+	}
+
+	protected boolean isValidPrefix(String prefix) {
+		String word = getDisplayString();
+		if (word.startsWith("$") && !prefix.startsWith("$")) { //$NON-NLS-1$ //$NON-NLS-2$
+			word = word.substring(1);
+		}
+		boolean result = isPrefix(prefix, word);
+		if (!result && ProposalExtraInfo.isClassInNamespace(getExtraInfo())) {
+			result = isPrefix(prefix, fUnqualifiedTypeName) || isPrefix(prefix, fFullyQualifiedTypeName);
+		}
+		return result;
+	}
+
+	@Override
+	public CharSequence getPrefixCompletionText(IDocument document, int completionOffset) {
+		return fUnqualifiedTypeName;
+	}
+
+	protected boolean isSmartTrigger(char trigger) {
+		return trigger == '$';
+	}
+
+	public Object getExtraInfo() {
+		return ProposalExtraInfo.DEFAULT;
 	}
 
 	public IContextInformation getContextInformation() {
@@ -174,23 +176,4 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 		return PHPUiPlugin.getDefault().getTextTools();
 	}
 
-	public IInformationControlCreator getInformationControlCreator() {
-		if (fCreator == null) {
-			fCreator = new CompletionHoverControlCreator(new IInformationControlCreator() {
-				public IInformationControl createInformationControl(Shell parent) {
-					if (BrowserInformationControl.isAvailable(parent)) {
-						return new BrowserInformationControl(parent, PreferenceConstants.APPEARANCE_DOCUMENTATION_FONT,
-								true);
-					} else {
-						return new DefaultInformationControl(parent, true);
-					}
-				}
-			}, true);
-		}
-		return fCreator;
-	}
-
-	public Object getExtraInfo() {
-		return ProposalExtraInfo.DEFAULT;
-	}
 }

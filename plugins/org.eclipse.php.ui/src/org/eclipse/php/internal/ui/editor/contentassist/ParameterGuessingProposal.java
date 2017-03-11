@@ -15,30 +15,34 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.ui.ScriptElementLabels;
+import org.eclipse.dltk.ui.text.completion.ReplacementBuffer;
+import org.eclipse.dltk.ui.text.completion.ScriptContentAssistInvocationContext;
+import org.eclipse.dltk.ui.text.completion.ScriptMethodCompletionProposal;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.text.*;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.link.*;
-import org.eclipse.jface.viewers.StyledString;
-import org.eclipse.php.internal.core.PHPCoreConstants;
+import org.eclipse.jface.text.link.LinkedModeUI.ExitFlags;
+import org.eclipse.osgi.util.TextProcessor;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
-import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
+import org.eclipse.php.internal.ui.editor.EditorHighlightingSynchronizer;
+import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
 import org.eclipse.php.internal.ui.text.template.contentassist.PositionBasedCompletionProposal;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
 
 /**
@@ -47,22 +51,17 @@ import org.eclipse.ui.texteditor.link.EditorLinkedModeUI;
  * includes templates that represent the best guess completion for each
  * parameter of a method.
  */
-public final class ParameterGuessingProposal extends PHPOverrideCompletionProposal
-		implements IPHPCompletionProposalExtension {
+public final class ParameterGuessingProposal extends ScriptMethodCompletionProposal {
 	private static final char[] NO_TRIGGERS = new char[0];
-	protected static final char LPAREN = '('; // $NON-NLS-1$
-	protected static final char RPAREN = ')'; // $NON-NLS-1$
-	protected static final String COMMA = ", "; //$NON-NLS-1$
-	private CompletionProposal fProposal;
+	protected static final String THIS = "$this->";//$NON-NLS-1$
+	protected static final String DOUBLE_COLON = "::";//$NON-NLS-1$
+	protected static final String PARENT_DOUBLE_COLON = "parent::";//$NON-NLS-1$
+	protected static final String SELF_DOUBLE_COLON = "self::";//$NON-NLS-1$
 	private IMethod method;
 	private IMethod guessingMethod;
 	private final boolean fFillBestGuess;
-	private boolean fReplacementStringComputed = false;
-	private Object extraInfo;
-	private boolean fReplacementLengthComputed;
 	private String alias = null;
-	private IDocument document = null;
-	private IScriptProject sProject = null;
+	private int prefixLength = 0;
 
 	private ICompletionProposal[][] fChoices; // initialized by
 	// guessParameters()
@@ -70,88 +69,106 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 
 	private IRegion fSelectedRegion; // initialized by apply()
 	private IPositionUpdater fUpdater;
+	private int fContextInformationPosition;
+	private LazyPHPTypeCompletionProposal fTypeProsoal;
 
-	@Deprecated
-	public ParameterGuessingProposal(CompletionProposal proposal, IScriptProject jproject, ISourceModule cu,
-			String methodName, String[] paramTypes, int start, int length, String displayName,
-			String completionProposal, boolean fillBestGuess, Object extraInfo, IDocument document) {
-		this(proposal, jproject, cu, methodName, paramTypes, start, length, new StyledString(displayName),
-				completionProposal, fillBestGuess, extraInfo, document);
-	}
-
-	public ParameterGuessingProposal(CompletionProposal proposal, IScriptProject jproject, ISourceModule cu,
-			String methodName, String[] paramTypes, int start, int length, StyledString displayName,
-			String completionProposal, boolean fillBestGuess, Object extraInfo, IDocument document) {
-		super(jproject, cu, methodName, paramTypes, start, length, displayName, completionProposal);
-		this.fProposal = proposal;
-		method = (IMethod) fProposal.getModelElement();
+	public ParameterGuessingProposal(CompletionProposal proposal, ScriptContentAssistInvocationContext context,
+			boolean fillBestGuess) {
+		super(proposal, context);
+		fFillBestGuess = fillBestGuess;
+		method = (IMethod) proposal.getModelElement();
 		guessingMethod = method;
-		this.fFillBestGuess = fillBestGuess;
-		this.extraInfo = extraInfo;
-		this.document = document;
-		this.sProject = jproject;
+
+		if (fProposal.isConstructor()) {
+			fTypeProsoal = new LazyPHPTypeCompletionProposal((CompletionProposal) proposal.getExtraInfo(), context);
+		}
 	}
 
 	/*
 	 * @see ICompletionProposalExtension#apply(IDocument, char)
 	 */
-	public void apply(IDocument document, char trigger, int offset) {
+	public void apply(final IDocument document, char trigger, int offset) {
 		try {
-			dealPrefix();
-			dealSuffix(document, offset);
-
-			// TODO lengthChange is workaround for replacement string changed by
-			// super class, this needs better solution
-			int lengthChange = getReplacementString().length();
+			if (fTypeProsoal != null) {
+				int oldLen = document.getLength();
+				fTypeProsoal.apply(document);
+				setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
+			}
 			super.apply(document, trigger, offset);
-			lengthChange = Math.max(0, getReplacementString().length() - lengthChange);
-
 			int baseOffset = getReplacementOffset();
 			String replacement = getReplacementString();
-			boolean hasParameters = false;
-			try {
-				hasParameters = method.getParameters().length != 0;
-			} catch (ModelException e) {
-				PHPUiPlugin.log(e);
-			}
 
-			if (hasParameters && getTextViewer() != null) {
+			if (fPositions != null && fPositions.length > 0 && getTextViewer() != null) {
+
 				LinkedModeModel model = new LinkedModeModel();
 
-				if ((fPositions != null && fPositions.length > 0)) {
-					for (int i = 0; i < fPositions.length; i++) {
-						LinkedPositionGroup group = new LinkedPositionGroup();
-						int positionOffset = fPositions[i].getOffset() + lengthChange;
-						int positionLength = fPositions[i].getLength();
-
-						if (fChoices[i].length < 2) {
-							group.addPosition(new LinkedPosition(document, positionOffset, positionLength,
-									LinkedPositionGroup.NO_STOP));
-						} else {
-							ensurePositionCategoryInstalled(document, model);
-							document.addPosition(getCategory(), fPositions[i]);
-							group.addPosition(new ProposalPosition(document, positionOffset, positionLength,
-									LinkedPositionGroup.NO_STOP, fChoices[i]));
-						}
-						model.addGroup(group);
-					}
-				} else {
+				for (int i = 0; i < fPositions.length; i++) {
 					LinkedPositionGroup group = new LinkedPositionGroup();
-					group.addPosition(new LinkedPosition(document, getReplacementOffset() + getCursorPosition(), 0,
-							LinkedPositionGroup.NO_STOP));
+					int positionOffset = fPositions[i].getOffset();
+					int positionLength = fPositions[i].getLength();
+
+					if (fChoices[i].length < 2) {
+						group.addPosition(new LinkedPosition(document, positionOffset, positionLength,
+								LinkedPositionGroup.NO_STOP));
+					} else {
+						ensurePositionCategoryInstalled(document, model);
+						document.addPosition(getCategory(), fPositions[i]);
+						group.addPosition(new ProposalPosition(document, positionOffset, positionLength,
+								LinkedPositionGroup.NO_STOP, fChoices[i]));
+					}
 					model.addGroup(group);
 				}
 
 				model.forceInstall();
+				PHPStructuredEditor editor = getPHPEditor();
+				if (editor != null) {
+					model.addLinkingListener(new EditorHighlightingSynchronizer(editor));
+				}
 
 				LinkedModeUI ui = new EditorLinkedModeUI(model, getTextViewer());
 				ui.setExitPosition(getTextViewer(), baseOffset + replacement.length(), 0, Integer.MAX_VALUE);
+				// exit character can be either ')' or ';'
+				final char exitChar = replacement.charAt(replacement.length() - 1);
+				ui.setExitPolicy(new ExitPolicy(exitChar, document) {
+					@Override
+					public ExitFlags doExit(LinkedModeModel model2, VerifyEvent event, int offset2, int length) {
+						if (event.character == ',') {
+							for (int i = 0; i < fPositions.length - 1; i++) {
+								Position position = fPositions[i];
+								if (position.offset <= offset2
+										&& offset2 + length <= position.offset + position.length) {
+									try {
+										ITypedRegion partition = TextUtilities.getPartition(document,
+												"___java_partitioning", offset2 + length, false);
+										if (IDocument.DEFAULT_CONTENT_TYPE.equals(partition.getType())
+												|| offset2 + length == partition.getOffset() + partition.getLength()) {
+											event.character = '\t';
+											event.keyCode = SWT.TAB;
+											return null;
+										}
+									} catch (BadLocationException e) {
+										// continue; not serious enough to log
+									}
+								}
+							}
+						} else if (event.character == ')' && exitChar != ')') {
+							// exit from link mode when user is in the last ')'
+							// position.
+							Position position = fPositions[fPositions.length - 1];
+							if (position.offset <= offset2 && offset2 + length <= position.offset + position.length) {
+								return new ExitFlags(ILinkedModeListener.UPDATE_CARET, false);
+							}
+						}
+						return super.doExit(model2, event, offset2, length);
+					}
+				});
 				ui.setCyclingMode(LinkedModeUI.CYCLE_WHEN_NO_PARENT);
 				ui.setDoContextInfo(true);
 				ui.enter();
 				fSelectedRegion = ui.getSelectedRegion();
+
 			} else {
-				fSelectedRegion = new Region(baseOffset + getCursorPosition(), 0);
+				fSelectedRegion = new Region(baseOffset + replacement.length(), 0);
 			}
 
 		} catch (BadLocationException e) {
@@ -163,191 +180,64 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 			PHPUiPlugin.log(e);
 			openErrorDialog(e);
 		}
-	}
 
-	private void dealPrefix() {
-		String prefix = ""; //$NON-NLS-1$
-		if (shouldHaveGlobalNamespace()) {
-			prefix += NamespaceReference.NAMESPACE_SEPARATOR;
-		}
-
-		if (ProposalExtraInfo.isMethodOnly(extraInfo)) {
-			setReplacementString(prefix + method.getElementName());
-			return;
-		}
-
-		IEclipsePreferences prefs = InstanceScope.INSTANCE.getNode(PHPCorePlugin.ID);
-		boolean fileArgumentNames = prefs.getBoolean(PHPCoreConstants.CODEASSIST_FILL_ARGUMENT_NAMES, true);
-		if (fileArgumentNames && !fReplacementStringComputed)
-			setReplacementString(computeReplacementString(prefix));
-		if (!fileArgumentNames)
-			setReplacementString(prefix + super.getReplacementString());
-	}
-
-	private boolean shouldHaveGlobalNamespace() {
-		if (ProjectOptions.getPhpVersion(sProject.getProject()).isLessThan(PHPVersion.PHP5_3)) {
-			return false;
-		}
-		IType type = method.getDeclaringType();
-		boolean isInNamespace = PHPModelUtils.getCurrentNamespaceIfAny(fSourceModule, getReplacementOffset()) != null;
-
-		boolean isNotAlias = !(type instanceof AliasType);
-		boolean isNamespacedType = PHPModelUtils.getCurrentNamespace(type) != null;
-
-		try {
-			boolean globalMethod = (type == null && method.getNamespace() == null);
-			boolean globalConstructor = type != null && !isNamespacedType && method.isConstructor();
-			if (((globalMethod && prefixGlobalFunctionCall()) || globalConstructor) && isInNamespace && isNotAlias
-					&& document.getChar(getReplacementOffset() - 1) != NamespaceReference.NAMESPACE_SEPARATOR) {
-				return true;
-			}
-		} catch (ModelException e) {
-			PHPUiPlugin.log(e);
-		} catch (BadLocationException e) {
-			PHPUiPlugin.log(e);
-		}
-		return false;
-	}
-
-	private boolean prefixGlobalFunctionCall() {
-		return Platform.getPreferencesService().getBoolean(PHPCorePlugin.ID,
-				PHPCoreConstants.CODEASSIST_PREFIX_GLOBAL_FUNCTION_CALL, false, null);
-	}
-
-	private void dealSuffix(IDocument document, int offset) {
-		boolean toggleEating = isToggleEating();
-		boolean insertCompletion = insertCompletion();
-		String replacement = getReplacementString();
-		int posReplacementLP = replacement.indexOf(LPAREN);
-		if (posReplacementLP >= 0 && replacement.endsWith(String.valueOf(RPAREN))) {
-			int searchOffset;
-			if (!insertCompletion || toggleEating) {
-				searchOffset = getReplacementOffset() + getReplacementLength();
-			} else {
-				searchOffset = offset;
-			}
-			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=459377
-			int posLP = getRelativePositionOf(document, searchOffset, LPAREN);
-			if (posLP >= 0) {
-				int posRP = getRelativePositionOf(document, searchOffset + (posLP + 1), RPAREN);
-				if (posRP < 0) {
-					// unset all parameters that have to be written in the
-					// document, they should not collide with the text
-					// already written in the document after left parenthesis
-					fPositions = null;
-					fChoices = null;
-					// we truncate the replacement text starting
-					// from left parenthesis (included)
-					replacement = replacement.substring(0, posReplacementLP);
-					setReplacementString(replacement);
-					// put the cursor before left parenthesis in document,
-					// it will be put after left parenthesis through
-					// PHPOverrideCompletionProposal#calculateCursorPosition()
-					setReplacementLength(getReplacementLength() + posLP);
-				} else {
-					// put the cursor after right parenthesis in document
-					setReplacementLength(getReplacementLength() + (posLP + 1) + (posRP + 1));
-				}
-			}
-		} else {
-			// unset all existing parameters (if any), they are useless now
-			fPositions = null;
-			fChoices = null;
-			int searchOffset;
-			if (!insertCompletion || toggleEating) {
-				searchOffset = getReplacementOffset() + getReplacementLength();
-			} else {
-				searchOffset = offset;
-			}
-			int posLP = getRelativePositionOf(document, searchOffset, LPAREN);
-			if (posLP < 0) {
-				// append missing parentheses in insert and overwrite mode
-				replacement = replacement + LPAREN + RPAREN;
-				setReplacementString(replacement);
-			} else {
-				// put the cursor before left parenthesis in document,
-				// it will be put after left parenthesis through
-				// PHPOverrideCompletionProposal#calculateCursorPosition()
-				setReplacementLength(getReplacementLength() + posLP);
-			}
-		}
 	}
 
 	/**
-	 * Retrieves the position of the first occurrence of a "search" character,
-	 * starting from "offset" position and until end of line.
-	 * 
-	 * @param document
-	 * @param offset
-	 * @param search
-	 *            character to search
-	 * @return position of "search" character relative to offset, -1 if not
-	 *         found or if there are non-whitespace characters between "offset"
-	 *         position and the first occurrence of the "search" character
+	 * Returns the currently active java editor, or <code>null</code> if it
+	 * cannot be determined.
+	 *
+	 * @return the currently active java editor, or <code>null</code>
 	 */
-	private int getRelativePositionOf(IDocument document, int offset, char search) {
-		try {
-			IRegion line = document.getLineInformationOfOffset(offset);
-			int lineEnd = line.getOffset() + line.getLength();
-			if (offset >= lineEnd) {
-				// end of line
-				return -1;
-			}
-			int pos = 0;
-			while (offset + pos < lineEnd - 1 // 1 = "search" length
-					&& Character.isWhitespace(document.getChar(offset + pos))) {
-				pos++;
-			}
-			return document.getChar(offset + pos) == search ? pos : -1;
-		} catch (BadLocationException e) {
-		}
-		return -1;
+	private PHPStructuredEditor getPHPEditor() {
+		IEditorPart part = PHPUiPlugin.getActivePage().getActiveEditor();
+		if (part instanceof PHPStructuredEditor)
+			return (PHPStructuredEditor) part;
+		else
+			return null;
 	}
 
 	/**
-	 * Gets the replacement length.
-	 * 
-	 * @return Returns a int
+	 * @since 3.0
 	 */
-	public final int getReplacementLength() {
-		if (!fReplacementLengthComputed)
-			setReplacementLength(fProposal.getReplaceEnd() - fProposal.getReplaceStart());
-		return super.getReplacementLength();
-	}
-
-	/**
-	 * Sets the replacement length.
-	 * 
-	 * @param replacementLength
-	 *            The replacementLength to set
-	 */
-	public final void setReplacementLength(int replacementLength) {
-		fReplacementLengthComputed = true;
-		super.setReplacementLength(replacementLength);
-	}
-
-	/*
-	 * @seeorg.eclipse.jdt.internal.ui.text.java.JavaMethodCompletionProposal#
-	 * needsLinkedMode()
-	 */
-	protected boolean needsLinkedMode() {
-		return false; // we handle it ourselves
-	}
-
-	private String computeReplacementString(String prefix) {
-		fReplacementStringComputed = true;
+	@Override
+	protected void computeReplacement(ReplacementBuffer buffer) {
 		try {
 			// we should get the real constructor here
 			method = getProperMethod(guessingMethod);
-			if (alias != null || (hasParameters() && hasArgumentList())) {
-				return computeGuessingCompletion(prefix);
+			IMember element = (IMember) fInvocationContext.getSourceModule().getElementAt(getReplacementOffset());
+			if (element != null) {
+				if (ProposalExtraInfo.isInsertThis(fProposal.getExtraInfo())) {
+					IType proposalMethodParent = (IType) method.getParent();
+					IModelElement currentType = element;
+					while (currentType instanceof IMethod) {
+						currentType = currentType.getParent();
+					}
+					if ((PHPFlags.isClass(proposalMethodParent.getFlags())
+							|| PHPFlags.isTrait(proposalMethodParent.getFlags())) && currentType instanceof IType) {
+						String prefix = "";
+						if (PHPFlags.isStatic(method.getFlags())) {
+							IMethod m = ((IType) currentType).getMethod(method.getElementName());
+							if (m.exists()) {
+								prefix = SELF_DOUBLE_COLON;
+							} else {
+								prefix = PARENT_DOUBLE_COLON;
+							}
+						} else {
+							prefix = THIS;
+						}
+						prefixLength = prefix.length();
+						buffer.append(prefix);
+					}
+				}
 			}
+			buffer.append(computeGuessingCompletion());
+			return;
 		} catch (ModelException e) {
 			if (!e.isDoesNotExist()) {
 				PHPCorePlugin.log(e);
 			}
 		}
-		return prefix + super.getReplacementString();
 	}
 
 	/**
@@ -397,10 +287,21 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 	protected boolean isValidPrefix(String prefix) {
 		initAlias();
 		String replacementString = null;
+
+		if (fProposal.isConstructor()) {
+			String word = TextProcessor.deprocess(getDisplayString());
+			int start = word.indexOf(ScriptElementLabels.CONCAT_STRING) + ScriptElementLabels.CONCAT_STRING.length();
+			word = word.substring(start);
+			return isPrefix(prefix, word) || isPrefix(prefix, new String(fProposal.getName()));
+		}
+
 		if (alias != null) {
 			replacementString = alias + LPAREN + RPAREN;
 		} else {
 			replacementString = super.getReplacementString();
+			if (prefixLength > 0) {
+				replacementString = replacementString.substring(prefixLength);
+			}
 		}
 		return isPrefix(prefix, replacementString);
 	}
@@ -417,20 +318,6 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 		}
 	}
 
-	private boolean hasParameters() throws ModelException {
-		return method.getParameters() != null && hasNondefaultValues(method.getParameters());
-	}
-
-	private boolean hasNondefaultValues(IParameter[] parameters) {
-		for (int i = 0; i < parameters.length; i++) {
-			IParameter parameter = parameters[i];
-			if (parameter.getDefaultValue() == null) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/**
 	 * Creates the completion string. Offsets and Lengths are set to the offsets
 	 * and lengths of the parameters.
@@ -441,8 +328,8 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 	 * @throws ModelException
 	 *             if parameter guessing failed
 	 */
-	private String computeGuessingCompletion(String prefix) throws ModelException {
-		StringBuilder buffer = new StringBuilder(prefix);
+	private String computeGuessingCompletion() throws ModelException {
+		StringBuilder buffer = new StringBuilder();
 		appendMethodNameReplacement(buffer);
 
 		setCursorPosition(buffer.length());
@@ -452,9 +339,7 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 		if (parameters != null) {
 			for (int i = 0; i < parameters.length; i++) {
 				IParameter parameter = parameters[i];
-				if (parameter.getDefaultValue() == null) {
-					paramList.add(parameter.getName());
-				}
+				paramList.add(parameter.getName());
 			}
 		}
 		char[][] parameterNames = new char[paramList.size()][];
@@ -464,11 +349,12 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 
 		fChoices = guessParameters(parameterNames);
 		int count = fChoices.length;
-		int replacementOffset = getReplacementOffset();
+		int replacementOffset = getReplacementOffset() + prefixLength;
 
 		for (int i = 0; i < count; i++) {
 			if (i != 0) {
 				buffer.append(COMMA);
+				buffer.append(SPACE);
 			}
 
 			ICompletionProposal proposal = fChoices[i][0];
@@ -499,13 +385,13 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 	 * @since 3.4
 	 */
 	protected void appendMethodNameReplacement(StringBuilder buffer) {
-		if (alias != null) {
-			buffer.append(alias);
-			buffer.append(LPAREN);
-		} else {
-			buffer.append(fProposal.getName());
-			buffer.append(LPAREN);
+		if (!fProposal.isConstructor()) {
+			if (alias != null)
+				buffer.append(alias);
+			else
+				buffer.append(fProposal.getName());
 		}
+		buffer.append(LPAREN);
 	}
 
 	private ICompletionProposal[][] guessParameters(char[][] parameterNames) throws ModelException {
@@ -652,25 +538,53 @@ public final class ParameterGuessingProposal extends PHPOverrideCompletionPropos
 	}
 
 	@Override
-	public void setReplacementOffset(int replacementOffset) {
-		int oldReplacementOffset = getReplacementOffset();
-		if (fPositions != null && fPositions.length > 0) {
-			for (Position position : fPositions) {
-				position.offset = position.offset + (replacementOffset - oldReplacementOffset);
-			}
-		}
-
-		super.setReplacementOffset(replacementOffset);
-	}
-
-	@Override
 	public IModelElement getModelElement() {
 		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=469377
 		// be sure to return the "unchanged" method
 		return guessingMethod;
 	}
 
-	public Object getExtraInfo() {
-		return extraInfo;
+	/**
+	 * Creates a {@link ParameterGuessingProposal} or <code>null</code> if the
+	 * core context isn't available or extended.
+	 *
+	 * @param proposal
+	 *            the original completion proposal
+	 * @param context
+	 *            the currrent context
+	 * @param fillBestGuess
+	 *            if set, the best guess will be filled in
+	 *
+	 * @return a proposal or <code>null</code>
+	 */
+	public static ParameterGuessingProposal createProposal(CompletionProposal proposal,
+			ScriptContentAssistInvocationContext context, boolean fillBestGuess) {
+		return new ParameterGuessingProposal(proposal, context, fillBestGuess);
+	}
+
+	@Override
+	protected IContextInformation computeContextInformation() {
+		// no context information for METHOD_NAME_REF proposals (e.g. for static
+		// imports)
+		// https://bugs.eclipse.org/bugs/show_bug.cgi?id=94654
+		if (fProposal.getKind() == CompletionProposal.METHOD_REF && hasParameters()
+				&& (getReplacementString().endsWith(RPAREN) || getReplacementString().length() == 0)) {
+			ProposalContextInformation contextInformation = new ProposalContextInformation(fProposal);
+			if (fContextInformationPosition != 0 && fProposal.getCompletion().length() == 0)
+				contextInformation.setContextInformationPosition(fContextInformationPosition);
+			return contextInformation;
+		}
+		return super.computeContextInformation();
+	}
+
+	/**
+	 * Overrides the default context information position. Ignored if set to
+	 * zero.
+	 *
+	 * @param contextInformationPosition
+	 *            the replaced position.
+	 */
+	public void setContextInformationPosition(int contextInformationPosition) {
+		fContextInformationPosition = contextInformationPosition;
 	}
 }

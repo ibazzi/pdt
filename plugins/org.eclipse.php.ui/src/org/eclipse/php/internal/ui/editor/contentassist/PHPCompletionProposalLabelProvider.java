@@ -29,10 +29,13 @@ import org.eclipse.php.internal.core.codeassist.AliasField;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
+import org.eclipse.php.internal.core.language.PHPMagicMethods;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
+import org.eclipse.php.internal.core.typeinference.FakeMethod;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
+import org.eclipse.php.internal.ui.text.PHPTextMessages;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.php.ui.PHPElementLabels;
 
@@ -64,12 +67,21 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 		// parameters
 		nameBuffer.append('(');
-		appendStyledParameterList(nameBuffer, methodProposal);
+		appendParameterList(nameBuffer, methodProposal);
 		nameBuffer.append(')'); // $NON-NLS-1$
 
 		appendMethodType(nameBuffer, methodProposal);
 
-		appendQualifier(nameBuffer, method.getParent());
+		if (method.getParent() != null) {
+			nameBuffer.append(" - ", StyledString.QUALIFIER_STYLER); //$NON-NLS-1$
+			if (method instanceof FakeMethod && PHPMagicMethods.isMagicMethod(method.getElementName())) {
+				nameBuffer.append(PHPTextMessages.ResultCollector_overloadingmagicmethod,
+						StyledString.QUALIFIER_STYLER);
+			} else {
+				nameBuffer.append(Messages.format(PHPTextMessages.ResultCollector_overridingmethod,
+						method.getParent().getElementName()), StyledString.QUALIFIER_STYLER);
+			}
+		}
 
 		return nameBuffer;
 	}
@@ -123,7 +135,9 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 				nameBuffer.append(getReturnTypeSeparator());
 				nameBuffer.append(type);
 			}
-			appendQualifier(nameBuffer, element.getParent());
+			if (!(element.getParent() instanceof IMethod)) {
+				appendQualifier(nameBuffer, element.getParent());
+			}
 		} catch (ModelException e) {
 			Logger.logException(e);
 		}
@@ -255,7 +269,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 
 		// parameters
 		nameBuffer.append('(');
-		appendStyledParameterList(nameBuffer, methodProposal);
+		appendParameterList(nameBuffer, methodProposal);
 		nameBuffer.append(')');
 
 		appendMethodType(nameBuffer, methodProposal);
@@ -269,7 +283,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		return nameBuffer;
 	}
 
-	protected StyledString appendStyledParameterList(StyledString buffer, CompletionProposal methodProposal) {
+	protected StyledString appendParameterList(StyledString buffer, CompletionProposal methodProposal) {
 		IMethod method = (IMethod) methodProposal.getModelElement();
 		if (method instanceof AliasMethod) {
 			method = (IMethod) ((AliasMethod) method).getMethod();
@@ -293,13 +307,13 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			if (paramLimit == null) {
 				paramLimit = parameters.length;
 			}
-			return appendStyledParameterSignature(buffer, parameters, isVariadic, paramLimit);
+			return appendParameterSignature(buffer, parameters, isVariadic, paramLimit);
 		}
 		return buffer;
 	}
 
-	protected StyledString appendStyledParameterSignature(StyledString buffer, IParameter[] parameters,
-			boolean isVariadic, int paramLimit) {
+	protected StyledString appendParameterSignature(StyledString buffer, IParameter[] parameters, boolean isVariadic,
+			int paramLimit) {
 		if (parameters != null) {
 			for (int i = 0; i < paramLimit; i++) {
 				if (i > 0) {

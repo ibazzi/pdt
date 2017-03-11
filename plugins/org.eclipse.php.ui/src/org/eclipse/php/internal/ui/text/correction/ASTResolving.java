@@ -3,29 +3,34 @@ package org.eclipse.php.internal.ui.text.correction;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.ArrayAccess;
-import org.eclipse.php.internal.core.ast.nodes.ArrayCreation;
-import org.eclipse.php.internal.core.ast.nodes.Assignment;
-import org.eclipse.php.internal.core.ast.nodes.CastExpression;
-import org.eclipse.php.internal.core.ast.nodes.ClassInstanceCreation;
-import org.eclipse.php.internal.core.ast.nodes.ConditionalExpression;
-import org.eclipse.php.internal.core.ast.nodes.Expression;
-import org.eclipse.php.internal.core.ast.nodes.FieldAccess;
-import org.eclipse.php.internal.core.ast.nodes.FieldsDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.IMethodBinding;
-import org.eclipse.php.internal.core.ast.nodes.ITypeBinding;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.InfixExpression;
-import org.eclipse.php.internal.core.ast.nodes.InstanceOfExpression;
-import org.eclipse.php.internal.core.ast.nodes.MethodDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.MethodInvocation;
-import org.eclipse.php.internal.core.ast.nodes.SingleFieldDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.StructuralPropertyDescriptor;
-import org.eclipse.php.internal.core.ast.nodes.SwitchCase;
-import org.eclipse.php.internal.core.ast.nodes.SwitchStatement;
+import org.eclipse.php.internal.core.ast.nodes.*;
 
 public class ASTResolving {
+
+	/**
+	 * Finds the ancestor type of <code>node</code> (includes <code>node</code>
+	 * in the search).
+	 *
+	 * @param node
+	 *            the node to start the search from, can be <code>null</code>
+	 * @param treatModifiersOutside
+	 *            if set, modifiers are not part of their type, but of the
+	 *            type's parent
+	 * @return returns the ancestor type of <code>node</code>
+	 *         (AbstractTypeDeclaration or AnonymousTypeDeclaration) if any
+	 *         (including <code>node</code>), <code>null</code> otherwise
+	 */
+	public static ASTNode findParentType(ASTNode node) {
+		while (node != null) {
+			if (node instanceof TypeDeclaration) {
+				return node;
+			} else if (node instanceof AnonymousClassDeclaration) {
+				return node;
+			}
+			node = node.getParent();
+		}
+		return null;
+	}
 
 	public static ITypeBinding guessBindingForReference(ASTNode node) {
 		return getPossibleReferenceBinding(node);
@@ -191,6 +196,7 @@ public class ASTResolving {
 		}
 		return null;
 	}
+
 	/**
 	 * Returns the method binding of the node's parent method declaration or
 	 * <code>null</code> if the node is not inside a method.
@@ -209,6 +215,7 @@ public class ASTResolving {
 		}
 		return null;
 	}
+
 	public static int getPossibleTypeKinds(ASTNode node) {
 		int kinds = internalGetPossibleTypeKinds(node);
 		return kinds;

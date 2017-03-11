@@ -147,9 +147,8 @@ public class CompletionStrategyFactory implements ICompletionStrategyFactory {
 						new GlobalConstantsStrategy(context), new GlobalTypesStrategy(context) };
 			} else {
 				return new ICompletionStrategy[] { new ClassKeywordsStrategy(context),
-						// new GlobalConstantsStrategy(context),
-						// new GlobalTypesStrategy(context)
-				};
+						new ClassMethodsStrategy(context) };
+
 			}
 		}
 		if (contextClass == GlobalStatementContext.class) {

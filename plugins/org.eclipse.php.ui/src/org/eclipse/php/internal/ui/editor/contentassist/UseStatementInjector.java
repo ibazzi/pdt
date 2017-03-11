@@ -60,6 +60,7 @@ import org.eclipse.wst.sse.core.internal.provisional.text.*;
  * 
  * @author michael
  */
+@Deprecated
 public class UseStatementInjector {
 
 	private ScriptCompletionProposal proposal;
@@ -241,8 +242,8 @@ public class UseStatementInjector {
 				}
 				return offset;
 			} else
-				// class members should return offset directly
-				if (modelElement.getElementType() != IModelElement.TYPE && !(modelElement instanceof FakeConstructor)) {
+			// class members should return offset directly
+			if (modelElement.getElementType() != IModelElement.TYPE && !(modelElement instanceof FakeConstructor)) {
 				IModelElement type = modelElement.getAncestor(IModelElement.TYPE);
 				if (type != null && !PHPFlags.isNamespace(((IType) type).getFlags())) {
 					return offset;

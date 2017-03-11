@@ -11,6 +11,7 @@
  *******************************************************************************/
 package org.eclipse.php.internal.core.codeassist.strategies;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.IElementFilter;
@@ -39,7 +40,11 @@ public class ClassKeywordsStrategy extends KeywordsStrategy {
 
 	public void apply(ICompletionReporter reporter) throws BadLocationException {
 		ICompletionContext context = getContext();
-		statementText = ((AbstractCompletionContext) context).getStatementText();
+		AbstractCompletionContext abstractContext = (AbstractCompletionContext) context;
+		if (StringUtils.isBlank(abstractContext.getPrefixWithoutProcessing())) {
+			return;
+		}
+		statementText = abstractContext.getStatementText();
 		super.apply(reporter);
 	}
 
