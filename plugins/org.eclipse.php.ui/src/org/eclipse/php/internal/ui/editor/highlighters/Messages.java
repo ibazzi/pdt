@@ -25,6 +25,7 @@ public class Messages extends NLS {
 	public static String InternalFunctionHighlighting_0;
 	public static String MethodHighlighting_0;
 	public static String ParameterVariableHighlighting_0;
+	public static String LocalVariableHighlighting_0;
 	public static String StaticFieldHighlighting_0;
 	public static String StaticMethodHighlighting_0;
 	public static String SuperGlobalHighlighting_0;

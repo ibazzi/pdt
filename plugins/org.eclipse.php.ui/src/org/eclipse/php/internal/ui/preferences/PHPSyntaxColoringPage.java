@@ -1150,6 +1150,22 @@ public final class PHPSyntaxColoringPage extends PreferencePage implements IWork
 						return ParameterVariableHighlighting.class.getName();
 					}
 				});
+				highlightings.add(new LocalVariableHighlighting() {
+					@Override
+					protected Program getProgram(IStructuredDocumentRegion region) {
+						return program;
+					}
+
+					@Override
+					public ISourceModule getSourceModule() {
+						return sourceModule;
+					}
+
+					@Override
+					public String getPreferenceKey() {
+						return LocalVariableHighlighting.class.getName();
+					}
+				});
 				highlightings.add(new SuperGlobalHighlighting() {
 					@Override
 					protected Program getProgram(IStructuredDocumentRegion region) {
