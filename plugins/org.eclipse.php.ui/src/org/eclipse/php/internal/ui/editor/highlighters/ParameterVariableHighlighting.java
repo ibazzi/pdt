@@ -25,10 +25,8 @@ public class ParameterVariableHighlighting extends AbstractSemanticHighlighting 
 
 		private Collection<String> params = new LinkedList<String>();
 
-		public boolean visit(FunctionDeclaration functionDecl) {
-			for (FormalParameter param : functionDecl.formalParameters()) {
-				params.add(param.getParameterNameIdentifier().getName());
-			}
+		public boolean visit(FormalParameter param) {
+			params.add(param.getParameterNameIdentifier().getName());
 			return true;
 		}
 
