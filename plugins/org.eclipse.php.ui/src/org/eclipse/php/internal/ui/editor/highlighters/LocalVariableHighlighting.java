@@ -12,10 +12,7 @@ rg/legal/epl-v10.html
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.highlighters;
 
-import org.eclipse.php.internal.core.ast.nodes.FormalParameter;
-import org.eclipse.php.internal.core.ast.nodes.FunctionDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.Variable;
+import org.eclipse.php.internal.core.ast.nodes.*;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -24,8 +21,16 @@ public class LocalVariableHighlighting extends AbstractSemanticHighlighting {
 	protected class LocalVariableApply extends AbstractSemanticApply {
 
 		public boolean visit(Variable variable) {
-			if (!(variable.getParent() instanceof FormalParameter) && variable.isDollared()
-					&& variable.getEnclosingBodyNode() instanceof FunctionDeclaration
+			ASTNode parent = variable.getParent();
+			boolean isLocal = false;
+			while (parent != null) {
+				if (parent instanceof FunctionDeclaration || parent instanceof LambdaFunctionDeclaration) {
+					isLocal = true;
+					break;
+				}
+				parent = parent.getParent();
+			}
+			if (isLocal && !(variable.getParent() instanceof FormalParameter) && variable.isDollared()
 					&& !((Identifier) variable.getName()).getName().equals("this")) {
 				highlight(variable);
 			}
