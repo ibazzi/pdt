@@ -1722,28 +1722,29 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 				appendToBuffer(reference);
 			}
 			newLineOfComment = false;
-			if (this.preferences.comment_insert_new_line_for_parameter && phpDocTag.getTagKind() == TagKind.PARAM) {
-				if (insertTag && hasDesc) {
-					insertNewLineForPHPDoc();
-				}
-				if (this.preferences.comment_indent_root_tags) {
-					insertSpaces(tagLength);
-				}
-
-				insertSpaces(1);
-				insertSpace = false;
-
-				newLineOfComment = true;
-				if (this.preferences.comment_indent_root_tags
-						&& this.preferences.comment_indent_parameter_description) {
-					for (int i = 0; i < preferences.indentationSize; i++) {
-						appendToBuffer(preferences.indentationChar);
-						lineWidth += (preferences.indentationChar == CodeFormatterPreferences.SPACE_CHAR) ? 0 : 3;
+			if (words.size() > 0) {
+				if (this.preferences.comment_insert_new_line_for_parameter && phpDocTag.getTagKind() == TagKind.PARAM) {
+					if (insertTag && hasDesc) {
+						insertNewLineForPHPDoc();
+					}
+					if (this.preferences.comment_indent_root_tags) {
+						insertSpaces(tagLength);
 					}
 
+					insertSpaces(1);
+					insertSpace = false;
+
+					newLineOfComment = true;
+					if (this.preferences.comment_indent_root_tags
+							&& this.preferences.comment_indent_parameter_description) {
+						for (int i = 0; i < preferences.indentationSize; i++) {
+							appendToBuffer(preferences.indentationChar);
+							lineWidth += (preferences.indentationChar == CodeFormatterPreferences.SPACE_CHAR) ? 0 : 3;
+						}
+					}
+				} else if (!insertTag && this.preferences.comment_indent_root_tags) {
+					insertSpaces(tagLength);
 				}
-			} else if (!insertTag && this.preferences.comment_indent_root_tags) {
-				insertSpaces(tagLength);
 			}
 		}
 
