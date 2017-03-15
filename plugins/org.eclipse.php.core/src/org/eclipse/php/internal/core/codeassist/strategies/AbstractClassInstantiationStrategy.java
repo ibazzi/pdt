@@ -7,7 +7,6 @@ import org.eclipse.dltk.compiler.env.IModuleSource;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.core.search.IDLTKSearchScope;
 import org.eclipse.dltk.internal.core.ModelElement;
-import org.eclipse.dltk.internal.core.ModelManager;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.compiler.PHPFlags;
@@ -68,7 +67,7 @@ public abstract class AbstractClassInstantiationStrategy extends GlobalTypesStra
 				// ParameterGuessingProposal
 				IMethod ctorMethod = type.getMethod("__construct");
 				boolean isAccessable = false;
-				if (ModelManager.getModelManager().getInfo(ctorMethod) != null) {
+				if (ctorMethod.exists()) {
 					try {
 						if (PHPFlags.isPublic(ctorMethod.getFlags())) {
 							isAccessable = true;

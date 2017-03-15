@@ -134,6 +134,36 @@ public class StubUtility {
 		return decl;
 	}
 
+	public static MethodDeclaration createMagicMethodStub(ISourceModule unit, ASTRewrite rewrite, IMethod method,
+			boolean deferred) throws CoreException {
+		Assert.isNotNull(rewrite);
+
+		AST ast = rewrite.getAST();
+		MethodDeclaration decl = ast.newMethodDeclaration();
+		decl.setModifier(method.getFlags());
+		FunctionDeclaration func = ast.newFunctionDeclaration();
+		func.setFunctionName(ast.newIdentifier(method.getElementName()));
+		decl.setFunction(func);
+
+		IParameter[] typeParams = method.getParameters();
+		List<FormalParameter> typeParameters = decl.getFunction().formalParameters();
+
+		if (typeParams.length > 0) {
+			for (int i = 0; i < typeParams.length; i++) {
+				FormalParameter newTypeParam = ast.newFormalParameter();
+				IParameter curr = typeParams[i];
+				newTypeParam.setParameterName(ast.newIdentifier(curr.getName()));
+				typeParameters.add(newTypeParam);
+			}
+		}
+
+		if (!deferred) {
+			Block body = ast.newBlock();
+			func.setBody(body);
+		}
+		return decl;
+	}
+
 	private static String getDeclaringNamespace(IMethod method) {
 		IType namespace = PHPModelUtils.getCurrentNamespace(method);
 		if (namespace != null) {
