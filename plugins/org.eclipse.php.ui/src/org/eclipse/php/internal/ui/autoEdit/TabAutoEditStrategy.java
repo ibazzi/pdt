@@ -37,6 +37,11 @@ public class TabAutoEditStrategy implements IAutoEditStrategy {
 	private IStructuredDocument document;
 	private DocumentCommand command;
 	private IndentLineAutoEditStrategy autoIndentLineStrategy = new IndentLineAutoEditStrategy();
+	private boolean resetIndentationOnEachDocumentCommand;
+
+	public TabAutoEditStrategy(boolean resetIndentationOnEachDocumentCommand) {
+		this.resetIndentationOnEachDocumentCommand = resetIndentationOnEachDocumentCommand;
+	}
 
 	public void customizeDocumentCommand(IDocument document, DocumentCommand command) {
 		if ((command.text != null) && command.text.equals("\t")) { //$NON-NLS-1$
@@ -66,6 +71,9 @@ public class TabAutoEditStrategy implements IAutoEditStrategy {
 
 			this.command = command;
 			this.document = (IStructuredDocument) document;
+			if (resetIndentationOnEachDocumentCommand) {
+				autoIndentLineStrategy.setIndentationObject(null); // reset
+			}
 
 			boolean isAutoIndent = PHPUiPlugin.getDefault().getPreferenceStore()
 					.getBoolean(PreferenceConstants.EDITOR_SMART_TAB);
@@ -87,7 +95,7 @@ public class TabAutoEditStrategy implements IAutoEditStrategy {
 			// get original line information
 			final int lineNumber = document.getLineOfOffset(command.offset);
 			final IRegion originalLineInfo = document.getLineInformation(lineNumber);
-			final int originalLineStart = document.getLineOffset(lineNumber);
+			final int originalLineStart = originalLineInfo.getOffset();
 			int originalIndentSize = 0;
 			int autoIndentSize = 0;
 
