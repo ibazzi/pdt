@@ -16,6 +16,7 @@ import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.ui.text.completion.*;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.viewers.StyledString;
+import org.eclipse.php.internal.core.codeassist.AliasField;
 import org.eclipse.php.internal.core.codeassist.CompletionFlag;
 import org.eclipse.php.internal.core.codeassist.IPHPCompletionRequestor;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
@@ -190,7 +191,60 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 	}
 
 	protected IScriptCompletionProposal createFieldProposal(final CompletionProposal proposal) {
-		return super.createFieldProposal(proposal);
+		String completion = String.valueOf(proposal.getCompletion());
+		int start = proposal.getReplaceStart();
+		int length = getLength(proposal);
+		StyledString displayString = ((PHPCompletionProposalLabelProvider) getLabelProvider())
+				.createStyledFieldProposalLabel(proposal);
+		Image image = getImage(
+				((PHPCompletionProposalLabelProvider) getLabelProvider()).createFieldImageDescriptor(proposal));
+
+		ScriptCompletionProposal scriptProposal = new ScriptCompletionProposal(completion, start, length, image,
+				displayString, 0, false) {
+			private boolean fReplacementStringComputed = false;
+
+			public String getReplacementString() {
+				if (!fReplacementStringComputed) {
+					String replacementString = computeReplacementString();
+					if (ProposalExtraInfo.isAddQuote(proposal.getExtraInfo())) {
+						replacementString = "'" + replacementString + "'"; //$NON-NLS-1$ //$NON-NLS-2$
+					}
+					setReplacementString(replacementString);
+				}
+				fReplacementStringComputed = true;
+				return super.getReplacementString();
+			}
+
+			private String computeReplacementString() {
+				IField field = (IField) proposal.getModelElement();
+				if (field instanceof AliasField) {
+					AliasField aliasField = (AliasField) field;
+					return aliasField.getAlias();
+				}
+				if (ProposalExtraInfo.isFullName(proposal.getExtraInfo())) {
+					return field.getFullyQualifiedName("\\"); //$NON-NLS-1$
+				}
+				return super.getReplacementString();
+			}
+
+			protected boolean isValidPrefix(String prefix) {
+				String word = getDisplayString();
+				if (word.startsWith("$") && !prefix.startsWith("$")) { //$NON-NLS-1$ //$NON-NLS-2$
+					word = word.substring(1);
+				}
+				return isPrefix(prefix, word);
+			}
+
+			protected boolean isSmartTrigger(char trigger) {
+				return trigger == '$';
+			}
+		};
+		if (getSourceModule().getScriptProject() != null) {
+			scriptProposal.setProposalInfo(new FieldProposalInfo(getSourceModule().getScriptProject(), proposal));
+		}
+		scriptProposal.setRelevance(computeRelevance(proposal));
+		scriptProposal.setTriggerCharacters(getVarTrigger());
+		return scriptProposal;
 	}
 
 	public int getOffset() {
