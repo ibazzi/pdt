@@ -592,20 +592,26 @@ public final class ImportRewriteAnalyzer {
 	}
 
 	private static int getFirstTypeBeginPos(Program root) {
-		List<Statement> types = root.statements();
-		if (!types.isEmpty()) {
+		List<Statement> statements = root.statements();
+		if (!statements.isEmpty()) {
 			ASTNode node = null;
-			if (types.get(0) instanceof NamespaceDeclaration) {
-				List<Statement> statements = ((NamespaceDeclaration) types.get(0)).getBody().statements();
-				for (Statement s : statements) {
-					if (s instanceof UseStatement) {
-						continue;
-					}
+			boolean isAfterUseStatements = false;
+			if (root.getUseStatements().size() == 0) {
+				isAfterUseStatements = true;
+			}
+			if (statements.get(0) instanceof NamespaceDeclaration) {
+				statements = ((NamespaceDeclaration) statements.get(0)).getBody().statements();
+
+			}
+			for (Statement s : statements) {
+				if (s instanceof UseStatement) {
+					isAfterUseStatements = true;
+					continue;
+				}
+				if (isAfterUseStatements) {
 					node = s;
 					break;
 				}
-			} else {
-				node = (ASTNode) types.get(0);
 			}
 			return root.getExtendedStartPosition(node);
 		}
