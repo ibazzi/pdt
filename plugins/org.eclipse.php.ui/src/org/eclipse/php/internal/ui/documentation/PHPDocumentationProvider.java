@@ -25,11 +25,11 @@ import org.eclipse.dltk.ui.documentation.IScriptDocumentationProvider;
 import org.eclipse.jface.internal.text.html.HTMLPrinter;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.ConstantDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.IPHPDocAwareDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.PHPCallExpression;
+import org.eclipse.php.core.compiler.ast.nodes.Scalar;
 import org.eclipse.php.internal.core.codeassist.AliasType;
-import org.eclipse.php.internal.core.compiler.ast.nodes.ConstantDeclaration;
-import org.eclipse.php.internal.core.compiler.ast.nodes.IPHPDocAwareDeclaration;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPCallExpression;
-import org.eclipse.php.internal.core.compiler.ast.nodes.Scalar;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 import org.eclipse.php.internal.core.typeinference.DefineMethodUtils;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
@@ -60,6 +60,7 @@ public class PHPDocumentationProvider implements IScriptDocumentationProvider {
 	private static final long LOCAL_VARIABLE_FLAGS = LABEL_FLAGS & ~ScriptElementLabels.F_FULLY_QUALIFIED
 			| ScriptElementLabels.F_POST_QUALIFIED;
 
+	@Override
 	public Reader getInfo(IMember element, boolean lookIntoParents, boolean lookIntoExternal) {
 		if (element instanceof FakeConstructor) {
 			IType type = (IType) element.getParent();
@@ -115,6 +116,7 @@ public class PHPDocumentationProvider implements IScriptDocumentationProvider {
 		return null;
 	}
 
+	@Override
 	public Reader getInfo(String keyword) {
 		String builtinDoc = BuiltinDoc.getString(keyword);
 		if (builtinDoc.length() > 0) {

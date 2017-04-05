@@ -166,6 +166,7 @@ public class PHPElementLinks {
 	 */
 	public static LocationListener createLocationListener(final ILinkHandler handler) {
 		return new LocationAdapter() {
+			@Override
 			public void changing(LocationEvent event) {
 				String loc = event.location;
 

@@ -15,7 +15,7 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -25,11 +25,13 @@ public class ParameterVariableHighlighting extends AbstractSemanticHighlighting 
 
 		private Collection<String> params = new LinkedList<String>();
 
+		@Override
 		public boolean visit(FormalParameter param) {
 			params.add(param.getParameterNameIdentifier().getName());
 			return true;
 		}
 
+		@Override
 		public void endVisit(Variable variable) {
 			if (variable.getParent().getType() != ASTNode.FIELD_ACCESS
 					|| (variable.getParent().getType() == ASTNode.FIELD_ACCESS
@@ -42,6 +44,7 @@ public class ParameterVariableHighlighting extends AbstractSemanticHighlighting 
 			}
 		}
 
+		@Override
 		public void endVisit(FunctionDeclaration functionDecl) {
 			params.clear();
 		}
@@ -57,6 +60,7 @@ public class ParameterVariableHighlighting extends AbstractSemanticHighlighting 
 		getStyle().setEnabledByDefault(true).setDefaultTextColor(106, 62, 62);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.ParameterVariableHighlighting_0;
 	}

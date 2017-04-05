@@ -70,6 +70,7 @@ public class PHPAppearancePreferencePage extends AbstractPreferencePage {
 		return DLTKUIPlugin.getDefault().getPreferenceStore();
 	}
 
+	@Override
 	protected Control createContents(Composite parent) {
 		createMainBlock(parent);
 		initializeValues();
@@ -77,6 +78,7 @@ public class PHPAppearancePreferencePage extends AbstractPreferencePage {
 		return null;
 	}
 
+	@Override
 	public void init(IWorkbench workbench) {
 
 	}

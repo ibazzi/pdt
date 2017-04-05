@@ -26,7 +26,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Region;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.internal.core.documentModel.parser.AbstractPhpLexer;
 import org.eclipse.php.internal.core.documentModel.parser.PHPRegionContext;
 import org.eclipse.php.internal.core.documentModel.parser.PhpLexerFactory;
@@ -569,11 +569,6 @@ public class PHPTextSequenceUtilities {
 	// ///////////////////////////////////////////////////////////////////////////////////////////////////////
 	// ///////////////////////////////////////////////////////////////////////////////////////////////////////
 	// ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	@Deprecated
-	public static int getPrivousTriggerIndex(@NonNull CharSequence textSequence, int startPosition) {
-		return getPreviousTriggerIndex(textSequence, startPosition);
-	}
 
 	public static int getPreviousTriggerIndex(@NonNull CharSequence textSequence, int startPosition) {
 		int rv = startPosition;

@@ -18,7 +18,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.dltk.core.DLTKCore;
@@ -56,6 +58,7 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 	/**
 	 * Adding the page to the wizard.
 	 */
+	@Override
 	public void addPages() {
 		phpFileCreationWizardPage = new PHPFileCreationWizardPage(selection);
 		addPage(phpFileCreationWizardPage);
@@ -68,6 +71,7 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 	 * This method is called when 'Finish' button is pressed in the wizard. We
 	 * will create an operation and run it using wizard as execution context.
 	 */
+	@Override
 	public boolean performFinish() {
 		final String containerName = phpFileCreationWizardPage.getContainerFullPath().toString();
 		final String fileName = phpFileCreationWizardPage.getFileName();
@@ -88,6 +92,7 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 				fileName, lineSeparator);
 
 		IRunnableWithProgress op = new IRunnableWithProgress() {
+			@Override
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
 					new FileCreator().createFile(PHPFileCreationWizard.this, file, monitor, template.string,
@@ -117,6 +122,7 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 	 * 
 	 * @see IWorkbenchWizard#init(IWorkbench, IStructuredSelection)
 	 */
+	@Override
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		this.selection = selection;
 	}
@@ -204,6 +210,7 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 				monitor.worked(1);
 				monitor.setTaskName(NLS.bind(PHPUIMessages.newPhpFile_openning, file.getName()));
 				wizard.getShell().getDisplay().asyncExec(new Runnable() {
+					@Override
 					public void run() {
 						IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 						try {
@@ -252,12 +259,6 @@ public class PHPFileCreationWizard extends Wizard implements INewWizard {
 				return WorkbenchEncoding.getWorkbenchDefaultEncoding();
 			}
 
-		}
-
-		private static void throwCoreException(String message) throws CoreException {
-			IStatus status = new Status(IStatus.ERROR, PHPUIMessages.PHPFileCreationWizard_4, IStatus.OK, message,
-					null);
-			throw new CoreException(status);
 		}
 
 		/**

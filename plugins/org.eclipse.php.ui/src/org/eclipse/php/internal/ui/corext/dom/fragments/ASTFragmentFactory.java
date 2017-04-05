@@ -16,10 +16,10 @@ import org.eclipse.dltk.core.ISourceRange;
 import org.eclipse.dltk.core.SourceRange;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Expression;
-import org.eclipse.php.internal.core.ast.nodes.InfixExpression;
-import org.eclipse.php.internal.core.ast.visitor.HierarchicalVisitor;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Expression;
+import org.eclipse.php.core.ast.nodes.InfixExpression;
+import org.eclipse.php.core.ast.visitor.HierarchicalVisitor;
 import org.eclipse.php.internal.core.corext.dom.Selection;
 import org.eclipse.php.internal.core.corext.dom.SelectionAnalyzer;
 
@@ -129,6 +129,7 @@ public class ASTFragmentFactory {
 			return new FragmentForSubPartBySourceRangeFactory().createFragment(node, range, scope, document);
 		}
 
+		@Override
 		public boolean visit(InfixExpression node) {
 			try {
 				setFragment(createInfixExpressionSubPartFragmentBySourceRange(node, fRange, fScope, fDocument));
@@ -138,6 +139,7 @@ public class ASTFragmentFactory {
 			return false;
 		}
 
+		@Override
 		public boolean visit(ASTNode node) {
 			// let fragment be null
 			return false;
@@ -166,6 +168,7 @@ public class ASTFragmentFactory {
 			return new FragmentForFullSubtreeFactory().createFragment(node, astFragment);
 		}
 
+		@Override
 		public boolean visit(InfixExpression node) {
 			/*
 			 * Try creating an associative infix expression fragment /* for the
@@ -188,11 +191,13 @@ public class ASTFragmentFactory {
 			return false;
 		}
 
+		@Override
 		public boolean visit(Expression node) {
 			setFragment(new SimpleExpressionFragment(node));
 			return false;
 		}
 
+		@Override
 		public boolean visit(ASTNode node) {
 			setFragment(new SimpleFragment(node));
 			return false;
@@ -217,10 +222,6 @@ public class ASTFragmentFactory {
 		protected final void setFragment(IASTFragment fragment) {
 			Assert.isTrue(!isFragmentSet());
 			fFragment = fragment;
-		}
-
-		protected final void clearFragment() {
-			fFragment = null;
 		}
 
 		protected final boolean isFragmentSet() {

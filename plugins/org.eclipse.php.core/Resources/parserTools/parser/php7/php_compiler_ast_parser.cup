@@ -12,7 +12,7 @@ import org.eclipse.dltk.ast.declarations.*;
 import org.eclipse.dltk.ast.expressions.*;
 import org.eclipse.dltk.ast.references.*;
 import org.eclipse.dltk.ast.statements.*;
-import org.eclipse.php.internal.core.compiler.ast.nodes.*;
+import org.eclipse.php.core.compiler.ast.nodes.*;
 import org.eclipse.php.internal.core.compiler.ast.parser.*;
 import org.eclipse.php.internal.core.ast.scanner.php7.*;
 
@@ -3875,9 +3875,9 @@ T_CURLY_OPEN_WITH_DOLAR:start variable:var T_CURLY_CLOSE:end
 	RESULT = new ReflectionVariableReference(startleft, endright, new Scalar(varNameleft, varNameright, varName, Scalar.TYPE_STRING));
 :}
 
-| T_DOLLAR_OPEN_CURLY_BRACES:start T_STRING_VARNAME:varName T_OPEN_RECT expr:index T_CLOSE_RECT T_CURLY_CLOSE:end
+| T_DOLLAR_OPEN_CURLY_BRACES:start T_STRING_VARNAME:varName T_OPEN_RECT expr:index T_CLOSE_RECT:c T_CURLY_CLOSE:end
 {:
-	RESULT = new ArrayVariableReference(startleft, endright, varName, index, ArrayVariableReference.VARIABLE_ARRAY);
+	RESULT = new ReflectionVariableReference(startleft, endright, new ArrayVariableReference(varNameleft, cright, varName, index, ArrayVariableReference.VARIABLE_ARRAY));
 :}
 ;
 

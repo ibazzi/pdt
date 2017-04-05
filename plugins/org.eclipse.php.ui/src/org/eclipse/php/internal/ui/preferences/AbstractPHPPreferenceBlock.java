@@ -13,6 +13,7 @@ package org.eclipse.php.internal.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.dialogs.Dialog;
@@ -43,10 +44,10 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 
 	protected PreferencePage preferencePage;
 
-	protected ArrayList buttons = new ArrayList();
-	protected ArrayList textBoxes = new ArrayList();
-	protected ArrayList labels = new ArrayList();
-	protected ArrayList combos = new ArrayList();
+	protected List<Button> buttons = new ArrayList<>();
+	protected List<Text> textBoxes = new ArrayList<>();
+	protected List<Label> labels = new ArrayList<>();
+	protected List<ValuedCombo> combos = new ArrayList<>();
 
 	/**
 	 * Add this control to the list of controls
@@ -74,8 +75,8 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 	}
 
 	protected void restoreDefaultComboTextValues() {
-		for (Iterator comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
-			ValuedCombo valuedCombo = (ValuedCombo) comboIterator.next();
+		for (Iterator<ValuedCombo> comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
+			ValuedCombo valuedCombo = comboIterator.next();
 			Object data = valuedCombo.getData();
 			if (data != null) {
 				valuedCombo.selectValue(getPreferenceStore().getDefaultString((String) data));
@@ -116,8 +117,8 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 	}
 
 	protected void initializeComboValues() {
-		for (Iterator comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
-			ValuedCombo valuedCombo = (ValuedCombo) comboIterator.next();
+		for (Iterator<ValuedCombo> comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
+			ValuedCombo valuedCombo = comboIterator.next();
 			Object data = valuedCombo.getData();
 			if (data != null) {
 				valuedCombo.selectValue(getPreferenceStore().getString((String) data));
@@ -157,8 +158,8 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 	}
 
 	protected void storeCombosValues() {
-		for (Iterator comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
-			ValuedCombo valuedCombo = (ValuedCombo) comboIterator.next();
+		for (Iterator<ValuedCombo> comboIterator = this.combos.iterator(); comboIterator.hasNext();) {
+			ValuedCombo valuedCombo = comboIterator.next();
 			Object data = valuedCombo.getData();
 			if (data != null) {
 				getPreferenceStore().setValue((String) data, valuedCombo.getSelectionValue());
@@ -199,9 +200,9 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 		setControlsEnabled(combos, key, enabled);
 	}
 
-	private void setControlsEnabled(ArrayList controls, String key, boolean enabled) {
-		for (Iterator controlIterator = controls.iterator(); controlIterator.hasNext();) {
-			Control control = (Control) controlIterator.next();
+	private void setControlsEnabled(List<? extends Control> controls, String key, boolean enabled) {
+		for (Iterator<? extends Control> controlIterator = controls.iterator(); controlIterator.hasNext();) {
+			Control control = controlIterator.next();
 			Object data = control.getData();
 			if (data != null && ((String) data).equals(key)) {
 				control.setEnabled(enabled);
@@ -224,6 +225,7 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 	/**
 	 * Creates sub-section group with title
 	 */
+	@Override
 	protected Composite createSubsection(Composite parent, String label) {
 		Group group = new Group(parent, SWT.SHADOW_NONE);
 		group.setText(label);
@@ -238,6 +240,7 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 	/**
 	 * Create new checkbox and associate a preference key with it
 	 */
+	@Override
 	protected Button addCheckBox(Composite parent, String label, String prefKey, int horizontalIndent) {
 		Button checkBox = new Button(parent, SWT.CHECK);
 		checkBox.setText(label);
@@ -260,6 +263,7 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 			this.stringValidator = stringValidator;
 		}
 
+		@Override
 		public void modifyText(ModifyEvent e) {
 			ValidationStatus status = stringValidator.validate(((Text) e.widget).getText());
 			if (!status.isOK()) {
@@ -321,10 +325,12 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 		return PreferenceConstants.getPreferenceStore();
 	}
 
+	@Override
 	public void performDefaults() {
 		restoreDefaultValues();
 	}
 
+	@Override
 	public boolean performOK(boolean isProjectSpecific) {
 		storeValues();
 		try {
@@ -335,6 +341,7 @@ public abstract class AbstractPHPPreferenceBlock extends AbstractPHPPreferencePa
 		return true;
 	}
 
+	@Override
 	public void performApply(boolean isProjectSpecific) {
 		storeValues();
 		try {

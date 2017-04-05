@@ -159,6 +159,14 @@ public interface PHPRegionTypes {
 
 	static final String PHP_VARIABLE = "PHP_VARIABLE"; //$NON-NLS-1$
 
+	// Variables starting with ${ in back-quoted strings, double-quoted strings
+	// or heredoc sections
+	// Examples: "${a}" or "${a[0]}"
+	// NB: ${ is NOT included in the token value associated to
+	// PHP_ENCAPSED_VARIABLE which also means that corresponding
+	// Variable#isDollared() will always be false
+	static final String PHP_ENCAPSED_VARIABLE = "PHP_ENCAPSED_VARIABLE"; //$NON-NLS-1$
+
 	static final String PHP_ABSTRACT = "PHP_ABSTRACT"; //$NON-NLS-1$
 
 	// static final String PHP_SL_EQUAL = "PHP_SL_EQUAL";
@@ -359,9 +367,6 @@ public interface PHPRegionTypes {
 	static final String PHPDOC_COMMENT_START = "PHPDOC_COMMENT_START"; //$NON-NLS-1$
 
 	static final String PHPDOC_COMMENT_END = "PHPDOC_COMMENT_END"; //$NON-NLS-1$
-
-	@Deprecated
-	static final String PHPDOC_TODO = "PHPDOC_TODO"; //$NON-NLS-1$
 
 	static final String PHPDOC_GENERIC_TAG = "PHPDOC_GENERIC_TAG"; //$NON-NLS-1$
 

@@ -12,10 +12,10 @@
 package org.eclipse.php.internal.ui.corext.dom.fragments;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.php.internal.core.ast.match.PHPASTMatcher;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.ParenthesisExpression;
+import org.eclipse.php.core.ast.match.PHPASTMatcher;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.nodes.ParenthesisExpression;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.text.edits.TextEditGroup;
 
@@ -27,6 +27,7 @@ class SimpleFragment extends ASTFragment {
 		fNode = node;
 	}
 
+	@Override
 	public IASTFragment[] getMatchingFragmentsWithNode(ASTNode node) {
 		if (!PHPASTMatcher.doNodesMatch(getAssociatedNode(), node))
 			return new IASTFragment[0];
@@ -36,28 +37,34 @@ class SimpleFragment extends ASTFragment {
 		return new IASTFragment[] { match };
 	}
 
+	@Override
 	public boolean matches(IASTFragment other) {
 		return other.getClass().equals(getClass())
 				&& PHPASTMatcher.doNodesMatch(other.getAssociatedNode(), getAssociatedNode());
 	}
 
+	@Override
 	public IASTFragment[] getSubFragmentsMatching(IASTFragment toMatch) {
 		return ASTMatchingFragmentFinder.findMatchingFragments(getAssociatedNode(), (ASTFragment) toMatch);
 
 	}
 
+	@Override
 	public int getStartPosition() {
 		return fNode.getStart();
 	}
 
+	@Override
 	public int getLength() {
 		return fNode.getLength();
 	}
 
+	@Override
 	public ASTNode getAssociatedNode() {
 		return fNode;
 	}
 
+	@Override
 	public void replace(ASTRewrite rewrite, ASTNode replacement, TextEditGroup textEditGroup) {
 		if (replacement instanceof Identifier && fNode.getParent() instanceof ParenthesisExpression) {
 			// replace including the parenthesized expression around it
@@ -67,10 +74,12 @@ class SimpleFragment extends ASTFragment {
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		return fNode.hashCode();
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;

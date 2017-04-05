@@ -17,12 +17,13 @@ import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ModelException;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.TextInvocationContext;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.ASTParser;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.ASTParser;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.corext.dom.NodeFinder;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
 import org.eclipse.ui.IEditorPart;
 
 public class AssistContext extends TextInvocationContext implements IInvocationContext {
@@ -81,6 +82,7 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * 
 	 * @return an <code>ISourceModule</code>
 	 */
+	@Override
 	public ISourceModule getCompilationUnit() {
 		return fProgram;
 	}
@@ -100,6 +102,7 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * 
 	 * @return int
 	 */
+	@Override
 	public int getSelectionLength() {
 		return Math.max(getLength(), 0);
 	}
@@ -109,10 +112,12 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * 
 	 * @return int
 	 */
+	@Override
 	public int getSelectionOffset() {
 		return getOffset();
 	}
 
+	@Override
 	public Program getASTRoot() {
 		if (fASTRoot == null) {
 			try {
@@ -148,6 +153,7 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * 
 	 * @see org.eclipse.jdt.ui.text.java.IInvocationContext#getCoveringNode()
 	 */
+	@Override
 	public ASTNode getCoveringNode() {
 		NodeFinder finder = new NodeFinder(getOffset(), getLength());
 		getASTRoot().accept(finder);
@@ -159,6 +165,7 @@ public class AssistContext extends TextInvocationContext implements IInvocationC
 	 * 
 	 * @see org.eclipse.jdt.ui.text.java.IInvocationContext#getCoveredNode()
 	 */
+	@Override
 	public ASTNode getCoveredNode() {
 		NodeFinder finder = new NodeFinder(getOffset(), getLength());
 		getASTRoot().accept(finder);

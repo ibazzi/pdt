@@ -25,10 +25,10 @@ import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.core.util.MethodOverrideTester;
 import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocBlock;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocTag;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocTag.TagKind;
 import org.eclipse.php.internal.core.Constants;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocBlock;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag.TagKind;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.core.util.MagicMemberUtil;
@@ -95,11 +95,13 @@ public class PHPDocumentationContentAccess {
 	 */
 	private static abstract class InheritDocVisitor {
 		public static final Object STOP_BRANCH = new Object() {
+			@Override
 			public String toString() {
 				return "STOP_BRANCH"; //$NON-NLS-1$
 			}
 		};
 		public static final Object CONTINUE = new Object() {
+			@Override
 			public String toString() {
 				return "CONTINUE"; //$NON-NLS-1$
 			}
@@ -213,22 +215,27 @@ public class PHPDocumentationContentAccess {
 
 	private static class JavadocLookup {
 		private static final JavadocLookup NONE = new JavadocLookup(null) {
+			@Override
 			public CharSequence getInheritedMainDescription(IMethod method) {
 				return null;
 			}
 
+			@Override
 			public CharSequence getInheritedParamDescription(IMethod method, int i) {
 				return null;
 			}
 
+			@Override
 			public CharSequence getInheritedReturnDescription(IMethod method) {
 				return null;
 			}
 
+			@Override
 			public CharSequence getInheritedExceptionDescription(IMethod method, String name) {
 				return null;
 			}
 
+			@Override
 			public List<PHPDocTag> getInheritedExceptions(IMethod method) {
 				return null;
 			}
@@ -270,6 +277,7 @@ public class PHPDocumentationContentAccess {
 		 */
 		public CharSequence getInheritedMainDescription(IMethod method) {
 			return (CharSequence) getInheritedDescription(method, new DescriptionGetter() {
+				@Override
 				public Object getDescription(PHPDocumentationContentAccess contentAccess) {
 					return contentAccess.getMainDescription();
 				}
@@ -289,11 +297,8 @@ public class PHPDocumentationContentAccess {
 		 *         none could be found
 		 */
 		public CharSequence getInheritedParamDescription(IMethod method, final int paramIndex) {
-			return (CharSequence) getInheritedDescription(method, new DescriptionGetter() {
-				public Object getDescription(PHPDocumentationContentAccess contentAccess) throws ModelException {
-					return contentAccess.getInheritedParamDescription(paramIndex);
-				}
-			});
+			return (CharSequence) getInheritedDescription(method,
+					contentAccess -> contentAccess.getInheritedParamDescription(paramIndex));
 		}
 
 		/**
@@ -310,6 +315,7 @@ public class PHPDocumentationContentAccess {
 		 */
 		public CharSequence getInheritedParamType(IMethod method, final int paramIndex) {
 			return (CharSequence) getInheritedDescription(method, new DescriptionGetter() {
+				@Override
 				public Object getDescription(PHPDocumentationContentAccess contentAccess) throws ModelException {
 					return contentAccess.getInheritedParamType(paramIndex);
 				}
@@ -328,6 +334,7 @@ public class PHPDocumentationContentAccess {
 		 */
 		public CharSequence getInheritedReturnDescription(IMethod method) {
 			return (CharSequence) getInheritedDescription(method, new DescriptionGetter() {
+				@Override
 				public Object getDescription(PHPDocumentationContentAccess contentAccess) {
 					return contentAccess.getReturnDescription();
 				}
@@ -348,6 +355,7 @@ public class PHPDocumentationContentAccess {
 		 */
 		public CharSequence getInheritedExceptionDescription(IMethod method, final String simpleName) {
 			return (CharSequence) getInheritedDescription(method, new DescriptionGetter() {
+				@Override
 				public Object getDescription(PHPDocumentationContentAccess contentAccess) {
 					return contentAccess.getExceptionDescription(simpleName);
 				}
@@ -366,6 +374,7 @@ public class PHPDocumentationContentAccess {
 		 */
 		public List<PHPDocTag> getInheritedExceptions(IMethod method) {
 			return (List<PHPDocTag>) getInheritedDescription(method, new DescriptionGetter() {
+				@Override
 				public Object getDescription(PHPDocumentationContentAccess contentAccess) {
 					return contentAccess.getExceptions();
 				}
@@ -375,6 +384,7 @@ public class PHPDocumentationContentAccess {
 		private Object getInheritedDescription(final IMethod method, final DescriptionGetter descriptionGetter) {
 			try {
 				return new InheritDocVisitor() {
+					@Override
 					public Object visit(IType currType) throws ModelException {
 						IMethod overridden = getOverrideTester().findOverriddenMethodInType(currType, method);
 						if (overridden == null)
@@ -509,6 +519,7 @@ public class PHPDocumentationContentAccess {
 		final ArrayList<IMethod> superInterfaceMethods = new ArrayList<IMethod>();
 		final IMethod[] superClassMethod = { null };
 		new InheritDocVisitor() {
+			@Override
 			public Object visit(IType currType) throws ModelException {
 				IMethod overridden = tester.findOverriddenMethodInType(currType, method);
 				if (overridden == null)
@@ -1395,9 +1406,10 @@ public class PHPDocumentationContentAccess {
 	}
 
 	private void handleLinkTag(PHPDocTag tag) {
-		fBuf.append("<a href="); //$NON-NLS-1$
-		fBuf.append(tag.getValue());
-		fBuf.append(">").append(tag.getValue()).append("</a>"); //$NON-NLS-1$ //$NON-NLS-2$
+		String uri = tag.getValue().trim();
+		fBuf.append("<a href=\""); //$NON-NLS-1$
+		fBuf.append(uri);
+		fBuf.append("\">").append(uri).append("</a>"); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	private void handleSeeTag(PHPDocTag tag) {

@@ -25,12 +25,12 @@ import org.eclipse.dltk.ui.DLTKUIPlugin;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.Logger;
 import org.eclipse.php.internal.core.PHPCoreConstants;
-import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.model.ImportDeclarationVisitor;
 import org.eclipse.php.internal.core.preferences.CorePreferencesSupport;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.FakeType;
 import org.eclipse.php.internal.core.util.OutlineFilter;
 import org.eclipse.php.internal.ui.PHPUIMessages;
@@ -65,6 +65,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		inputChanged(fOutlineViewer, null, null);
 	}
 
+	@Override
 	public void dispose() {
 		if (fListener != null) {
 			DLTKCore.removeElementChangedListener(fListener);
@@ -76,6 +77,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		}
 	}
 
+	@Override
 	public Object[] getChildren(Object parent) {
 		if (parent instanceof IParent) {
 			IParent c = (IParent) parent;
@@ -101,11 +103,12 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 					.getWorkspacePreferencesValue(PHPCoreConstants.PHP_OPTIONS_PHP_VERSION);
 			phpVersion = PHPVersion.byAlias(versionName);
 		} else {
-			phpVersion = ProjectOptions.getPhpVersion(modelElement.getScriptProject().getProject());
+			phpVersion = ProjectOptions.getPHPVersion(modelElement.getScriptProject().getProject());
 		}
 		return phpVersion.isGreaterThan(PHPVersion.PHP5);
 	}
 
+	@Override
 	public Object[] getElements(Object parent) {
 		Object[] children = getChildren(parent);
 
@@ -116,6 +119,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		return children;
 	}
 
+	@Override
 	public Object getParent(Object child) {
 		if (child instanceof IModelElement) {
 			IModelElement e = (IModelElement) child;
@@ -124,6 +128,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		return null;
 	}
 
+	@Override
 	public boolean hasChildren(Object parent) {
 		if (parent instanceof IModelElement) {
 			IModelElement me = (IModelElement) parent;
@@ -165,6 +170,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 	/*
 	 * @see IContentProvider#inputChanged(Viewer, Object, Object)
 	 */
+	@Override
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 
 		// Check that the new input is valid
@@ -204,6 +210,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 		private int useStatementsCount;
 		private int useStatementsCountNew;
 
+		@Override
 		public void elementChanged(final ElementChangedEvent e) {
 			final Control control = fOutlineViewer.getControl();
 			if (control == null || control.isDisposed()) {
@@ -245,6 +252,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 						Display d = control.getDisplay();
 						if (d != null) {
 							d.asyncExec(new Runnable() {
+								@Override
 								public void run() {
 									refresh(delta);
 								}
@@ -480,6 +488,7 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 						if (d != null) {
 							final Object[] objects = collector.toUpdate.toArray();
 							d.asyncExec(new Runnable() {
+								@Override
 								public void run() {
 									fOutlineViewer.update(objects, null);
 								}
@@ -530,12 +539,14 @@ public class PHPOutlineContentProvider implements ITreeContentProvider {
 			super((ModelElement) sourceModule, PHPUIMessages.PHPOutlineContentProvider_useStatementsNode, 0, null);
 		}
 
+		@Override
 		public IModelElement[] getChildren() throws ModelException {
 			if (fUseStatements == null)
 				fUseStatements = getUseStatements(fSourceModule);
 			return fUseStatements;
 		}
 
+		@Override
 		public boolean hasChildren() throws ModelException {
 			return getChildren().length > 0;
 		}

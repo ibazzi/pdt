@@ -43,18 +43,19 @@ import org.eclipse.dltk.internal.core.ModelElement;
 import org.eclipse.dltk.internal.core.SourceField;
 import org.eclipse.dltk.internal.core.SourceRefElement;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.nodes.NamespaceName;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.*;
+import org.eclipse.php.core.compiler.ast.visitor.PHPASTVisitor;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.*;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.NamespaceName;
-import org.eclipse.php.internal.core.compiler.ast.nodes.*;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
-import org.eclipse.php.internal.core.compiler.ast.visitor.PHPASTVisitor;
 import org.eclipse.php.internal.core.filenetwork.FileNetworkUtility;
 import org.eclipse.php.internal.core.filenetwork.ReferenceTree;
 import org.eclipse.php.internal.core.language.LanguageModelInitializer;
 import org.eclipse.php.internal.core.model.PhpModelAccess;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.DeclarationSearcher.DeclarationType;
 import org.eclipse.php.internal.core.util.text.PHPTextSequenceUtilities;
 import org.eclipse.php.internal.core.util.text.TextSequence;
@@ -2052,7 +2053,7 @@ public class PHPModelUtils {
 			if (PHPFlags.isNamespace(type.getFlags())) {
 				return false;
 			}
-			if (PHPVersion.PHP5_4.isLessThan(ProjectOptions.getPhpVersion(type))) {
+			if (PHPVersion.PHP5_4.isLessThan(ProjectOptions.getPHPVersion(type))) {
 				return true; // class constant always available
 			}
 			ITypeHierarchy hierarchy = type.newSupertypeHierarchy(null);

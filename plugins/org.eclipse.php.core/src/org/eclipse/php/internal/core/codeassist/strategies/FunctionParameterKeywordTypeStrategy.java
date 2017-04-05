@@ -16,10 +16,10 @@ import org.eclipse.dltk.core.ModelException;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.core.codeassist.ICompletionContext;
+import org.eclipse.php.core.codeassist.ICompletionReporter;
 import org.eclipse.php.core.codeassist.IElementFilter;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.codeassist.ICompletionReporter;
 import org.eclipse.php.internal.core.codeassist.contexts.FunctionParameterTypeContext;
 import org.eclipse.php.internal.core.language.keywords.PHPKeywords.KeywordData;
 
@@ -59,8 +59,7 @@ public class FunctionParameterKeywordTypeStrategy extends KeywordsStrategy {
 			try {
 				int flags = context.getEnclosingType().getFlags();
 				if (!PHPFlags.isNamespace(flags)) {
-					String pref = PHPVersion.PHP5_4.isLessThan(context.getPhpVersion().toApi()) ? prefix.toLowerCase()
-							: prefix;
+					String pref = PHPVersion.PHP5_4.isLessThan(context.getPhpVersion()) ? prefix.toLowerCase() : prefix;
 
 					for (String keyword : KEYWORDS) {
 						if (keyword.startsWith(pref)) {
@@ -73,7 +72,7 @@ public class FunctionParameterKeywordTypeStrategy extends KeywordsStrategy {
 			}
 		}
 
-		PHPVersion phpVersion = context.getPhpVersion().toApi();
+		PHPVersion phpVersion = context.getPhpVersion();
 		for (SimpleProposal proposal : SimpleProposal.BASIC_TYPES) {
 			if (proposal.isValid(prefix, phpVersion)) {
 				reporter.reportKeyword(proposal.getProposal(), suffix, replaceRange);

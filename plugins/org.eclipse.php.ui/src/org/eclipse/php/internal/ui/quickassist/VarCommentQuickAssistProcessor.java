@@ -33,16 +33,16 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.TextUtilities;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Variable;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Variable;
 import org.eclipse.php.internal.core.corext.dom.NodeFinder;
 import org.eclipse.php.internal.ui.PHPUILanguageToolkit;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
-import org.eclipse.php.internal.ui.text.correction.IInvocationContext;
-import org.eclipse.php.internal.ui.text.correction.IProblemLocation;
-import org.eclipse.php.internal.ui.text.correction.IQuickAssistProcessor;
 import org.eclipse.php.internal.ui.text.correction.proposals.AbstractCorrectionProposal;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
+import org.eclipse.php.ui.text.correction.IQuickAssistProcessor;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.MalformedTreeException;
@@ -129,6 +129,9 @@ public class VarCommentQuickAssistProcessor implements IQuickAssistProcessor {
 			varTypeHint.append("/** @var "); //$NON-NLS-1$
 			varTypeHint.append(typeName);
 			varTypeHint.append(" "); //$NON-NLS-1$
+			if (variableNode instanceof Variable && !((Variable) variableNode).isDollared()) {
+				varTypeHint.append("$"); //$NON-NLS-1$
+			}
 			varTypeHint.append(varName);
 			varTypeHint.append(" */"); //$NON-NLS-1$
 			varTypeHint.append(TextUtilities.getDefaultLineDelimiter(document));
@@ -187,7 +190,8 @@ public class VarCommentQuickAssistProcessor implements IQuickAssistProcessor {
 
 			switch (selectedNode.getType()) {
 			case ASTNode.VARIABLE:
-				if (((Variable) selectedNode).isDollared()) {
+				if (((Variable) selectedNode).isDollared() || org.eclipse.php.internal.core.corext.ASTNodes
+						.isQuotedDollaredCurlied((Variable) selectedNode)) {
 					ASTNode parent = selectedNode.getParent();
 					if (parent != null && (parent.getType() == ASTNode.SINGLE_FIELD_DECLARATION
 							|| parent.getType() == ASTNode.FORMAL_PARAMETER)) {

@@ -18,10 +18,10 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Region;
-import org.eclipse.php.formatter.core.CodeFormatterPreferences;
 import org.eclipse.php.formatter.core.CodeFormatterVisitor;
+import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
 import org.eclipse.php.formatter.ui.Logger;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.text.edits.ReplaceEdit;
 
@@ -40,6 +40,7 @@ public class CodeFormatterPreview extends PhpPreview {
 		fPreviewDocument = new Document();
 	}
 
+	@Override
 	protected void doFormatPreview() {
 		fText.setRedraw(false);
 		try {

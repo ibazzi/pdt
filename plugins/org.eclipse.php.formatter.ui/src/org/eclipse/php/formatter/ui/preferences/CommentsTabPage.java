@@ -14,7 +14,7 @@ import java.util.*;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.php.formatter.core.CodeFormatterConstants;
-import org.eclipse.php.formatter.core.CodeFormatterPreferences;
+import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
 import org.eclipse.php.formatter.ui.FormatterMessages;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -40,6 +40,7 @@ public class CommentsTabPage extends ModifyDialogTabPage {
 			}
 		}
 
+		@Override
 		public void update(Observable o, Object arg) {
 			boolean enabled = areSlavesEnabled();
 
@@ -156,6 +157,7 @@ public class CommentsTabPage extends ModifyDialogTabPage {
 		super(modifyDialog, codeFormatterPreferences);
 	}
 
+	@Override
 	protected void doCreatePreferences(Composite composite, int numColumns) {
 		final int indent = fPixelConverter.convertWidthInCharsToPixels(4);
 
@@ -325,15 +327,18 @@ public class CommentsTabPage extends ModifyDialogTabPage {
 		isInitialized = true;
 	}
 
+	@Override
 	protected void initializePage() {
 		fPreview.setPreviewText(PREVIEW);
 	}
 
+	@Override
 	protected PhpPreview doCreatePhpPreview(Composite parent) {
 		fPreview = new CodeFormatterPreview(codeFormatterPreferences, parent);
 		return fPreview;
 	}
 
+	@Override
 	protected void doUpdatePreview() {
 		if (fPreview != null) {
 			fPreview.update();

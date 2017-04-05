@@ -64,6 +64,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		/*
 		 * Implements method from Listener
 		 */
+		@Override
 		public void handleEvent(Event e) {
 			if (getControl() == null)
 				return;
@@ -133,6 +134,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Method declared on IDialogPage.
 	 */
+	@Override
 	public void createControl(final Composite parent) {
 
 		initializeDialogUnits(parent);
@@ -263,6 +265,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	 * Hook method for restoring widget values to the values that they held last
 	 * time this wizard was used to completion.
 	 */
+	@Override
 	protected void restoreWidgetValues() {
 		super.restoreWidgetValues();
 
@@ -406,6 +409,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		fManifestFileBrowseButton.setText(PharPackagerMessages.JarManifestWizardPage_manifestFileBrowse_text);
 		fManifestFileBrowseButton.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
 		fManifestFileBrowseButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				handleManifestFileBrowseButtonPressed();
 			}
@@ -453,6 +457,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		// dialog.setComparator(new JavaElementComparator());
 		dialog.setAllowMultiple(false);
 		dialog.setValidator(new ISelectionStatusValidator() {
+			@Override
 			public IStatus validate(Object[] selection) {
 				StatusInfo res = new StatusInfo();
 				// only single selection
@@ -489,6 +494,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 				.getBoolean(PreferenceConstants.SHOW_SOURCE_MODULE_CHILDREN);
 		// if (getRootMode() == ScriptExplorerPart.PROJECTS_AS_ROOTS) {
 		return new PHPExplorerContentProvider(showCUChildren) {
+			@Override
 			protected IPreferenceStore getPreferenceStore() {
 				return DLTKUIPlugin.getDefault().getPreferenceStore();
 			}
@@ -515,6 +521,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 				treeContentProvider, provider, new StandardModelElementContentProvider(), provider, SWT.NONE,
 				SIZING_SELECTION_WIDGET_WIDTH, SIZING_SELECTION_WIDGET_HEIGHT) {
 
+			@Override
 			protected void setTreeChecked(final Object element, final boolean state) {
 				if (fInitiallySelecting && element instanceof IResource) {
 					final IResource resource = (IResource) element;
@@ -531,6 +538,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		fInputGroup.setListComparator(comparator);
 		fInputGroup.addTreeFilter(new ContainerFilter(ContainerFilter.FILTER_NON_CONTAINERS));
 		fInputGroup.addTreeFilter(new ViewerFilter() {
+			@Override
 			public boolean select(Viewer viewer, Object p, Object element) {
 				if (element instanceof IProjectFragment) {
 					IProjectFragment root = (IProjectFragment) element;
@@ -547,6 +555,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		// setAccessibilityText(fInputGroup.getTable(), "");
 
 		ICheckStateListener listener = new ICheckStateListener() {
+			@Override
 			public void checkStateChanged(CheckStateChangedEvent event) {
 				update();
 			}
@@ -561,6 +570,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	 * @param parent
 	 *            org.eclipse.swt.widgets.Composite
 	 */
+	@Override
 	protected void createOptionsGroup(Composite parent) {
 		Composite optionsGroup = new Composite(parent, SWT.NONE);
 		GridLayout layout = new GridLayout();
@@ -681,6 +691,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 			((GridData) gd).horizontalAlignment = GridData.FILL;
 		}
 		fDestinationBrowseButton.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				handleDestinationBrowseButtonPressed();
 			}
@@ -762,6 +773,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Implements method from IJarPackageWizardPage.
 	 */
+	@Override
 	public void finish() {
 		saveWidgetValues();
 	}
@@ -769,6 +781,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/**
 	 * {@inheritDoc}
 	 */
+	@Override
 	protected void saveWidgetValues() {
 		IDialogSettings settings = getDialogSettings();
 		if (settings != null) {
@@ -807,6 +820,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Overrides method from WizardDataTransferPage
 	 */
+	@Override
 	protected boolean validateDestinationGroup() {
 		if (fDestinationNamesCombo.getText().length() == 0) {
 			// Clear error
@@ -856,6 +870,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Implements method from Listener
 	 */
+	@Override
 	public void handleEvent(Event e) {
 		if (getControl() == null)
 			return;
@@ -972,6 +987,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 		// }
 	}
 
+	@Override
 	protected void updatePageCompletion() {
 		boolean pageComplete = isPageComplete();
 		setPageComplete(pageComplete);
@@ -1036,6 +1052,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	 */
 	public static void setAccessibilityText(Control control, final String text) {
 		control.getAccessible().addAccessibleListener(new AccessibleAdapter() {
+			@Override
 			public void getName(AccessibleEvent e) {
 				e.result = text;
 			}
@@ -1045,6 +1062,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Overrides method from IJarPackageWizardPage
 	 */
+	@Override
 	public boolean isPageComplete() {
 		boolean complete = validateDestinationGroup();
 		complete = validateOptionsGroup() && complete;
@@ -1064,10 +1082,12 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Overrides method from WizardDataTransferPage
 	 */
+	@Override
 	protected boolean validateOptionsGroup() {
 		return true;
 	}
 
+	@Override
 	protected Iterator getSelectedResourcesIterator() {
 		return fInputGroup.getAllCheckedListItems();
 	}
@@ -1075,6 +1095,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Overrides method from WizardExportResourcePage
 	 */
+	@Override
 	protected void setupBasedOnInitialSelections() {
 		Iterator iterator = fInitialSelection.iterator();
 		while (iterator.hasNext()) {
@@ -1117,6 +1138,7 @@ public class PharPackageWizardPage extends WizardExportResourcesPage implements 
 	/*
 	 * Method declared on IWizardPage.
 	 */
+	@Override
 	public void setPreviousPage(IWizardPage page) {
 		super.setPreviousPage(page);
 		if (getControl() != null)

@@ -13,8 +13,8 @@ package org.eclipse.php.internal.ui.editor.selectionactions;
 import org.eclipse.dltk.core.ISourceRange;
 import org.eclipse.dltk.core.ISourceReference;
 import org.eclipse.dltk.core.ModelException;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.visitor.ApplyAll;
 import org.eclipse.php.internal.core.corext.dom.SelectionAnalyzer;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
 
@@ -83,6 +83,7 @@ public class StructureSelectNextAction extends StructureSelectionAction {
 	 * @see StructureSelectionAction#internalGetNewSelectionRange(ISourceRange,
 	 * ICompilationUnit, SelectionAnalyzer)
 	 */
+	@Override
 	public ISourceRange internalGetNewSelectionRange(ISourceRange oldSourceRange, ISourceReference sr,
 			SelectionAnalyzer selAnalyzer) throws ModelException {
 		if (oldSourceRange.getLength() == 0 && selAnalyzer.getLastCoveringNode() != null) {
@@ -91,17 +92,17 @@ public class StructureSelectNextAction extends StructureSelectionAction {
 			if (previousNode != null)
 				return getSelectedNodeSourceRange(sr, previousNode);
 		}
-		org.eclipse.php.internal.core.ast.nodes.ASTNode first = selAnalyzer.getFirstSelectedNode();
+		org.eclipse.php.core.ast.nodes.ASTNode first = selAnalyzer.getFirstSelectedNode();
 		if (first == null)
 			return getLastCoveringNodeRange(oldSourceRange, sr, selAnalyzer);
 
-		org.eclipse.php.internal.core.ast.nodes.ASTNode parent = first.getParent();
+		org.eclipse.php.core.ast.nodes.ASTNode parent = first.getParent();
 		if (parent == null)
 			return getLastCoveringNodeRange(oldSourceRange, sr, selAnalyzer);
 
-		org.eclipse.php.internal.core.ast.nodes.ASTNode lastSelectedNode = selAnalyzer
+		org.eclipse.php.core.ast.nodes.ASTNode lastSelectedNode = selAnalyzer
 				.getSelectedNodes()[selAnalyzer.getSelectedNodes().length - 1];
-		org.eclipse.php.internal.core.ast.nodes.ASTNode nextNode = getNextNode(parent, lastSelectedNode);
+		org.eclipse.php.core.ast.nodes.ASTNode nextNode = getNextNode(parent, lastSelectedNode);
 		if (nextNode == parent)
 			return getSelectedNodeSourceRange(sr, first.getParent());
 		int offset = oldSourceRange.getOffset();
@@ -111,10 +112,10 @@ public class StructureSelectNextAction extends StructureSelectionAction {
 
 	// -- helper methods for this class and subclasses
 
-	private static org.eclipse.php.internal.core.ast.nodes.ASTNode getNextNode(
-			org.eclipse.php.internal.core.ast.nodes.ASTNode parent,
-			org.eclipse.php.internal.core.ast.nodes.ASTNode node) {
-		org.eclipse.php.internal.core.ast.nodes.ASTNode[] siblingNodes = getSiblingNodes(node);
+	private static org.eclipse.php.core.ast.nodes.ASTNode getNextNode(
+			org.eclipse.php.core.ast.nodes.ASTNode parent,
+			org.eclipse.php.core.ast.nodes.ASTNode node) {
+		org.eclipse.php.core.ast.nodes.ASTNode[] siblingNodes = getSiblingNodes(node);
 		if (siblingNodes == null || siblingNodes.length == 0)
 			return parent;
 		if (node == siblingNodes[siblingNodes.length - 1])

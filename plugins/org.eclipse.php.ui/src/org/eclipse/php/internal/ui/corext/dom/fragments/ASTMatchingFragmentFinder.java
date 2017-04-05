@@ -14,8 +14,8 @@ package org.eclipse.php.internal.ui.corext.dom.fragments;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.visitor.ApplyAll;
 
 class ASTMatchingFragmentFinder extends ApplyAll {
 
@@ -44,6 +44,7 @@ class ASTMatchingFragmentFinder extends ApplyAll {
 		return (IASTFragment[]) fMatches.toArray(new IASTFragment[fMatches.size()]);
 	}
 
+	@Override
 	protected boolean apply(ASTNode node) {
 		// if the change scope is the program scope, we don't want it to affect
 		// the function scope

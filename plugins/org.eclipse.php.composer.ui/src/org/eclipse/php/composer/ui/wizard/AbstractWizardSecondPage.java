@@ -51,11 +51,11 @@ import org.eclipse.php.composer.core.log.Logger;
 import org.eclipse.php.composer.ui.ComposerUIPlugin;
 import org.eclipse.php.composer.ui.handler.ConsoleResponseHandler;
 import org.eclipse.php.composer.ui.job.runner.MissingExecutableRunner;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.includepath.IncludePath;
 import org.eclipse.php.internal.core.language.LanguageModelInitializer;
 import org.eclipse.php.internal.core.project.PHPNature;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.ui.wizards.IPHPProjectCreateWizardPage;
 import org.eclipse.php.internal.ui.wizards.PHPBuildpathDetector;
 import org.eclipse.php.ui.util.PHPProjectUtils;
@@ -204,9 +204,9 @@ public abstract class AbstractWizardSecondPage extends CapabilityConfigurationPa
 
 	protected void setPhpLangOptions() {
 		boolean useASPTags = false;
-		PHPVersion phpVersion = PHPVersion.fromApi(firstPage.versionGroup.fConfigurationBlock.getPHPVersionValue());
-		ProjectOptions.setSupportingAspTags(useASPTags, getProject());
-		ProjectOptions.setPhpVersion(phpVersion, getProject());
+		PHPVersion phpVersion = firstPage.versionGroup.fConfigurationBlock.getPHPVersionValue();
+		ProjectOptions.setSupportingASPTags(useASPTags, getProject());
+		ProjectOptions.setPHPVersion(phpVersion, getProject());
 	}
 
 	protected URI getProjectLocationURI() throws CoreException {
@@ -225,7 +225,7 @@ public abstract class AbstractWizardSecondPage extends CapabilityConfigurationPa
 	}
 
 	public void createProject(IProject project, URI locationURI, IProgressMonitor monitor) throws CoreException {
-		PHPProjectUtils.createProjectAt(project, locationURI, monitor);
+		PHPProjectUtils.createProjectAt(project, locationURI, getScriptNature(), monitor);
 	}
 
 	public IProject getCurrProject() {
@@ -302,6 +302,24 @@ public abstract class AbstractWizardSecondPage extends CapabilityConfigurationPa
 			// adding build paths, and language-Container:
 			getScriptProject().setRawBuildpath(buildpathEntries, new NullProgressMonitor());
 			LanguageModelInitializer.enableLanguageModelFor(getScriptProject());
+		} finally {
+			monitor.done();
+		}
+	}
+
+	public void configureScriptProject(IProgressMonitor monitor) throws CoreException, InterruptedException {
+		if (monitor == null) {
+			monitor = new NullProgressMonitor();
+		}
+
+		int nSteps = 5;
+		monitor.beginTask(NewWizardMessages.ScriptCapabilityConfigurationPage_op_desc_Script, nSteps);
+
+		try {
+			final IProject project = getScriptProject().getProject();
+			configureProject(project, new SubProgressMonitor(monitor, 5));
+		} catch (OperationCanceledException e) {
+			throw new InterruptedException();
 		} finally {
 			monitor.done();
 		}

@@ -13,7 +13,7 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.index2.search.ISearchEngine.MatchRule;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.model.PhpModelAccess;
 import org.eclipse.php.internal.core.search.AbstractOccurrencesFinder;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
@@ -32,6 +32,7 @@ public class InternalFunctionHighlighting extends AbstractSemanticHighlighting {
 		/**
 		 * skip static call invocation, and add to changes list the global calls
 		 */
+		@Override
 		public boolean visit(FunctionInvocation functionInvocation) {
 			final Expression functionName = functionInvocation.getFunctionName().getName();
 			final int invocationParent = functionInvocation.getParent().getType();
@@ -79,6 +80,7 @@ public class InternalFunctionHighlighting extends AbstractSemanticHighlighting {
 		getStyle().setEnabledByDefault(false).setDefaultTextColor(new RGB(0, 0, 192));
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.InternalFunctionHighlighting_0;
 	}

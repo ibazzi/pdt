@@ -24,10 +24,10 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.ltk.core.refactoring.CategorizedTextEditGroup;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
-import org.eclipse.php.internal.core.ast.nodes.AST;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.AST;
+import org.eclipse.php.core.ast.nodes.Program;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.refactoring.ui.RefactoringUIPlugin;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
@@ -51,7 +51,7 @@ public class CompilationUnitRewrite {
 
 	// TODO: add RefactoringStatus fStatus;?
 	private ISourceModule fCu;
-	private List/* <TextEditGroup> */ fTextEditGroups = new ArrayList();
+	private List<TextEditGroup> fTextEditGroups = new ArrayList<>();
 
 	private Program fRoot; // lazily initialized
 	private ASTRewrite fRewrite; // lazily initialized
@@ -145,7 +145,7 @@ public class CompilationUnitRewrite {
 
 	public void clearASTRewrite() {
 		fRewrite = null;
-		fTextEditGroups = new ArrayList();
+		fTextEditGroups = new ArrayList<>();
 	}
 
 	public void clearImportRewrites() {
@@ -285,8 +285,8 @@ public class CompilationUnitRewrite {
 				if (!isEmptyEdit(rewriteEdit)) {
 					multiEdit.addChild(rewriteEdit);
 					if (generateGroups) {
-						for (Iterator iter = fTextEditGroups.iterator(); iter.hasNext();) {
-							TextEditGroup group = (TextEditGroup) iter.next();
+						for (Iterator<TextEditGroup> iter = fTextEditGroups.iterator(); iter.hasNext();) {
+							TextEditGroup group = iter.next();
 							cuChange.addTextEditGroup(group);
 						}
 					}
@@ -327,7 +327,7 @@ public class CompilationUnitRewrite {
 	public Program getRoot() {
 		if (fRoot == null) {
 			try {
-				fRoot = new RefactoringASTParser(ProjectOptions.getPhpVersion(fCu), ProjectOptions.useShortTags(fCu))
+				fRoot = new RefactoringASTParser(ProjectOptions.getPHPVersion(fCu), ProjectOptions.useShortTags(fCu))
 						.parse(fCu, fOwner, fResolveBindings, fStatementsRecovery, fBindingsRecovery, null);
 			} catch (Exception e) {
 				RefactoringUIPlugin.log(e);
@@ -355,36 +355,9 @@ public class CompilationUnitRewrite {
 		return fRewrite;
 	}
 
-	// public ImportRewrite getImportRewrite() {
-	// if (fImportRewrite == null) {
-	// // lazily initialized to avoid lengthy processing in
-	// checkInitialConditions(..)
-	// try {
-	// if (fRoot == null) {
-	// fImportRewrite= StubUtility.createImportRewrite(fCu, true);
-	// } else {
-	// fImportRewrite= StubUtility.createImportRewrite(getRoot(), true);
-	// }
-	// } catch (CoreException e) {
-	// JavaPlugin.log(e);
-	// throw new IllegalStateException(e.getMessage()); // like
-	// ASTParser#createAST(..) does
-	// }
-	// }
-	// return fImportRewrite;
-	//
-	// }
-	//
-	// public ImportRemover getImportRemover() {
-	// if (fImportRemover == null) {
-	// fImportRemover= new ImportRemover(fCu.getJavaProject(), getRoot());
-	// }
-	// return fImportRemover;
-	// }
-
 	public void clearGroupDescriptions() {
-		for (Iterator iter = fTextEditGroups.iterator(); iter.hasNext();) {
-			TextEditGroup group = (TextEditGroup) iter.next();
+		for (Iterator<TextEditGroup> iter = fTextEditGroups.iterator(); iter.hasNext();) {
+			TextEditGroup group = iter.next();
 			group.clearTextEdits();
 		}
 	}

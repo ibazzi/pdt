@@ -40,12 +40,12 @@ import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.window.Window;
 import org.eclipse.osgi.util.NLS;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.debug.core.debugger.parameters.IDebugParametersInitializer;
 import org.eclipse.php.debug.core.debugger.parameters.IDebugParametersKeys;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.preferences.CorePreferenceConstants;
 import org.eclipse.php.internal.core.preferences.PreferencesSupport;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.debug.core.*;
 import org.eclipse.php.internal.debug.core.debugger.IDebuggerConfiguration;
 import org.eclipse.php.internal.debug.core.preferences.PHPDebugCorePreferenceNames;
@@ -783,7 +783,7 @@ public class PHPLaunchUtilities {
 			item = PHPDebugPlugin.getPHPexeItem(project);
 		} else {
 			IPath exePath = Path.fromPortableString(path);
-			org.eclipse.php.internal.core.PHPVersion version = PHPRuntime.getPHPVersion(exePath);
+			org.eclipse.php.core.PHPVersion version = PHPRuntime.getPHPVersion(exePath);
 			if (version == null) {
 				String exeName = exePath.lastSegment();
 				item = PHPexes.getInstance().getItem(exeName);
@@ -851,16 +851,26 @@ public class PHPLaunchUtilities {
 		if (phpPath == null || phpPath.isEmpty()) {
 			return;
 		}
-		phpPath += File.pathSeparatorChar;
 
-		String path = env.get("PATH"); //$NON-NLS-1$
+		String pathKey = getPathEnvKey(env);
+		String path = env.get(pathKey);
 		if (path == null) {
 			path = phpPath;
 		} else {
-			path = phpPath + path;
+			path = phpPath + File.pathSeparatorChar + path;
 		}
 
-		env.put("PATH", path); //$NON-NLS-1$
+		env.put(pathKey, path);
+	}
+
+	private static String getPathEnvKey(Map<String, String> env) {
+		String pathKey = "PATH"; //$NON-NLS-1$
+		for (String key : env.keySet()) {
+			if ("path".equalsIgnoreCase(key)) { //$NON-NLS-1$
+				pathKey = key;
+			}
+		}
+		return pathKey;
 	}
 
 	/**
@@ -953,7 +963,7 @@ public class PHPLaunchUtilities {
 			String scriptPath, String[] args, String phpVersion) throws CoreException {
 		// Check if we should treat ASP tags as PHP tags
 		IProject project = getProject(configuration);
-		String aspTags = ProjectOptions.isSupportingAspTags(project) ? "on" //$NON-NLS-1$
+		String aspTags = ProjectOptions.isSupportingASPTags(project) ? "on" //$NON-NLS-1$
 				: "off"; //$NON-NLS-1$
 		String shortOpenTag = ProjectOptions.useShortTags(project) ? "on" //$NON-NLS-1$
 				: "off"; //$NON-NLS-1$
@@ -992,7 +1002,7 @@ public class PHPLaunchUtilities {
 			throws CoreException {
 		// Check if we should treat ASP tags as PHP tags
 		IProject project = getProject(configuration);
-		String aspTags = ProjectOptions.isSupportingAspTags(project) ? "on" //$NON-NLS-1$
+		String aspTags = ProjectOptions.isSupportingASPTags(project) ? "on" //$NON-NLS-1$
 				: "off"; //$NON-NLS-1$
 		String shortOpenTag = ProjectOptions.useShortTags(project) ? "on" //$NON-NLS-1$
 				: "off"; //$NON-NLS-1$

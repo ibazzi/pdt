@@ -11,34 +11,30 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.contentassist;
 
-import java.io.IOException;
-
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.dltk.core.ISourceModule;
+import org.eclipse.core.runtime.preferences.IPreferencesService;
+import org.eclipse.dltk.core.IModelElement;
+import org.eclipse.dltk.core.IScriptProject;
 import org.eclipse.dltk.core.IType;
 import org.eclipse.dltk.internal.ui.text.hover.CompletionHoverControlCreator;
 import org.eclipse.dltk.ui.PreferenceConstants;
 import org.eclipse.dltk.ui.text.ScriptTextTools;
 import org.eclipse.dltk.ui.text.completion.ScriptCompletionProposal;
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
-import org.eclipse.jface.text.*;
+import org.eclipse.jface.text.DefaultInformationControl;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IInformationControl;
+import org.eclipse.jface.text.IInformationControlCreator;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.ast.nodes.Program;
-import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
-import org.eclipse.php.internal.core.ast.util.Signature;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
+import org.eclipse.php.internal.core.codeassist.strategies.IncludeStatementStrategy;
+import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
-import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.text.edits.TextEdit;
 
 @Deprecated
 public class PHPCompletionProposal extends ScriptCompletionProposal implements IPHPCompletionProposalExtension {
@@ -47,112 +43,104 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 	 * The control creator.
 	 */
 	private IInformationControlCreator fCreator;
-	private ISourceModule fSourceModule;
-	/** The unqualified type name. */
-	private final String fUnqualifiedTypeName;
-	/** The fully qualified type name. */
-	private final String fFullyQualifiedTypeName;
 
-	@Deprecated
 	public PHPCompletionProposal(String replacementString, int replacementOffset, int replacementLength, Image image,
 			String displayString, int relevance) {
 		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance);
-		fUnqualifiedTypeName = null;
-		fFullyQualifiedTypeName = null;
 	}
 
-	@Deprecated
 	public PHPCompletionProposal(String replacementString, int replacementOffset, int replacementLength, Image image,
-			String displayString, int relevance, boolean indoc) {
+			StyledString displayString, int relevance) {
+		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance, false);
+	}
+
+	public PHPCompletionProposal(String replacementString, int replacementOffset, int replacementLength, Image image,
+			StyledString displayString, int relevance, boolean indoc) {
 		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance, indoc);
-		fUnqualifiedTypeName = null;
-		fFullyQualifiedTypeName = null;
 	}
 
-	public PHPCompletionProposal(String replacementString, ISourceModule sourceModule, int replacementOffset,
-			int replacementLength, Image image, StyledString displayString, int relevance,
-			String fullyQualifiedTypeName) {
-		this(replacementString, sourceModule, replacementOffset, replacementLength, image, displayString, relevance,
-				false, fullyQualifiedTypeName);
-	}
-
-	public PHPCompletionProposal(String replacementString, ISourceModule sourceModule, int replacementOffset,
-			int replacementLength, Image image, StyledString displayString, int relevance, boolean indoc,
-			String fullyQualifiedTypeName) {
-		super(replacementString, replacementOffset, replacementLength, image, displayString, relevance, indoc);
-		this.fSourceModule = sourceModule;
-		fFullyQualifiedTypeName = fullyQualifiedTypeName;
-		fUnqualifiedTypeName = fullyQualifiedTypeName != null ? Signature.getSimpleName(fullyQualifiedTypeName) : null;
-	}
-
+	@Override
 	protected boolean isValidPrefix(String prefix) {
 		String word = getDisplayString();
 		if (word.startsWith("$") && !prefix.startsWith("$")) { //$NON-NLS-1$ //$NON-NLS-2$
 			word = word.substring(1);
 		}
 		boolean result = isPrefix(prefix, word);
-		if (!result && ProposalExtraInfo.isClassInNamespace(getExtraInfo())) {
-			result = isPrefix(prefix, fUnqualifiedTypeName) || isPrefix(prefix, fFullyQualifiedTypeName);
+		if (!result && ProposalExtraInfo.isClassInNamespace(getExtraInfo()) && (getModelElement() instanceof IType)) {
+			IType type = (IType) getModelElement();
+			result = isPrefix(prefix, PHPModelUtils.getFullName(type));
 		}
+		// int index = word.indexOf(" - ");
+		// if (!result && index >= 0) {
+		// StringBuffer sb = new StringBuffer();
+		// sb.append(word.substring(index + " - ".length()));
+		// sb.append('\\');
+		// sb.append(word.substring(0, index));
+		// result = isPrefix(prefix, sb.toString());
+		// }
 		return result;
 	}
 
+	@Override
 	protected boolean isSmartTrigger(char trigger) {
 		return trigger == '$';
 	}
 
+	@Override
 	public void apply(IDocument document, char trigger, int offset) {
-		try {
-			ImportRewrite impRewrite = null;
-			if (fSourceModule != null) {
-				try {
-					Program astRoot = SharedASTProvider.getAST(fSourceModule, SharedASTProvider.WAIT_YES,
-							SubMonitor.convert(null, 2));
-					impRewrite = ImportRewrite.create(astRoot, true);
-				} catch (IOException e) {
-					PHPUiPlugin.log(e);
-				}
-			}
+		IModelElement modelElement = getModelElement();
 
-			boolean updateCursorPosition = updateReplacementString(document, trigger, offset, impRewrite);
-
-			if (updateCursorPosition)
-				setCursorPosition(getReplacementString().length());
-
-			super.apply(document, trigger, offset);
-
-			if (impRewrite != null) {
-				int oldLen = document.getLength();
-				impRewrite.rewriteImports(new NullProgressMonitor()).apply(document, TextEdit.UPDATE_REGIONS);
-				setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
-			}
-		} catch (CoreException e) {
-			PHPUiPlugin.log(e);
-		} catch (BadLocationException e) {
-			PHPUiPlugin.log(e);
-		}
-	}
-
-	protected boolean updateReplacementString(IDocument document, char trigger, int offset, ImportRewrite impRewrite)
-			throws CoreException, BadLocationException {
-		// avoid adding imports when inside imports container
-		if (impRewrite != null && fFullyQualifiedTypeName != null) {
-			String replacementString = getReplacementString();
-			String qualifiedType = fFullyQualifiedTypeName;
-			if (qualifiedType.indexOf(NamespaceReference.NAMESPACE_DELIMITER) != -1
-					&& replacementString.startsWith(qualifiedType)
-					&& !replacementString.endsWith(String.valueOf(';'))) {
-				IType[] types = impRewrite.getSourceModule().getTypes();
-				if (types.length > 0 && types[0].getSourceRange().getOffset() <= offset) {
-					// ignore positions above type.
-					setReplacementString(impRewrite.addImport(getReplacementString()));
-					return true;
+		boolean activateCodeAssist = false;
+		String replacementString = getReplacementString();
+		if (modelElement instanceof IScriptProject
+				&& replacementString.endsWith(IncludeStatementStrategy.FOLDER_SEPARATOR)) {
+			// workaround for:
+			// https://bugs.eclipse.org/bugs/show_bug.cgi?id=269634
+			activateCodeAssist = true;
+		} else {
+			IPreferencesService preferencesService = Platform.getPreferencesService();
+			boolean enableAutoactivation = preferencesService.getBoolean(PHPCorePlugin.ID,
+					PHPCoreConstants.CODEASSIST_AUTOACTIVATION, false, null);
+			if (enableAutoactivation) {
+				char lastChar = replacementString.charAt(replacementString.length() - 1);
+				for (char autoActivationChar : PHPCompletionProcessor.completionAutoActivationChars) {
+					if (autoActivationChar == lastChar) {
+						activateCodeAssist = true;
+						break;
+					}
 				}
 			}
 		}
-		return false;
+		if (activateCodeAssist) {
+			AutoActivationTrigger.register(document);
+		}
+
+		UseStatementInjector injector = new UseStatementInjector(this);
+		offset = injector.inject(document, getTextViewer(), offset);
+
+		super.apply(document, trigger, offset);
+
+		setCursorPosition(calcCursorPosition());
 	}
 
+	private int calcCursorPosition() {
+		String replacementString = getReplacementString();
+		int i = replacementString.lastIndexOf('(');
+		if (i != -1) {
+			return i + 1;
+		}
+		i = replacementString.lastIndexOf('\'');
+		if (i != -1) {
+			return i;
+		}
+		i = replacementString.lastIndexOf('\"');
+		if (i != -1) {
+			return i;
+		}
+		return replacementString.length();
+	}
+
+	@Override
 	public IContextInformation getContextInformation() {
 		String displayString = getDisplayString();
 		if (displayString.indexOf('(') == -1) {
@@ -161,22 +149,27 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 		return super.getContextInformation();
 	}
 
+	@Override
 	protected boolean isCamelCaseMatching() {
 		return true;
 	}
 
+	@Override
 	protected boolean insertCompletion() {
 		return Platform.getPreferencesService().getBoolean(PHPCorePlugin.ID,
 				PHPCoreConstants.CODEASSIST_INSERT_COMPLETION, true, null);
 	}
 
+	@Override
 	protected ScriptTextTools getTextTools() {
 		return PHPUiPlugin.getDefault().getTextTools();
 	}
 
+	@Override
 	public IInformationControlCreator getInformationControlCreator() {
 		if (fCreator == null) {
 			fCreator = new CompletionHoverControlCreator(new IInformationControlCreator() {
+				@Override
 				public IInformationControl createInformationControl(Shell parent) {
 					if (BrowserInformationControl.isAvailable(parent)) {
 						return new BrowserInformationControl(parent, PreferenceConstants.APPEARANCE_DOCUMENTATION_FONT,
@@ -190,6 +183,7 @@ public class PHPCompletionProposal extends ScriptCompletionProposal implements I
 		return fCreator;
 	}
 
+	@Override
 	public Object getExtraInfo() {
 		return ProposalExtraInfo.DEFAULT;
 	}

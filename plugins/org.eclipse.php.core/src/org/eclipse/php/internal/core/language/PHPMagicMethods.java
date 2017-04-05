@@ -18,7 +18,7 @@ import org.eclipse.dltk.core.IMethod;
 import org.eclipse.dltk.core.IParameter;
 import org.eclipse.dltk.internal.core.MethodParameterInfo;
 import org.eclipse.dltk.internal.core.ModelElement;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.internal.core.typeinference.FakeMethod;
 
 public class PHPMagicMethods {

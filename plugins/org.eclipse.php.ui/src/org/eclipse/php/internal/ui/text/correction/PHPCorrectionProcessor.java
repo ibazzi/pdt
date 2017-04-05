@@ -40,6 +40,7 @@ import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.editor.PHPStructuredTextViewer;
 import org.eclipse.php.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.php.ui.editor.SharedASTProvider;
+import org.eclipse.php.ui.text.correction.*;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IMarkerHelpRegistry;
 import org.eclipse.ui.IMarkerResolution;
@@ -164,15 +165,18 @@ public class PHPCorrectionProcessor
 
 		fAssistant.addCompletionListener(new ICompletionListener() {
 
+			@Override
 			public void assistSessionEnded(ContentAssistEvent event) {
 				fAssistant.setStatusLineVisible(false);
 			}
 
+			@Override
 			public void assistSessionStarted(ContentAssistEvent event) {
 				fAssistant.setStatusLineVisible(true);
 				fAssistant.setStatusMessage(getJumpHintStatusLineMessage());
 			}
 
+			@Override
 			public void selectionChanged(ICompletionProposal proposal, boolean smartToggle) {
 				if (proposal instanceof IStatusLineProposal) {
 					IStatusLineProposal statusLineProposal = (IStatusLineProposal) proposal;
@@ -213,6 +217,7 @@ public class PHPCorrectionProcessor
 	/*
 	 * @see IContentAssistProcessor#computeCompletionProposals(ITextViewer, int)
 	 */
+	@Override
 	public ICompletionProposal[] computeQuickAssistProposals(IQuickAssistInvocationContext quickAssistContext) {
 
 		ICompletionProposal[] res = null;
@@ -238,7 +243,7 @@ public class PHPCorrectionProcessor
 
 			fErrorMessage = null;
 			if (model != null && annotations != null) {
-				ArrayList<ICompletionProposal> proposals = new ArrayList<>(10);
+				ArrayList<IScriptCompletionProposal> proposals = new ArrayList<>(10);
 				IStatus status = collectProposals(context, model, annotations, true, !fAssistant.isUpdatedOffset(),
 						proposals);
 				res = proposals.toArray(new ICompletionProposal[proposals.size()]);
@@ -260,7 +265,7 @@ public class PHPCorrectionProcessor
 	}
 
 	public static IStatus collectProposals(IInvocationContext context, IAnnotationModel model, Annotation[] annotations,
-			boolean addQuickFixes, boolean addQuickAssists, Collection proposals) {
+			boolean addQuickFixes, boolean addQuickAssists, Collection<IScriptCompletionProposal> proposals) {
 		List<ProblemLocation> problems = new ArrayList<>();
 
 		// collect problem locations and corrections from marker annotations
@@ -323,7 +328,8 @@ public class PHPCorrectionProcessor
 		return null;
 	}
 
-	private static void collectMarkerProposals(SimpleMarkerAnnotation annotation, Collection proposals) {
+	private static void collectMarkerProposals(SimpleMarkerAnnotation annotation,
+			Collection<IScriptCompletionProposal> proposals) {
 		IMarker marker = annotation.getMarker();
 		IMarkerResolution[] res = IDE.getMarkerHelpRegistry().getResolutions(marker);
 		if (res.length > 0) {
@@ -349,12 +355,14 @@ public class PHPCorrectionProcessor
 			SafeRunner.run(this);
 		}
 
+		@Override
 		public void run() throws Exception {
 			safeRun(fDescriptor);
 		}
 
 		protected abstract void safeRun(ContributedProcessorDescriptor processor) throws Exception;
 
+		@Override
 		public void handleException(Throwable exception) {
 			if (fMulti == null) {
 				fMulti = new MultiStatus(PHPUiPlugin.ID, IStatus.OK,
@@ -375,10 +383,10 @@ public class PHPCorrectionProcessor
 
 	private static class SafeCorrectionCollector extends SafeCorrectionProcessorAccess {
 		private final IInvocationContext fContext;
-		private final Collection fProposals;
+		private final Collection<IScriptCompletionProposal> fProposals;
 		private IProblemLocation[] fLocations;
 
-		public SafeCorrectionCollector(IInvocationContext context, Collection proposals) {
+		public SafeCorrectionCollector(IInvocationContext context, Collection<IScriptCompletionProposal> proposals) {
 			fContext = context;
 			fProposals = proposals;
 		}
@@ -387,6 +395,7 @@ public class PHPCorrectionProcessor
 			fLocations = locations;
 		}
 
+		@Override
 		public void safeRun(ContributedProcessorDescriptor desc) throws Exception {
 			IQuickFixProcessor curr = (IQuickFixProcessor) desc.getProcessor(fContext.getCompilationUnit(),
 					IQuickFixProcessor.class);
@@ -404,14 +413,16 @@ public class PHPCorrectionProcessor
 	private static class SafeAssistCollector extends SafeCorrectionProcessorAccess {
 		private final IInvocationContext fContext;
 		private final IProblemLocation[] fLocations;
-		private final Collection fProposals;
+		private final Collection<IScriptCompletionProposal> fProposals;
 
-		public SafeAssistCollector(IInvocationContext context, IProblemLocation[] locations, Collection proposals) {
+		public SafeAssistCollector(IInvocationContext context, IProblemLocation[] locations,
+				Collection<IScriptCompletionProposal> proposals) {
 			fContext = context;
 			fLocations = locations;
 			fProposals = proposals;
 		}
 
+		@Override
 		public void safeRun(ContributedProcessorDescriptor desc) throws Exception {
 			IQuickAssistProcessor curr = (IQuickAssistProcessor) desc.getProcessor(fContext.getCompilationUnit(),
 					IQuickAssistProcessor.class);
@@ -439,6 +450,7 @@ public class PHPCorrectionProcessor
 			return fHasAssists;
 		}
 
+		@Override
 		public void safeRun(ContributedProcessorDescriptor desc) throws Exception {
 			IQuickAssistProcessor processor = (IQuickAssistProcessor) desc.getProcessor(fContext.getCompilationUnit(),
 					IQuickAssistProcessor.class);
@@ -472,6 +484,7 @@ public class PHPCorrectionProcessor
 			return fHasCorrections;
 		}
 
+		@Override
 		public void safeRun(ContributedProcessorDescriptor desc) throws Exception {
 			IQuickFixProcessor processor = (IQuickFixProcessor) desc.getProcessor(fCu, IQuickFixProcessor.class);
 			if (processor != null && processor.hasCorrections(fCu, fProblemId)) {
@@ -484,7 +497,7 @@ public class PHPCorrectionProcessor
 	}
 
 	public static IStatus collectCorrections(IInvocationContext context, IProblemLocation[] locations,
-			Collection proposals) {
+			Collection<IScriptCompletionProposal> proposals) {
 		ContributedProcessorDescriptor[] processors = getCorrectionProcessors();
 		SafeCorrectionCollector collector = new SafeCorrectionCollector(context, proposals);
 		for (int i = 0; i < processors.length; i++) {
@@ -532,7 +545,7 @@ public class PHPCorrectionProcessor
 	}
 
 	public static IStatus collectAssists(IInvocationContext context, IProblemLocation[] locations,
-			Collection proposals) {
+			Collection<IScriptCompletionProposal> proposals) {
 		ContributedProcessorDescriptor[] processors = getAssistProcessors();
 		SafeAssistCollector collector = new SafeAssistCollector(context, locations, proposals);
 		collector.process(processors);
@@ -543,6 +556,7 @@ public class PHPCorrectionProcessor
 	/*
 	 * @see IContentAssistProcessor#getErrorMessage()
 	 */
+	@Override
 	public String getErrorMessage() {
 		return fErrorMessage;
 	}
@@ -553,6 +567,7 @@ public class PHPCorrectionProcessor
 	 * 
 	 * @since 3.2
 	 */
+	@Override
 	public boolean canFix(Annotation annotation) {
 		return hasCorrections(annotation);
 	}
@@ -564,12 +579,14 @@ public class PHPCorrectionProcessor
 	 * 
 	 * @since 3.2
 	 */
+	@Override
 	public boolean canAssist(IQuickAssistInvocationContext invocationContext) {
 		if (invocationContext instanceof IInvocationContext)
 			return hasAssists((IInvocationContext) invocationContext);
 		return false;
 	}
 
+	@Override
 	public boolean canFix(IScriptAnnotation annotation) {
 		if (annotation instanceof Annotation) {
 			return canFix((Annotation) annotation);
@@ -577,13 +594,16 @@ public class PHPCorrectionProcessor
 		return false;
 	}
 
+	@Override
 	public boolean canFix(IMarker marker) {
 		return false;
 	}
 
+	@Override
 	public void computeQuickAssistProposals(IScriptAnnotation annotation, IScriptCorrectionContext context) {
 	}
 
+	@Override
 	public void computeQuickAssistProposals(IMarker marker, IScriptCorrectionContext context) {
 	}
 }

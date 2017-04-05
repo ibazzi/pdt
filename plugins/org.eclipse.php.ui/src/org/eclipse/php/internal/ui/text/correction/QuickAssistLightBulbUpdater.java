@@ -23,12 +23,13 @@ import org.eclipse.jface.text.*;
 import org.eclipse.jface.text.source.*;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
 import org.eclipse.php.internal.ui.viewsupport.ISelectionListenerWithAST;
 import org.eclipse.php.internal.ui.viewsupport.SelectionListenerWithASTManager;
 import org.eclipse.php.ui.editor.SharedASTProvider;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -70,6 +71,7 @@ public class QuickAssistLightBulbUpdater {
 		/*
 		 * @see org.eclipse.jface.text.source.IAnnotationPresentation#getLayer()
 		 */
+		@Override
 		public int getLayer() {
 			return LAYER;
 		}
@@ -88,6 +90,7 @@ public class QuickAssistLightBulbUpdater {
 		 * graphics .GC, org.eclipse.swt.widgets.Canvas,
 		 * org.eclipse.swt.graphics.Rectangle)
 		 */
+		@Override
 		public void paint(GC gc, Canvas canvas, Rectangle r) {
 			ImageUtilities.drawImage(getImage(), gc, canvas, r, SWT.CENTER, SWT.TOP);
 		}
@@ -116,6 +119,7 @@ public class QuickAssistLightBulbUpdater {
 
 	private void installSelectionListener() {
 		fListener = new ISelectionListenerWithAST() {
+			@Override
 			public void selectionChanged(IEditorPart part, ITextSelection selection, Program astRoot) {
 				doSelectionChanged(selection.getOffset(), selection.getLength(), astRoot);
 			}
@@ -142,6 +146,7 @@ public class QuickAssistLightBulbUpdater {
 		}
 		if (fPropertyChangeListener == null) {
 			fPropertyChangeListener = new IPropertyChangeListener() {
+				@Override
 				public void propertyChange(PropertyChangeEvent event) {
 					doPropertyChanged(event.getProperty());
 				}
@@ -276,7 +281,7 @@ public class QuickAssistLightBulbUpdater {
 
 			// this iterator is not protected, it may throw
 			// ConcurrentModificationExceptions
-			Iterator iter = model.getAnnotationIterator();
+			Iterator<Annotation> iter = model.getAnnotationIterator();
 			while (iter.hasNext()) {
 				Annotation annot = (Annotation) iter.next();
 				if (PHPCorrectionProcessor.isQuickFixableType(annot)) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009 IBM Corporation and others.
+ * Copyright (c) 2009, 2017 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,9 +13,9 @@ package org.eclipse.php.internal.core.corext;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.dltk.ast.Modifiers;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.visitor.ApplyAll;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewriteFlattener;
-import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
 
 public class ASTNodes {
 
@@ -110,6 +110,31 @@ public class ASTNodes {
 				return true;
 		} while (node != null);
 		return false;
+	}
+
+	public static boolean isQuotedDollaredCurlied(Variable variable) {
+		if (variable.isDollared() || variable.getParent() == null) {
+			return false;
+		}
+
+		ASTNode enclosing = null;
+
+		if (variable.getParent().getType() == ASTNode.ARRAY_ACCESS) {
+			enclosing = variable.getParent().getParent();
+			if (enclosing != null && enclosing.getType() == ASTNode.REFLECTION_VARIABLE) {
+				enclosing = enclosing.getParent();
+			} else {
+				enclosing = null;
+			}
+		} else if (variable.getParent().getType() == ASTNode.REFLECTION_VARIABLE) {
+			enclosing = variable.getParent().getParent();
+		}
+
+		if (enclosing == null) {
+			return false;
+		}
+
+		return enclosing.getType() == ASTNode.QUOTE || enclosing.getType() == ASTNode.BACK_TICK_EXPRESSION;
 	}
 
 	public static int getExclusiveEnd(ASTNode node) {

@@ -15,13 +15,13 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.IDocumentorLexer;
-import org.eclipse.php.internal.core.ast.nodes.Comment;
+import org.eclipse.php.core.ast.nodes.IDocumentorLexer;
+import org.eclipse.php.core.ast.nodes.Comment;
 import java_cup.sym;
-import org.eclipse.php.internal.core.ast.nodes.AST;
+import org.eclipse.php.core.ast.nodes.AST;
 import java_cup.runtime.Symbol;
 import org.eclipse.php.internal.core.ast.scanner.StateStack;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
 
 %%
 
@@ -409,7 +409,7 @@ HEREDOC_CHARS=("{"*([^$\n\r\\{]|("\\"[^\n\r]))|{HEREDOC_LITERAL_DOLLAR}|({HEREDO
 }
 
 <ST_LOOKING_FOR_PROPERTY>{ANY_CHAR} {
-	yypushback(yylength());
+	yypushback(1);
 	popState();
 }
 
@@ -684,7 +684,6 @@ HEREDOC_CHARS=("{"*([^$\n\r\\{]|("\\"[^\n\r]))|{HEREDOC_LITERAL_DOLLAR}|({HEREDO
 }
 
 <ST_IN_SCRIPTING>"}" {
-	/* This is a temporary fix which is dependant on flex and it's implementation */
 	if (!stack.isEmpty()) {
 		popState();
 	}
@@ -692,15 +691,13 @@ HEREDOC_CHARS=("{"*([^$\n\r\\{]|("\\"[^\n\r]))|{HEREDOC_LITERAL_DOLLAR}|({HEREDO
 }
 
 <ST_LOOKING_FOR_VARNAME>{LABEL} {
-	popState();
-	pushState(ST_IN_SCRIPTING);
+	yybegin(ST_IN_SCRIPTING);
 	return createFullSymbol(ParserConstants.T_STRING_VARNAME);
 }
 
 <ST_LOOKING_FOR_VARNAME>{ANY_CHAR} {
-	yypushback(yylength());
-	popState();
-	pushState(ST_IN_SCRIPTING);
+	yypushback(1);
+	yybegin(ST_IN_SCRIPTING);
 }
 
 <ST_IN_SCRIPTING>{LNUM} {

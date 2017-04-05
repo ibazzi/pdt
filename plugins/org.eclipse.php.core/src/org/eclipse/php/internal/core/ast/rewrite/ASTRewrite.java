@@ -20,7 +20,7 @@ import org.eclipse.dltk.core.ModelException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.TextUtilities;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.rewrite.RewriteEventStore.CopySourceInfo;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
@@ -178,8 +178,7 @@ public class ASTRewrite {
 		LineInformation lineInfo = LineInformation.create(document);
 		String lineDelim = TextUtilities.getDefaultLineDelimiter(document);
 
-		ASTNode astRoot = rootNode.getProgramRoot();
-		List commentNodes = astRoot instanceof Program ? ((Program) astRoot).comments() : null;
+		List<Comment> commentNodes = rootNode.getProgramRoot().comments();
 		return internalRewriteAST(document, content, lineInfo, lineDelim, commentNodes, options, rootNode);
 	}
 
@@ -229,12 +228,7 @@ public class ASTRewrite {
 			return new MultiTextEdit(); // no changes
 		}
 
-		ASTNode root = rootNode.getProgramRoot();
-		if (!(root instanceof Program)) {
-			throw new IllegalArgumentException(
-					"This API can only be used if the AST is created from a compilation unit or class file"); //$NON-NLS-1$
-		}
-		Program astRoot = (Program) root;
+		Program astRoot = rootNode.getProgramRoot();
 		ISourceModule typeRoot = astRoot.getSourceModule();
 		if (typeRoot == null || typeRoot.getBuffer() == null) {
 			throw new IllegalArgumentException(
@@ -245,7 +239,7 @@ public class ASTRewrite {
 		Document document = new Document(new String(content));
 		LineInformation lineInfo = LineInformation.create(astRoot);
 		String lineDelim = TextUtilities.getDefaultLineDelimiter(document);
-		Map options = typeRoot.getScriptProject().getOptions(true);
+		Map<String, String> options = typeRoot.getScriptProject().getOptions(true);
 
 		return internalRewriteAST(document, content, lineInfo, lineDelim, astRoot.comments(), options, rootNode);
 	}

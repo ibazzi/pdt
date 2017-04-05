@@ -16,10 +16,10 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.dltk.core.*;
-import org.eclipse.php.internal.core.PHPVersion;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.ASTParser;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.ASTParser;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.editor.ASTProvider;
 import org.eclipse.php.refactoring.ui.RefactoringUIPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
@@ -163,10 +163,10 @@ public class RefactoringASTParser {
 	 *            an element (not the Java model)
 	 * @return compiler options
 	 */
-	public static Map getCompilerOptions(IModelElement element) {
+	public static Map<String, String> getCompilerOptions(IModelElement element) {
 		IScriptProject project = element.getScriptProject();
-		Map options = project.getOptions(true);
-		for (Iterator iter = options.keySet().iterator(); iter.hasNext();) {
+		Map<String, String> options = project.getOptions(true);
+		for (Iterator<String> iter = options.keySet().iterator(); iter.hasNext();) {
 			String key = (String) iter.next();
 			String value = (String) options.get(key);
 			if (DLTKCore.ERROR.equals(value) || DLTKCore.WARNING.equals(value)) {

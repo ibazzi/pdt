@@ -18,16 +18,16 @@ import org.eclipse.dltk.core.SourceParserUtil;
 import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.dltk.ui.text.completion.IScriptCompletionProposal;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.compiler.ast.parser.PhpProblemIdentifier;
 import org.eclipse.php.internal.core.corext.util.DocumentUtils;
-import org.eclipse.php.internal.ui.text.correction.IInvocationContext;
-import org.eclipse.php.internal.ui.text.correction.IProblemLocation;
-import org.eclipse.php.internal.ui.text.correction.IQuickFixProcessor;
-import org.eclipse.php.internal.ui.text.correction.IQuickFixProcessorExtension;
 import org.eclipse.php.internal.ui.text.correction.proposals.ASTRewriteCorrectionProposal;
 import org.eclipse.php.internal.ui.text.correction.proposals.AbstractCorrectionProposal;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
+import org.eclipse.php.ui.text.correction.IQuickFixProcessor;
+import org.eclipse.php.ui.text.correction.IQuickFixProcessorExtension;
 import org.eclipse.text.edits.TextEditGroup;
 
 public class UnusedUseStatementProcessor implements IQuickFixProcessor, IQuickFixProcessorExtension {
@@ -65,6 +65,7 @@ public class UnusedUseStatementProcessor implements IQuickFixProcessor, IQuickFi
 			this.context = context;
 		}
 
+		@Override
 		protected ASTRewrite getRewrite() throws CoreException {
 			ASTNode coveringNode = context.getCoveringNode();
 			ASTRewrite rewrite = ASTRewrite.create(coveringNode.getAST());

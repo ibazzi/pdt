@@ -18,7 +18,7 @@ import java.util.Iterator;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.php.formatter.core.CodeFormatterPreferences;
+import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
 import org.eclipse.php.internal.core.documentModel.provisional.contenttype.ContentTypeIdForPHP;
 import org.eclipse.php.internal.ui.editor.highlighter.LineStyleProviderForPhp;
 import org.eclipse.swt.SWT;
@@ -114,7 +114,7 @@ public abstract class PhpPreview {
 		fStyleProvider.loadColors();
 
 		IStructuredDocumentRegion node = fNodes;
-		final Collection<StyleRange> holdResults = new ArrayList<StyleRange>();
+		final Collection<StyleRange> holdResults = new ArrayList<>();
 		fStyleProvider.prepareTextRegions(node, 0, fInput.length(), holdResults);
 
 		for (Iterator<StyleRange> iter = holdResults.iterator(); iter.hasNext();) {

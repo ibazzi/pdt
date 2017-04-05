@@ -35,14 +35,14 @@ import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.core.PHPLanguageToolkit;
-import org.eclipse.php.internal.core.PHPVersion;
 import org.eclipse.php.internal.core.includepath.IIncludepathListener;
 import org.eclipse.php.internal.core.includepath.IncludePath;
 import org.eclipse.php.internal.core.includepath.IncludePathManager;
 import org.eclipse.php.internal.core.project.PHPNature;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.GlobalNamespace;
 import org.eclipse.php.internal.core.util.OutlineFilter;
 import org.eclipse.php.internal.ui.Logger;
@@ -91,6 +91,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 		return model.getForeignResources();
 	}
 
+	@Override
 	public Object[] getChildren(Object parentElement) {
 		if (parentElement instanceof IPath) {
 			IPath path = (IPath) parentElement;
@@ -323,7 +324,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 	}
 
 	protected boolean supportsNamespaces(IScriptProject project) {
-		PHPVersion version = ProjectOptions.getPhpVersion(project.getProject());
+		PHPVersion version = ProjectOptions.getPHPVersion(project.getProject());
 		return version.isGreaterThan(PHPVersion.PHP5);
 	}
 
@@ -430,10 +431,12 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 			fIncludePath = entries;
 		}
 
+		@Override
 		public String getLabel() {
 			return PHPUIMessages.IncludePathExplorerNode_label;
 		}
 
+		@Override
 		public IAdaptable[] getChildren() {
 			return fIncludePath;
 		}
@@ -481,6 +484,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 	/**
 	 * This method overrides the
 	 */
+	@Override
 	public void refresh(IProject project) {
 		Collection<Runnable> runnables = new ArrayList<Runnable>();
 		final ArrayList<IScriptProject> resources = new ArrayList<IScriptProject>(1);
@@ -500,6 +504,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 		}
 	}
 
+	@Override
 	public void elementChanged(ElementChangedEvent event) {
 		IJavaScriptElementDelta[] affectedChildren = event.getDelta().getAffectedChildren();
 		final ArrayList<Runnable> runnables = new ArrayList<Runnable>();

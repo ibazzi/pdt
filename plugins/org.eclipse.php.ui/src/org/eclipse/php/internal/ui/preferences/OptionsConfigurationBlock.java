@@ -133,149 +133,6 @@ public abstract class OptionsConfigurationBlock {
 		}
 	}
 
-	/**
-	 * A node in <code>FilteredPreferenceTree</code>.
-	 */
-	protected static class PreferenceTreeNode {
-
-		public static final int NONE = 0;
-
-		public static final int CHECKBOX = 1;
-
-		public static final int COMBO = 2;
-
-		public static final int EXPANDABLE_COMPOSITE = 3;
-
-		public static final int TEXT_CONTROL = 4;
-
-		public static final int LINK = 5;
-
-		/**
-		 * Tells the type of UI control corresponding to this node. One of
-		 * <ul>
-		 * <li><code>NONE</code></li>
-		 * <li><code>CHECKBOX</code></li>
-		 * <li><code>COMBO</code></li>
-		 * <li><code>EXPANDABLE_COMPOSITE</code></li>
-		 * <li><code>TEXT_CONTROL</code></li>
-		 * <li><code>LINK</code></li>
-		 * </ul>
-		 */
-		private final int fControlType;
-
-		/**
-		 * Label text of the preference which is used for filtering. This text
-		 * does not contain <code>&</code> which is used to indicate mnemonics.
-		 */
-		private final String fLabel;
-
-		/**
-		 * The preference key or the local key to uniquely identify a node's
-		 * corresponding UI control. Can be <code>null</code>.
-		 */
-		private final Key fKey;
-
-		/**
-		 * Tells whether all children should be shown even if just one child
-		 * matches the filter.
-		 */
-		private final boolean fShowAllChildren;
-
-		/**
-		 * Tells whether this node's UI control is visible in the UI for the
-		 * current filter text.
-		 */
-		private boolean fVisible;
-
-		/**
-		 * List of children nodes.
-		 */
-		private List<PreferenceTreeNode> fChildren;
-
-		/**
-		 * Constructs a new instance of PreferenceTreeNode according to the
-		 * parameters.
-		 * <p>
-		 * The <code>label</code> and the <code>key</code> must not be
-		 * <code>null</code> if the node has a corresponding UI control.
-		 * </p>
-		 * 
-		 * @param label
-		 *            the label text
-		 * @param key
-		 *            the key
-		 * @param controlType
-		 *            the type of UI control.
-		 * @param showAllChildren
-		 *            tells whether all children should be shown even if just
-		 *            one child matches the filter.
-		 */
-		public PreferenceTreeNode(String label, Key key, int controlType, boolean showAllChildren) {
-			super();
-			if (controlType != NONE && (label == null || key == null)) {
-				throw new IllegalArgumentException();
-			}
-			if (label == null) {
-				label = ""; //$NON-NLS-1$
-			}
-			fLabel = LegacyActionTools.removeMnemonics(label);
-			fKey = key;
-			fControlType = controlType;
-			fShowAllChildren = showAllChildren;
-		}
-
-		public String getLabel() {
-			return fLabel;
-		}
-
-		public Key getKey() {
-			return fKey;
-		}
-
-		public int getControlType() {
-			return fControlType;
-		}
-
-		public List<PreferenceTreeNode> getChildren() {
-			return fChildren;
-		}
-
-		public boolean isShowAllChildren() {
-			return fShowAllChildren;
-		}
-
-		public boolean isVisible() {
-			return fVisible;
-		}
-
-		private void setVisible(boolean visible, boolean recursive) {
-			fVisible = visible;
-			if (!recursive)
-				return;
-			if (fChildren != null) {
-				for (int i = 0; i < fChildren.size(); i++) {
-					fChildren.get(i).setVisible(visible, recursive);
-				}
-			}
-		}
-
-		public PreferenceTreeNode addChild(String label, Key key, int controlType, boolean showAllChildren) {
-			if (fChildren == null) {
-				fChildren = new ArrayList<PreferenceTreeNode>();
-			}
-			PreferenceTreeNode n = new PreferenceTreeNode(label, key, controlType, showAllChildren);
-			fChildren.add(n);
-			return n;
-		}
-
-		public boolean hasValue() {
-			if (fControlType == COMBO || fControlType == CHECKBOX || fControlType == TEXT_CONTROL) {
-				return true;
-			}
-			return false;
-		}
-	}
-
 	private static class HighlightPainter implements PaintListener {
 
 		private final Composite fParent;
@@ -290,6 +147,7 @@ public abstract class OptionsConfigurationBlock {
 			fColor = color;
 		}
 
+		@Override
 		public void paintControl(PaintEvent e) {
 			if (((GridData) fLabelControl.getLayoutData()).exclude) {
 				fParent.removePaintListener(this);
@@ -567,6 +425,7 @@ public abstract class OptionsConfigurationBlock {
 			}
 		});
 		link.addTraverseListener(new TraverseListener() {
+			@Override
 			public void keyTraversed(TraverseEvent e) {
 				if (e.detail == SWT.TRAVERSE_MNEMONIC && e.doit == true) {
 					e.detail = SWT.TRAVERSE_NONE;
@@ -615,10 +474,12 @@ public abstract class OptionsConfigurationBlock {
 
 	private void addHighlight(final Composite parent, final Label labelControl, final Combo comboBox) {
 		comboBox.addFocusListener(new FocusListener() {
+			@Override
 			public void focusLost(FocusEvent e) {
 				highlight(parent, labelControl, comboBox, HIGHLIGHT_NONE);
 			}
 
+			@Override
 			public void focusGained(FocusEvent e) {
 				highlight(parent, labelControl, comboBox, HIGHLIGHT_FOCUS);
 			}
@@ -647,21 +508,25 @@ public abstract class OptionsConfigurationBlock {
 					highlight(parent, labelControl, comboBox, HIGHLIGHT_NONE);
 			}
 
+			@Override
 			public void mouseMove(MouseEvent e) {
 				int color = comboBox.isEnabled() ? comboBox.isFocusControl() ? HIGHLIGHT_FOCUS
 						: isAroundLabel(e) ? HIGHLIGHT_MOUSE : HIGHLIGHT_NONE : HIGHLIGHT_NONE;
 				highlight(parent, labelControl, comboBox, color);
 			}
 
+			@Override
 			public void mouseDown(MouseEvent e) {
 				if (isAroundLabel(e))
 					comboBox.setFocus();
 			}
 
+			@Override
 			public void mouseDoubleClick(MouseEvent e) {
 				// not used
 			}
 
+			@Override
 			public void mouseUp(MouseEvent e) {
 				// not used
 			}
@@ -910,6 +775,7 @@ public abstract class OptionsConfigurationBlock {
 	protected ModifyListener getTextModifyListener() {
 		if (fTextModifyListener == null) {
 			fTextModifyListener = new ModifyListener() {
+				@Override
 				public void modifyText(ModifyEvent e) {
 					textChanged((Text) e.widget);
 				}

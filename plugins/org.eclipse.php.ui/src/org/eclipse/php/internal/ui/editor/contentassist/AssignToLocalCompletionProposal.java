@@ -12,10 +12,10 @@ package org.eclipse.php.internal.ui.editor.contentassist;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.core.ISourceModule;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.visitor.HierarchicalVisitor;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
-import org.eclipse.php.internal.core.ast.visitor.HierarchicalVisitor;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.ui.corext.fix.LinkedProposalModel;
 import org.eclipse.php.internal.ui.text.correction.proposals.ASTRewriteCorrectionProposal;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
@@ -193,7 +193,8 @@ public class AssignToLocalCompletionProposal extends ASTRewriteCorrectionProposa
 
 		@Override
 		public boolean visit(Variable var) {
-			if (var.isDollared() && var.getName() instanceof Identifier) {
+			if ((var.isDollared() || org.eclipse.php.internal.core.corext.ASTNodes.isQuotedDollaredCurlied(var))
+					&& var.getName() instanceof Identifier) {
 				String name = ((Identifier) var.getName()).getName();
 				if (name != null && name.equals(search)) {
 					found = true;

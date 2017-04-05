@@ -116,6 +116,7 @@ public class ActionContributorForPhp extends ActionContributorHTML {
 		fMarkOccurrencesAction = new ToggleMarkOccurrencesAction(resourceBundle);
 	}
 
+	@Override
 	protected void addToMenu(IMenuManager menu) {
 		super.addToMenu(menu);
 		// source commands
@@ -134,6 +135,7 @@ public class ActionContributorForPhp extends ActionContributorHTML {
 	 * @see org.eclipse.ui.part.EditorActionBarContributor#contributeToMenu(org.
 	 * eclipse .jface.action.IMenuManager)
 	 */
+	@Override
 	public void contributeToMenu(IMenuManager menu) {
 		super.contributeToMenu(menu);
 		IMenuManager gotoMenu = menu.findMenuUsingPath("navigate/goTo"); //$NON-NLS-1$
@@ -165,6 +167,7 @@ public class ActionContributorForPhp extends ActionContributorHTML {
 	/*
 	 * @see EditorActionBarContributor#setActiveEditor(IEditorPart)
 	 */
+	@Override
 	public void setActiveEditor(IEditorPart part) {
 		super.setActiveEditor(part);
 
@@ -210,6 +213,7 @@ public class ActionContributorForPhp extends ActionContributorHTML {
 	/*
 	 * @see IEditorActionBarContributor#dispose()
 	 */
+	@Override
 	public void dispose() {
 		Iterator<RetargetAction> e = fPartListeners.iterator();
 		while (e.hasNext())
@@ -225,6 +229,7 @@ public class ActionContributorForPhp extends ActionContributorHTML {
 		super.dispose();
 	}
 
+	@Override
 	protected String[] getExtensionIDs() {
 		return EDITOR_IDS;
 	}

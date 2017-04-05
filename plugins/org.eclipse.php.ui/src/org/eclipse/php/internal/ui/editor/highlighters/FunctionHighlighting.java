@@ -12,7 +12,7 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.language.keywords.PHPKeywords;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
@@ -24,6 +24,7 @@ public class FunctionHighlighting extends AbstractSemanticHighlighting {
 		/**
 		 * Visit the function declaration
 		 */
+		@Override
 		public boolean visit(FunctionDeclaration functionDeclaration) {
 			if (functionDeclaration.getParent().getType() != ASTNode.METHOD_DECLARATION) {
 				highlight(functionDeclaration.getFunctionName());
@@ -34,6 +35,7 @@ public class FunctionHighlighting extends AbstractSemanticHighlighting {
 		/**
 		 * skip static call invocation, and add to changes list the global calls
 		 */
+		@Override
 		public boolean visit(FunctionInvocation functionInvocation) {
 			final Expression functionName = functionInvocation.getFunctionName().getName();
 			final int invocationParent = functionInvocation.getParent().getType();
@@ -69,6 +71,7 @@ public class FunctionHighlighting extends AbstractSemanticHighlighting {
 		getStyle().setEnabledByDefault(true);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.FunctionHighlighting_0;
 	}

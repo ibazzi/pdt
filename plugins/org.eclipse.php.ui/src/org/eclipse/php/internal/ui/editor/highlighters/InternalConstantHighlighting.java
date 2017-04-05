@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.highlighters;
 
-import org.eclipse.php.internal.core.ast.nodes.Scalar;
+import org.eclipse.php.core.ast.nodes.Scalar;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -38,6 +38,7 @@ public class InternalConstantHighlighting extends AbstractSemanticHighlighting {
 				192);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.InternalConstantHighlighting_0;
 	}

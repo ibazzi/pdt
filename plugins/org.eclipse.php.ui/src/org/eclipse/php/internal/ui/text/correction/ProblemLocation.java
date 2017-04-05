@@ -16,9 +16,10 @@ import org.eclipse.dltk.compiler.problem.*;
 import org.eclipse.dltk.core.IModelMarker;
 import org.eclipse.dltk.ui.editor.IScriptAnnotation;
 import org.eclipse.dltk.ui.editor.ScriptMarkerAnnotation;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.corext.dom.NodeFinder;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
 
 /**
  *
@@ -70,6 +71,7 @@ public class ProblemLocation implements IProblemLocation {
 		}
 	}
 
+	@Override
 	public IProblemIdentifier getProblemIdentifier() {
 		return fIdentifier;
 	}
@@ -80,6 +82,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * @seeorg.eclipse.jdt.internal.ui.text.correction.IProblemLocation#
 	 * getProblemArguments()
 	 */
+	@Override
 	public String[] getProblemArguments() {
 		return fArguments;
 	}
@@ -90,6 +93,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * @see
 	 * org.eclipse.jdt.internal.ui.text.correction.IProblemLocation#getLength()
 	 */
+	@Override
 	public int getLength() {
 		return fLength;
 	}
@@ -100,6 +104,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * @see
 	 * org.eclipse.jdt.internal.ui.text.correction.IProblemLocation#getOffset()
 	 */
+	@Override
 	public int getOffset() {
 		return fOffset;
 	}
@@ -109,6 +114,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * 
 	 * @see org.eclipse.jdt.ui.text.java.IProblemLocation#isError()
 	 */
+	@Override
 	public boolean isError() {
 		return fIsError;
 	}
@@ -118,6 +124,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * 
 	 * @see org.eclipse.jdt.ui.text.java.IProblemLocation#getMarkerType()
 	 */
+	@Override
 	public String getMarkerType() {
 		return fMarkerType;
 	}
@@ -128,6 +135,7 @@ public class ProblemLocation implements IProblemLocation {
 	 * @see org.eclipse.jdt.internal.ui.text.correction.IProblemLocation#
 	 * getCoveringNode (org.eclipse.jdt.core.dom.CompilationUnit)
 	 */
+	@Override
 	public ASTNode getCoveringNode(Program astRoot) {
 		NodeFinder finder = new NodeFinder(fOffset, fLength);
 		astRoot.accept(finder);
@@ -140,12 +148,14 @@ public class ProblemLocation implements IProblemLocation {
 	 * @see org.eclipse.jdt.internal.ui.text.correction.IProblemLocation#
 	 * getCoveredNode (org.eclipse.jdt.core.dom.CompilationUnit)
 	 */
+	@Override
 	public ASTNode getCoveredNode(Program astRoot) {
 		NodeFinder finder = new NodeFinder(fOffset, fLength);
 		astRoot.accept(finder);
 		return finder.getCoveredNode();
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
 		buf.append(Messages.ProblemLocation_0).append(DefaultProblemIdentifier.encode(fIdentifier)).append('\n');

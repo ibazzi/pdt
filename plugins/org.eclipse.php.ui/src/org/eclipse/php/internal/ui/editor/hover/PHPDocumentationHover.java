@@ -32,9 +32,9 @@ import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.text.*;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.information.IInformationProviderExtension2;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.core.ast.nodes.*;
-import org.eclipse.php.internal.core.compiler.ast.nodes.FullyQualifiedReference;
+import org.eclipse.php.core.compiler.ast.nodes.FullyQualifiedReference;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 import org.eclipse.php.internal.core.corext.dom.NodeFinder;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
@@ -61,6 +61,7 @@ import org.osgi.framework.Bundle;
 public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		implements IPHPTextHover, IInformationProviderExtension2 {
 
+	@Override
 	public IHoverMessageDecorator getMessageDecorator() {
 		return null;
 	}
@@ -83,6 +84,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 			update();
 		}
 
+		@Override
 		public void run() {
 			BrowserInformationControlInput previous = (BrowserInformationControlInput) fInfoControl.getInput()
 					.getPrevious();
@@ -124,6 +126,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 			update();
 		}
 
+		@Override
 		public void run() {
 			BrowserInformationControlInput next = (BrowserInformationControlInput) fInfoControl.getInput().getNext();
 			if (next != null) {
@@ -164,6 +167,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		/*
 		 * @see org.eclipse.jface.action.Action#run()
 		 */
+		@Override
 		public void run() {
 			PHPDocumentationBrowserInformationControlInput infoInput = (PHPDocumentationBrowserInformationControlInput) fInfoControl
 					.getInput(); // TODO: check cast
@@ -195,6 +199,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		 * AbstractReusableInformationControlCreator
 		 * #doCreateInformationControl(org.eclipse.swt.widgets.Shell)
 		 */
+		@Override
 		public IInformationControl doCreateInformationControl(Shell parent) {
 			if (BrowserInformationControl.isAvailable(parent)) {
 				ToolBarManager tbm = new ToolBarManager(SWT.FLAT);
@@ -222,6 +227,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 				// tbm.add(openExternalJavadocAction);
 
 				IInputChangedListener inputChangeListener = new IInputChangedListener() {
+					@Override
 					public void inputChanged(Object newInput) {
 						backAction.update();
 						forwardAction.update();
@@ -275,6 +281,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		 * AbstractReusableInformationControlCreator
 		 * #doCreateInformationControl(org.eclipse.swt.widgets.Shell)
 		 */
+		@Override
 		public IInformationControl doCreateInformationControl(Shell parent) {
 			String tooltipAffordanceString = EditorsUI.getTooltipAffordanceString();
 			if (BrowserInformationControl.isAvailable(parent)) {
@@ -286,6 +293,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 					 * org.eclipse.jface.text.IInformationControlExtension5#
 					 * getInformationPresenterControlCreator()
 					 */
+					@Override
 					public IInformationControlCreator getInformationPresenterControlCreator() {
 						return fInformationPresenterControlCreator;
 					}
@@ -303,6 +311,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		 * AbstractReusableInformationControlCreator
 		 * #canReuse(org.eclipse.jface.text.IInformationControl)
 		 */
+		@Override
 		public boolean canReuse(IInformationControl control) {
 			if (!super.canReuse(control))
 				return false;
@@ -351,6 +360,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 	 * 
 	 * @since 3.1
 	 */
+	@Override
 	public IInformationControlCreator getInformationPresenterControlCreator() {
 		if (fPresenterControlCreator == null)
 			fPresenterControlCreator = new PresenterControlCreator();
@@ -362,6 +372,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 	 * 
 	 * @since 3.2
 	 */
+	@Override
 	public IInformationControlCreator getHoverControlCreator() {
 		if (fHoverControlCreator == null)
 			fHoverControlCreator = new HoverControlCreator(getInformationPresenterControlCreator());
@@ -377,6 +388,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 			 * .ILinkHandler #handleInlineJavadocLink(org.eclipse.jdt.core
 			 * .IModelElement)
 			 */
+			@Override
 			public void handleInlineLink(IModelElement linkTarget) {
 				PHPDocumentationBrowserInformationControlInput hoverInfo = getHoverInfo(
 						new IModelElement[] { linkTarget }, null,
@@ -394,6 +406,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 			 * .ILinkHandler #handleDeclarationLink(org.eclipse.jdt.core.
 			 * IModelElement)
 			 */
+			@Override
 			public void handleDeclarationLink(IModelElement linkTarget) {
 				control.notifyDelayedInputChange(null);
 				control.dispose(); // FIXME: should have protocol to
@@ -416,6 +429,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 			 * .ILinkHandler#handleExternalLink(java.net.URL,
 			 * org.eclipse.swt.widgets.Display)
 			 */
+			@Override
 			public boolean handleExternalLink(URL url, Display display) {
 				control.notifyDelayedInputChange(null);
 				control.dispose(); // FIXME: should have protocol to
@@ -427,6 +441,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 				return true;
 			}
 
+			@Override
 			public void handleTextSet() {
 			}
 		}));
@@ -437,6 +452,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 	 * org.eclipse.jface.text.ITextHoverExtension2#getHoverInfo2(org.eclipse
 	 * .jface.text.ITextViewer, org.eclipse.jface.text.IRegion)
 	 */
+	@Override
 	public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
 		return internalGetHoverInfo(textViewer, hoverRegion);
 	}
@@ -449,6 +465,7 @@ public class PHPDocumentationHover extends AbstractPHPEditorTextHover
 		// filter the same namespace
 		Set<IModelElement> elementSet = new TreeSet<IModelElement>(new Comparator<IModelElement>() {
 
+			@Override
 			public int compare(IModelElement o1, IModelElement o2) {
 				if (o1 instanceof IType && o2 instanceof IType) {
 					IType type1 = (IType) o1;

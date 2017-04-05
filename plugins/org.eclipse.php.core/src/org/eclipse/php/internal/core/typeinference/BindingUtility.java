@@ -30,9 +30,9 @@ import org.eclipse.dltk.ti.IContext;
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.goals.ExpressionTypeGoal;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
-import org.eclipse.php.internal.core.compiler.ast.nodes.LambdaFunctionDeclaration;
-import org.eclipse.php.internal.core.compiler.ast.nodes.ReturnStatement;
-import org.eclipse.php.internal.core.compiler.ast.nodes.YieldExpression;
+import org.eclipse.php.core.compiler.ast.nodes.LambdaFunctionDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.ReturnStatement;
+import org.eclipse.php.core.compiler.ast.nodes.YieldExpression;
 import org.eclipse.php.internal.core.typeinference.context.IModelCacheContext;
 import org.eclipse.php.internal.core.typeinference.context.MethodContext;
 import org.eclipse.php.internal.core.typeinference.evaluators.VariableReferenceEvaluator;
@@ -375,70 +375,6 @@ public class BindingUtility {
 		return null;
 	}
 
-	private class SourceRange {
-		private final int offset;
-		private final int length;
-
-		public SourceRange(ISourceRange sourceRange) {
-			offset = sourceRange.getOffset();
-			length = sourceRange.getLength();
-		}
-
-		public SourceRange(int offset, int length) {
-			this.length = length;
-			this.offset = offset;
-		}
-
-		public SourceRange(ASTNode node) {
-			this(node.sourceStart(), node.sourceEnd() - node.sourceStart());
-		}
-
-		public int getEnd() {
-			return length + offset;
-		}
-
-		public int getLength() {
-			return length;
-		}
-
-		public int getOffset() {
-			return offset;
-		}
-
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + length;
-			result = prime * result + offset;
-			return result;
-		}
-
-		public boolean equals(Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (getClass() != obj.getClass()) {
-				return false;
-			}
-			SourceRange other = (SourceRange) obj;
-			if (length != other.length) {
-				return false;
-			}
-			if (offset != other.offset) {
-				return false;
-			}
-			return true;
-		}
-
-		public String toString() {
-			return new StringBuilder("<offset=").append(offset) //$NON-NLS-1$
-					.append(", length=").append(length).append(">").toString(); //$NON-NLS-1$ //$NON-NLS-2$
-		}
-	}
-
 	/**
 	 * Finds binding context for the given AST node for internal usages only.
 	 */
@@ -470,13 +406,14 @@ public class BindingUtility {
 		}
 
 		public boolean visitGeneral(ASTNode node) throws Exception {
-			if (node.sourceStart() > sourceRange.getEnd()) {
+			if (node.sourceStart() > (sourceRange.getOffset() + sourceRange.getLength())) {
 				return false;
 			}
-			if (node.sourceEnd() < sourceRange.offset) {
+			if (node.sourceEnd() < sourceRange.getOffset()) {
 				return false;
 			}
-			if (node.sourceStart() <= sourceRange.offset && node.sourceEnd() >= sourceRange.getEnd()) {
+			if (node.sourceStart() <= sourceRange.getOffset()
+					&& node.sourceEnd() >= (sourceRange.getOffset() + sourceRange.getLength())) {
 				if (!contextStack.isEmpty()) {
 					this.context = contextStack.peek();
 					this.node = node;
@@ -592,7 +529,7 @@ public class BindingUtility {
 				evaluated.add(generator);
 			}
 		}
-		return (IEvaluatedType[]) evaluated.toArray(new IEvaluatedType[evaluated.size()]);
+		return evaluated.toArray(new IEvaluatedType[evaluated.size()]);
 	}
 
 	/**

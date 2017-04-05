@@ -25,7 +25,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.ui.ISelectionListener;
@@ -68,6 +68,7 @@ public class SelectionListenerWithASTManager {
 			fAstListeners = new ListenerList(ListenerList.IDENTITY);
 
 			fSelectionListener = new ISelectionChangedListener() {
+				@Override
 				public void selectionChanged(SelectionChangedEvent event) {
 					ISelection selection = event.getSelection();
 					if (selection instanceof ITextSelection) {
@@ -77,6 +78,7 @@ public class SelectionListenerWithASTManager {
 			};
 
 			fPostSelectionListener = new ISelectionListener() {
+				@Override
 				public void selectionChanged(IWorkbenchPart part, ISelection selection) {
 					if (part == fPart && selection instanceof ITextSelection)
 						firePostSelectionChanged((ITextSelection) selection);
@@ -136,6 +138,7 @@ public class SelectionListenerWithASTManager {
 			}
 
 			fCurrentJob = new Job("Selection Job titile") { //$NON-NLS-1$
+				@Override
 				public IStatus run(IProgressMonitor monitor) {
 					if (monitor == null) {
 						monitor = new NullProgressMonitor();

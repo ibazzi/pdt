@@ -11,9 +11,9 @@
 package org.eclipse.php.internal.ui.editor.highlighters;
 
 import org.eclipse.dltk.ast.Modifiers;
-import org.eclipse.php.internal.core.ast.nodes.FieldsDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.StaticFieldAccess;
-import org.eclipse.php.internal.core.ast.nodes.Variable;
+import org.eclipse.php.core.ast.nodes.FieldsDeclaration;
+import org.eclipse.php.core.ast.nodes.StaticFieldAccess;
+import org.eclipse.php.core.ast.nodes.Variable;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -40,6 +40,7 @@ public class StaticFieldHighlighting extends AbstractSemanticHighlighting {
 			return false;
 		}
 
+		@Override
 		public boolean visit(Variable var) {
 			if (visitField && var.isDollared()) {
 				highlight(var);
@@ -69,6 +70,7 @@ public class StaticFieldHighlighting extends AbstractSemanticHighlighting {
 		getStyle().setItalicByDefault(true).setDefaultTextColor(0, 0, 192);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.StaticFieldHighlighting_0;
 	}

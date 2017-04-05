@@ -21,10 +21,10 @@ import org.eclipse.dltk.core.IScriptProject;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.search.IDLTKSearchScope;
 import org.eclipse.dltk.core.search.SearchEngine;
-import org.eclipse.php.internal.core.ast.nodes.NamespaceDeclaration;
-import org.eclipse.php.internal.core.ast.nodes.UseStatement;
-import org.eclipse.php.internal.core.ast.nodes.UseStatementPart;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
+import org.eclipse.php.core.ast.nodes.NamespaceDeclaration;
+import org.eclipse.php.core.ast.nodes.UseStatement;
+import org.eclipse.php.core.ast.nodes.UseStatementPart;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 
 public class AbstractSemanticApplyWithNS extends AbstractSemanticApply {
@@ -71,6 +71,7 @@ public class AbstractSemanticApplyWithNS extends AbstractSemanticApply {
 		return SearchEngine.createSearchScope(sourceModule);
 	}
 
+	@Override
 	public boolean visit(UseStatement useStatement) {
 		List<UseStatementPart> useParts = useStatement.parts();
 		for (UseStatementPart part : useParts) {
@@ -89,12 +90,14 @@ public class AbstractSemanticApplyWithNS extends AbstractSemanticApply {
 		return true;
 	}
 
+	@Override
 	public boolean visit(NamespaceDeclaration namespaceDeclaration) {
 		fCurrentNamespace = namespaceDeclaration;
 		fLastUseParts.clear();
 		return true;
 	}
 
+	@Override
 	public void endVisit(NamespaceDeclaration namespaceDeclaration) {
 		fCurrentNamespace = null;
 		fLastUseParts.clear();

@@ -19,10 +19,10 @@ import org.eclipse.dltk.ast.expressions.Expression;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.ModelException;
 import org.eclipse.jface.text.Region;
-import org.eclipse.php.internal.core.compiler.ast.nodes.Include;
-import org.eclipse.php.internal.core.compiler.ast.nodes.InfixExpression;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPCallExpression;
-import org.eclipse.php.internal.core.compiler.ast.nodes.Scalar;
+import org.eclipse.php.core.compiler.ast.nodes.Include;
+import org.eclipse.php.core.compiler.ast.nodes.InfixExpression;
+import org.eclipse.php.core.compiler.ast.nodes.PHPCallExpression;
+import org.eclipse.php.core.compiler.ast.nodes.Scalar;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 
 public class IncludeHyperlinkVisitor extends ASTVisitor {
@@ -43,6 +43,7 @@ public class IncludeHyperlinkVisitor extends ASTVisitor {
 		this.filePath = new StringBuilder();
 	}
 
+	@Override
 	public boolean visit(Expression expr) throws ModelException {
 		if (expr.sourceStart() < offset && expr.sourceEnd() > offset) {
 			if (expr instanceof Include) {
@@ -125,6 +126,7 @@ public class IncludeHyperlinkVisitor extends ASTVisitor {
 		return new Path(path).removeLastSegments(1).toOSString();
 	}
 
+	@Override
 	public boolean visitGeneral(ASTNode n) {
 		return !found;
 	}

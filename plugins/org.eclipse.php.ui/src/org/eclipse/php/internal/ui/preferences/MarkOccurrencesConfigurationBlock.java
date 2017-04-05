@@ -13,6 +13,7 @@ package org.eclipse.php.internal.ui.preferences;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -36,10 +37,8 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 	private OverlayPreferenceStore fStore;
 
 	private Map<Button, String> fCheckBoxes = new HashMap<Button, String>();
-	private SelectionListener fCheckBoxListener = new SelectionListener() {
-		public void widgetDefaultSelected(SelectionEvent e) {
-		}
-
+	private SelectionListener fCheckBoxListener = new SelectionAdapter() {
+		@Override
 		public void widgetSelected(SelectionEvent e) {
 			Button button = (Button) e.widget;
 			fStore.setValue(fCheckBoxes.get(button), button.getSelection());
@@ -65,7 +64,7 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 
 	private OverlayPreferenceStore.OverlayKey[] createOverlayStoreKeys() {
 
-		ArrayList overlayKeys = new ArrayList();
+		List<OverlayPreferenceStore.OverlayKey> overlayKeys = new ArrayList<>();
 
 		overlayKeys.add(new OverlayPreferenceStore.OverlayKey(OverlayPreferenceStore.BOOLEAN,
 				PreferenceConstants.EDITOR_MARK_OCCURRENCES));
@@ -102,6 +101,7 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 	 *            the parent composite
 	 * @return the control for the preference page
 	 */
+	@Override
 	public Control createControl(final Composite parent) {
 
 		Composite composite = new Composite(parent, SWT.NONE);
@@ -114,6 +114,7 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 		Link link = new Link(composite, SWT.NONE);
 		link.setText(PHPUIMessages.MarkOccurrencesConfigurationBlock_link);
 		link.addSelectionListener(new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				PreferencesUtil.createPreferenceDialogOn(parent.getShell(), e.text, null, null);
 			}
@@ -205,12 +206,10 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 		indent(slave);
 		boolean masterState = fStore.getBoolean(masterKey);
 		slave.setEnabled(masterState);
-		SelectionListener listener = new SelectionListener() {
+		SelectionListener listener = new SelectionAdapter() {
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				slave.setEnabled(master.getSelection());
-			}
-
-			public void widgetDefaultSelected(SelectionEvent e) {
 			}
 		};
 		master.addSelectionListener(listener);
@@ -223,6 +222,7 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 		control.setLayoutData(gridData);
 	}
 
+	@Override
 	public void initialize() {
 		initializeFields();
 	}
@@ -240,9 +240,11 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 
 	}
 
+	@Override
 	public void performOk() {
 	}
 
+	@Override
 	public void performDefaults() {
 		restoreFromPreferences();
 		initializeFields();
@@ -265,6 +267,7 @@ public class MarkOccurrencesConfigurationBlock implements IPreferenceConfigurati
 	 * 
 	 * @since 3.0
 	 */
+	@Override
 	public void dispose() {
 	}
 }

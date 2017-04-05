@@ -52,7 +52,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 	 */
 	private static final Object DISABLE_LINK = "DISABLE_LINK"; //$NON-NLS-1$
 
-	protected Map fData = null;
+	protected Map<?, ?> fData = null;
 	protected Button fEnableProjectSettings;
 	private Link fProjectSettingsLink;
 	protected IPHPPreferencePageBlock[] projectScopeAddons;
@@ -62,10 +62,11 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		super();
 	}
 
+	@Override
 	public final void applyData(Object data) {
 		super.applyData(data);
 		if (data instanceof Map) {
-			fData = (Map) data;
+			fData = (Map<?, ?>) data;
 			updateLinkEnablement();
 		}
 	}
@@ -104,6 +105,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		return scrolledCompositeImpl;
 	}
 
+	@Override
 	public final Control createContents(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NULL);
 
@@ -145,10 +147,12 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		updateLinkEnablement();
 
 		fProjectSettingsLink.addSelectionListener(new SelectionListener() {
+			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				widgetSelected(e);
 			}
 
+			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (getProject() == null) {
 					openProjectSettings();
@@ -174,6 +178,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 			SelectionAdapter selectionAdapter = new SelectionAdapter() {
 				ControlEnableState enablements = null;
 
+				@Override
 				public void widgetSelected(SelectionEvent e) {
 					super.widgetSelected(e);
 					if (fEnableProjectSettings.getSelection()) {
@@ -192,6 +197,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		return composite;
 	}
 
+	@Override
 	public void createControl(Composite parent) {
 		if (getProject() != null) {
 			noDefaultAndApplyButton();
@@ -234,6 +240,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 	void openProjectSettings() {
 		ListDialog dialog = new ListDialog(getShell()) {
 
+			@Override
 			protected Control createDialogArea(Composite container) {
 				Control area = super.createDialogArea(container);
 				getTableViewer().setComparator(new ResourceComparator(ResourceComparator.NAME));
@@ -242,13 +249,16 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		};
 		dialog.setMessage(PHPUIMessages.AbstractPHPPropertyPreferencePage_3);
 		dialog.setContentProvider(new IStructuredContentProvider() {
+			@Override
 			public void dispose() {
 			}
 
+			@Override
 			public Object[] getElements(Object inputElement) {
 				return ((IWorkspace) inputElement).getRoot().getProjects();
 			}
 
+			@Override
 			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			}
 		});
@@ -260,7 +270,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 			Object[] result = dialog.getResult();
 			if (result.length > 0) {
 				IProject project = (IProject) dialog.getResult()[0];
-				Map data = new HashMap();
+				Map<Object, Boolean> data = new HashMap<>();
 				data.put(DISABLE_LINK, Boolean.TRUE);
 				PreferencesUtil.createPropertyDialogOn(getShell(), project, getPropertyPageID(),
 						new String[] { getPropertyPageID() }, data).open();
@@ -269,12 +279,13 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 	}
 
 	void openWorkspaceSettings() {
-		Map data = new HashMap();
+		Map<Object, Boolean> data = new HashMap<>();
 		data.put(DISABLE_LINK, Boolean.TRUE);
 		PreferencesUtil.createPreferenceDialogOn(getShell(), getPreferencePageID(),
 				new String[] { getPreferencePageID() }, data).open();
 	}
 
+	@Override
 	public boolean performOk() {
 		boolean ok = super.performOk();
 
@@ -301,6 +312,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		return ok;
 	}
 
+	@Override
 	public void performDefaults() {
 		if (projectScopeAddons != null) {
 			for (int i = 0; i < projectScopeAddons.length; i++) {
@@ -315,6 +327,7 @@ public abstract class AbstractPHPPropertyPreferencePage extends PropertyPage imp
 		super.performDefaults();
 	}
 
+	@Override
 	public void performApply() {
 		super.performApply(); // Will execute the preformOK()
 	}

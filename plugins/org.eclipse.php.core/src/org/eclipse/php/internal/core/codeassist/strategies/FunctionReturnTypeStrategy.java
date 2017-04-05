@@ -19,7 +19,7 @@ import org.eclipse.dltk.core.ISourceRange;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.core.codeassist.ICompletionContext;
-import org.eclipse.php.internal.core.codeassist.ICompletionReporter;
+import org.eclipse.php.core.codeassist.ICompletionReporter;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.codeassist.contexts.AbstractCompletionContext;
 
@@ -45,7 +45,7 @@ public class FunctionReturnTypeStrategy extends GlobalTypesStrategy {
 		String prefix = context.getPrefix();
 		String suffix = ""; //$NON-NLS-1$
 		ISourceRange replaceRange = getReplacementRange(context);
-		PHPVersion phpVersion = context.getPhpVersion().toApi();
+		PHPVersion phpVersion = context.getPhpVersion();
 		for (SimpleProposal proposal : TYPES) {
 			if (proposal.isValid(prefix, phpVersion)) {
 				reporter.reportKeyword(proposal.getProposal(), suffix, replaceRange);

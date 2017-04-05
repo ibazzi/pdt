@@ -28,10 +28,10 @@ import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.formatter.IContentFormatter;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.format.ICodeFormattingProcessor;
 import org.eclipse.php.internal.core.format.IFormatterProcessorFactory;
 import org.eclipse.php.internal.core.preferences.PreferencesSupport;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
 import org.eclipse.text.edits.MultiTextEdit;
@@ -39,10 +39,12 @@ import org.eclipse.wst.jsdt.internal.ui.javaeditor.saveparticipant.SaveParticipa
 
 public class CodeFormatSaveParticipant implements IPostSaveListener {
 
+	@Override
 	public String getName() {
 		return "Format source code"; //$NON-NLS-1$
 	}
 
+	@Override
 	public String getId() {
 		return ID;
 	}
@@ -71,15 +73,18 @@ public class CodeFormatSaveParticipant implements IPostSaveListener {
 		formatOnSaveEnabled = Boolean.parseBoolean(formatOnSavePref);
 	}
 
+	@Override
 	public boolean isEnabled(ISourceModule compilationUnit) {
 		return new PreferencesLookupDelegate(compilationUnit.getScriptProject().getProject()).getBoolean(PHPUiPlugin.ID,
 				EDITOR_SAVE_PARTICIPANT_PREFIX + ID);
 	}
 
+	@Override
 	public boolean needsChangedRegions(ISourceModule compilationUnit) throws CoreException {
 		return false;
 	}
 
+	@Override
 	public void saved(ISourceModule compilationUnit, IRegion[] changedRegions, IProgressMonitor monitor)
 			throws CoreException {
 		IScriptProject project = compilationUnit.getScriptProject();
@@ -91,11 +96,11 @@ public class CodeFormatSaveParticipant implements IPostSaveListener {
 
 		IContentFormatter formatter = PHPUiPlugin.getDefault().getActiveFormatter();
 
-		if (formatter instanceof IFormatterProcessorFactory) {
+		if (formatter instanceof IFormatterProcessorFactory && project != null) {
 			try {
 				IDocument document = new Document(compilationUnit.getSource());
 				ICodeFormattingProcessor processor = ((IFormatterProcessorFactory) formatter)
-						.getCodeFormattingProcessor(document, ProjectOptions.getPhpVersion(project),
+						.getCodeFormattingProcessor(document, ProjectOptions.getPHPVersion(project),
 								ProjectOptions.useShortTags(project), new Region(0, document.getLength()));
 				MultiTextEdit edits = processor.getTextEdits();
 				if (edits.hasChildren()) {

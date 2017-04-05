@@ -14,9 +14,9 @@
  */
 package org.eclipse.php.internal.core.search;
 
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.CoreMessages;
-import org.eclipse.php.internal.core.ast.nodes.*;
 
 /**
  * Finds all implement occurrences of an extended class or an implemented
@@ -97,7 +97,7 @@ public class ImplementOccurrencesFinder extends AbstractOccurrencesFinder {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see org.eclipse.php.internal.core.ast.visitor.AbstractVisitor#visit(org.
+	 * @see org.eclipse.php.core.ast.visitor.AbstractVisitor#visit(org.
 	 * eclipse .php.internal.core.ast.nodes.MethodDeclaration)
 	 */
 	public boolean visit(MethodDeclaration methodDeclaration) {

@@ -17,7 +17,7 @@ import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.internal.core.facet.PHPFacets;
 import org.eclipse.php.internal.core.preferences.CorePreferenceConstants.Keys;
 import org.eclipse.php.internal.ui.preferences.util.Key;
@@ -32,16 +32,20 @@ public abstract class PHPCoreOptionsConfigurationBlock extends OptionsConfigurat
 		super(context, project, allKeys, container);
 	}
 
+	@Override
 	protected abstract Control createContents(Composite parent);
 
+	@Override
 	protected abstract void validateSettings(Key changedKey, String oldValue, String newValue);
 
+	@Override
 	protected abstract String[] getFullBuildDialogStrings(boolean workspaceSettings);
 
 	protected final static Key getPHPCoreKey(String key) {
 		return getKey(PHPCorePlugin.ID, key);
 	}
 
+	@Override
 	protected boolean checkChanges(IScopeContext currContext) {
 		if (fProject != null) {
 			final Key versionKey = getPHPCoreKey(Keys.PHP_VERSION);

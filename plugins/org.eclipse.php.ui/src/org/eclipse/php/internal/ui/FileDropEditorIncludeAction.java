@@ -19,10 +19,10 @@ import org.eclipse.dltk.core.IModelElement;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.internal.core.ModelElement;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.AST;
-import org.eclipse.php.internal.core.ast.nodes.ASTParser;
-import org.eclipse.php.internal.core.ast.nodes.Include;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.AST;
+import org.eclipse.php.core.ast.nodes.ASTParser;
+import org.eclipse.php.core.ast.nodes.Include;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
 import org.eclipse.php.internal.ui.preferences.includepath.IncludePathUtils;
 import org.eclipse.swt.dnd.DropTargetEvent;
@@ -38,6 +38,7 @@ public class FileDropEditorIncludeAction extends FileDropAction {
 	public FileDropEditorIncludeAction() {
 	}
 
+	@Override
 	public boolean run(DropTargetEvent event, IEditorPart targetEditor) {
 
 		if (!(targetEditor instanceof PHPStructuredEditor))

@@ -42,6 +42,7 @@ public class TextTemplate {
 			setStructName(structName);
 		}
 
+		@Override
 		public boolean equals(final Object o) {
 			if (o instanceof StructPatternHandler) {
 				final StructPatternHandler handler = (StructPatternHandler) o;
@@ -135,7 +136,7 @@ public class TextTemplate {
 		return null;
 	}
 
-	Map vars;
+	Map<String, String> vars;
 
 	/**
 	 * @param text
@@ -228,8 +229,8 @@ public class TextTemplate {
 	 */
 	public String set(final String var, final String val) {
 		if (vars == null)
-			vars = new HashMap();
-		return (String) vars.put(var, val);
+			vars = new HashMap<>();
+		return vars.put(var, val);
 	}
 
 	/**

@@ -36,14 +36,14 @@ import org.eclipse.jface.text.templates.TemplateVariable;
 import org.eclipse.jface.text.templates.persistence.TemplatePersistenceData;
 import org.eclipse.jface.text.templates.persistence.TemplateStore;
 import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.compiler.ast.nodes.FullyQualifiedReference;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
+import org.eclipse.php.core.compiler.ast.nodes.PHPMethodDeclaration;
 import org.eclipse.php.core.project.ProjectOptions;
-import org.eclipse.php.internal.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.util.Signature;
-import org.eclipse.php.internal.core.compiler.ast.nodes.FullyQualifiedReference;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPMethodDeclaration;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.corext.template.php.CodeTemplateContext;
@@ -92,7 +92,7 @@ public class StubUtility {
 		ModuleDeclaration moduleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
 		org.eclipse.dltk.ast.declarations.MethodDeclaration methodDeclaration = PHPModelUtils
 				.getNodeByMethod(moduleDeclaration, method);
-		List<org.eclipse.php.internal.core.compiler.ast.nodes.FormalParameter> arguments = (List<org.eclipse.php.internal.core.compiler.ast.nodes.FormalParameter>) methodDeclaration
+		List<org.eclipse.php.core.compiler.ast.nodes.FormalParameter> arguments = (List<org.eclipse.php.core.compiler.ast.nodes.FormalParameter>) methodDeclaration
 				.getArguments();
 
 		Map<String, ImportDeclaration> importContainers = getImportContainer(method);
@@ -100,7 +100,7 @@ public class StubUtility {
 		if (typeParams.length > 0) {
 			for (int i = 0; i < typeParams.length; i++) {
 				FormalParameter newTypeParam = ast.newFormalParameter();
-				org.eclipse.php.internal.core.compiler.ast.nodes.FormalParameter currTypeParam = arguments.get(i);
+				org.eclipse.php.core.compiler.ast.nodes.FormalParameter currTypeParam = arguments.get(i);
 				IParameter curr = typeParams[i];
 
 				if (currTypeParam.getParameterType() != null) {

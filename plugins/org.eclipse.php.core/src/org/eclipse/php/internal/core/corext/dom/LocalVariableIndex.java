@@ -15,8 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.php.internal.core.ast.nodes.*;
-import org.eclipse.php.internal.core.ast.visitor.AbstractVisitor;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 
 public class LocalVariableIndex extends AbstractVisitor {
 
@@ -65,7 +65,8 @@ public class LocalVariableIndex extends AbstractVisitor {
 	 */
 	public boolean visit(Variable variable) {
 		Expression name = variable.getName();
-		if (variable.isDollared() && name.getType() == ASTNode.IDENTIFIER) {
+		if ((variable.isDollared() || org.eclipse.php.internal.core.corext.ASTNodes.isQuotedDollaredCurlied(variable))
+				&& name.getType() == ASTNode.IDENTIFIER) {
 			String variableName = ((Identifier) name).getName();
 			if (!variableName.equalsIgnoreCase("this") //$NON-NLS-1$
 					&& !variablesSet.contains(variableName)) {

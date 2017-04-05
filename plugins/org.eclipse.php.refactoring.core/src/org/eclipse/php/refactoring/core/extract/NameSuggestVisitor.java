@@ -13,10 +13,10 @@ package org.eclipse.php.refactoring.core.extract;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.FunctionInvocation;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.Scalar;
-import org.eclipse.php.internal.core.ast.visitor.AbstractVisitor;
+import org.eclipse.php.core.ast.nodes.FunctionInvocation;
+import org.eclipse.php.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.nodes.Scalar;
+import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 
 /**
  * This visitor is activated in order to get a list of name suggestions for

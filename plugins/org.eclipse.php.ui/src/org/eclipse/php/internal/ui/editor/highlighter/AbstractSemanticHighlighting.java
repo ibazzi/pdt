@@ -22,8 +22,8 @@ import org.eclipse.dltk.internal.core.BufferManager;
 import org.eclipse.dltk.internal.ui.editor.DocumentAdapter;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.Position;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
 import org.eclipse.php.internal.ui.editor.SemanticHighlightingStyle;
@@ -107,6 +107,7 @@ public abstract class AbstractSemanticHighlighting
 		return new Position[0];
 	}
 
+	@Override
 	public Position[] consumes(IStructuredDocumentRegion region) {
 		if (region.getStart() == 0) {
 			Program program = getProgram(region);
@@ -168,40 +169,48 @@ public abstract class AbstractSemanticHighlighting
 		return program;
 	}
 
+	@Override
 	public String getBoldPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_BOLD_SUFFIX;
 	}
 
+	@Override
 	public String getColorPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_COLOR_SUFFIX;
 	}
 
+	@Override
 	public String getBackgroundColorPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_BGCOLOR_SUFFIX;
 	}
 
+	@Override
 	public String getEnabledPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_ENABLED_SUFFIX;
 	}
 
+	@Override
 	public String getItalicPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_ITALIC_SUFFIX;
 	}
 
+	@Override
 	public IPreferenceStore getPreferenceStore() {
 		return PreferenceConstants.getPreferenceStore();
 	}
 
+	@Override
 	public String getStrikethroughPreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_STRIKETHROUGH_SUFFIX;
 	}
 
+	@Override
 	public String getUnderlinePreferenceKey() {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_UNDERLINE_SUFFIX;
@@ -211,6 +220,7 @@ public abstract class AbstractSemanticHighlighting
 
 	protected abstract void initDefaultPreferences();
 
+	@Override
 	public int compareTo(AbstractSemanticHighlighting highlighter) {
 		return getPriority() - highlighter.getPriority();
 	}

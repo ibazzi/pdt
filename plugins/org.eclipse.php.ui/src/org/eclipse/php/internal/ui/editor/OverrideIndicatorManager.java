@@ -36,8 +36,8 @@ import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
 import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.IAnnotationModelExtension;
-import org.eclipse.php.internal.core.ast.nodes.*;
-import org.eclipse.php.internal.core.ast.visitor.AbstractVisitor;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.PHPUIMessages;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
@@ -131,11 +131,6 @@ class OverrideIndicatorManager implements IPhpScriptReconcilingListener {
 		fAnnotationModelLockObject = getLockObject(fAnnotationModel);
 	}
 
-	@Deprecated
-	public OverrideIndicatorManager(IAnnotationModel annotationModel, IModelElement modelElement, Program ast) {
-		this(annotationModel);
-	}
-
 	/**
 	 * Returns the lock object for the given annotation model.
 	 * 
@@ -175,6 +170,7 @@ class OverrideIndicatorManager implements IPhpScriptReconcilingListener {
 			 * org.eclipse.jdt.core.dom.ASTVisitor#visit(org.eclipse.jdt.core
 			 * .dom.MethodDeclaration)
 			 */
+			@Override
 			public boolean visit(MethodDeclaration node) {
 				IMethodBinding binding = node.resolveMethodBinding();
 
@@ -252,6 +248,7 @@ class OverrideIndicatorManager implements IPhpScriptReconcilingListener {
 	 * @seeorg.eclipse.dltk.internal.ui.text.IScriptReconcilingListener#
 	 * aboutToBeReconciled()
 	 */
+	@Override
 	public void aboutToBeReconciled() {
 	}
 
@@ -284,6 +281,7 @@ class OverrideIndicatorManager implements IPhpScriptReconcilingListener {
 	 * reconciled (org.eclipse.php.internal.core.ast.nodes.Program, boolean,
 	 * org.eclipse.core.runtime.IProgressMonitor)
 	 */
+	@Override
 	public void reconciled(Program ast, boolean forced, IProgressMonitor progressMonitor) {
 		if (ast != null) {
 			updateAnnotations(ast, progressMonitor);

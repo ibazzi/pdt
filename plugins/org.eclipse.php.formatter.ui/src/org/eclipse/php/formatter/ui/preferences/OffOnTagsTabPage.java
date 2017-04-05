@@ -13,7 +13,7 @@ package org.eclipse.php.formatter.ui.preferences;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IInputValidator;
 import org.eclipse.php.formatter.core.CodeFormatterConstants;
-import org.eclipse.php.formatter.core.CodeFormatterPreferences;
+import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
 import org.eclipse.php.formatter.ui.FormatterMessages;
 import org.eclipse.php.internal.ui.util.PixelConverter;
 import org.eclipse.swt.SWT;
@@ -62,6 +62,7 @@ public class OffOnTagsTabPage extends ModifyDialogTabPage {
 			 * 
 			 * @since 3.6
 			 */
+			@Override
 			public String isValid(String input) {
 				if (input.length() == 0)
 					return null;
@@ -97,6 +98,7 @@ public class OffOnTagsTabPage extends ModifyDialogTabPage {
 		}
 
 		enablePref.getControl().addListener(SWT.Selection, new Listener() {
+			@Override
 			public void handleEvent(Event event) {
 				boolean enabled = enablePref.isChecked();
 				enableTagPref.setEnabled(enabled);
@@ -111,6 +113,7 @@ public class OffOnTagsTabPage extends ModifyDialogTabPage {
 		isInitialized = true;
 	}
 
+	@Override
 	public final Composite createContents(Composite parent) {
 		if (fPixelConverter == null)
 			fPixelConverter = new PixelConverter(parent);

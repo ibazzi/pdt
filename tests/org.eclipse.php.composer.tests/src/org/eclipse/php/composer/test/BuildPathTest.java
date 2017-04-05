@@ -10,8 +10,7 @@
  *******************************************************************************/
 package org.eclipse.php.composer.test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,10 +28,10 @@ import org.eclipse.php.composer.core.ComposerPlugin;
 import org.eclipse.php.composer.core.buildpath.BuildPathParser;
 import org.eclipse.php.composer.core.facet.FacetManager;
 import org.eclipse.php.composer.core.resources.IComposerProject;
-import org.eclipse.php.internal.core.PHPVersion;
+import org.eclipse.php.core.PHPVersion;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.facet.PHPFacets;
 import org.eclipse.php.internal.core.project.PHPNature;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.junit.Test;
 
 public class BuildPathTest extends ComposerModelTests {
@@ -51,7 +50,7 @@ public class BuildPathTest extends ComposerModelTests {
 		desc.setNatureIds(new String[] { PHPNature.ID });
 		scriptProject.getProject().setDescription(desc, null);
 
-		ProjectOptions.setPhpVersion(PHPVersion.PHP5_3, scriptProject.getProject());
+		ProjectOptions.setPHPVersion(PHPVersion.PHP5_3, scriptProject.getProject());
 
 		PHPFacets.setFacetedVersion(scriptProject.getProject(), PHPVersion.PHP5_3);
 		FacetManager.installFacets(scriptProject.getProject(), PHPVersion.PHP5_3, new NullProgressMonitor());
@@ -71,10 +70,10 @@ public class BuildPathTest extends ComposerModelTests {
 		IComposerProject composerProject = ComposerPlugin.getDefault().getComposerProject(scriptProject.getProject());
 		BuildPathParser parser = new BuildPathParser(composerProject);
 		List<String> paths = parser.getPaths();
-		List<String> expected = new ArrayList<String>(Arrays.asList("src", "test", "nother", "mordor/composer",
-				"mordor/phing/phing/classes/phing", "mordor/propel/propel1/runtime/lib",
-				"mordor/propel/propel1/generator/lib", "mordor/gossi/ldap/src", "mordor/symfony/console"));
-		assertThat(paths, is(expected));
+		List<String> expected = new ArrayList<String>(Arrays.asList("mordor/composer", "mordor/gossi/ldap/src",
+				"mordor/phing/phing/classes/phing", "mordor/propel/propel1/generator/lib",
+				"mordor/propel/propel1/runtime/lib", "mordor/symfony/console", "nother", "src", "test"));
+		assertArrayEquals(paths.toArray(), expected.toArray());
 
 		// let indexing threads shutdown to avoid SWT thread access errors
 		Thread.sleep(2000);

@@ -28,7 +28,6 @@ import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.codeassist.AliasField;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.language.PHPMagicMethods;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
 import org.eclipse.php.internal.core.typeinference.FakeMethod;
@@ -42,12 +41,12 @@ import org.eclipse.php.ui.PHPElementLabels;
 public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelProvider
 		implements ICompletionProposalLabelProviderExtension {
 
-	private static final String ENCLOSING_TYPE_SEPARATOR = String.valueOf(NamespaceReference.NAMESPACE_SEPARATOR);
-
+	@Override
 	protected StyledString createMethodProposalLabel(CompletionProposal methodProposal) {
 		return createStyledMethodProposalLabel(methodProposal);
 	}
 
+	@Override
 	protected StyledString createOverrideMethodProposalLabel(CompletionProposal methodProposal) {
 		return createStyledOverrideMethodProposalLabel(methodProposal);
 	}
@@ -147,6 +146,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		return PreferenceConstants.getPreferenceStore().getBoolean(PreferenceConstants.APPEARANCE_METHOD_RETURNTYPE);
 	}
 
+	@Override
 	public StyledString createTypeProposalLabel(CompletionProposal typeProposal) {
 		return createStyledTypeProposalLabel(typeProposal);
 	}
@@ -183,6 +183,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 	}
 
+	@Override
 	public StyledString createFieldProposalLabel(CompletionProposal proposal) {
 		return createStyledFieldProposalLabel(proposal);
 	}
@@ -241,6 +242,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		}
 	}
 
+	@Override
 	protected ImageDescriptor decorateImageDescriptor(ImageDescriptor descriptor, CompletionProposal proposal) {
 		if (proposal.isConstructor()) {
 			int adornmentFlags = ScriptElementImageProvider.computeAdornmentFlags(proposal.getModelElement(),
@@ -283,6 +285,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		return nameBuffer;
 	}
 
+	@Override
 	protected StyledString appendParameterList(StyledString buffer, CompletionProposal methodProposal) {
 		IMethod method = (IMethod) methodProposal.getModelElement();
 		if (method instanceof AliasMethod) {

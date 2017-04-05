@@ -11,9 +11,9 @@
  *******************************************************************************/
 package org.eclipse.php.astview;
 
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Program;
-import org.eclipse.php.internal.core.ast.visitor.ApplyAll;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.visitor.ApplyAll;
 
 /**
  *

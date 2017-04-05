@@ -87,6 +87,7 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	/*
 	 * @see ICompletionProposalExtension#apply(IDocument, char)
 	 */
+	@Override
 	public void apply(final IDocument document, char trigger, int offset) {
 		try {
 			if (fTypeProsoal != null) {
@@ -277,6 +278,7 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	 * @return <code>true</code> when the proposal is not in javadoc nor within
 	 *         an import and comprises the parameter list
 	 */
+	@Override
 	protected boolean hasArgumentList() {
 		if (CompletionProposal.METHOD_NAME_REFERENCE == fProposal.getKind())
 			return false;
@@ -284,6 +286,7 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 		return !isInDoc() && completion.length() > 0;
 	}
 
+	@Override
 	protected boolean isValidPrefix(String prefix) {
 		initAlias();
 		String replacementString = null;
@@ -434,6 +437,7 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	/*
 	 * @see ICompletionProposal#getSelection(IDocument)
 	 */
+	@Override
 	public Point getSelection(IDocument document) {
 		if (fSelectedRegion == null)
 			return new Point(getReplacementOffset(), 0);
@@ -459,13 +463,16 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 				 * org.eclipse.jface.text.link.ILinkedModeListener#left(org.
 				 * eclipse.jface.text.link.LinkedModeModel, int)
 				 */
+				@Override
 				public void left(LinkedModeModel environment, int flags) {
 					ensurePositionCategoryRemoved(document);
 				}
 
+				@Override
 				public void suspend(LinkedModeModel environment) {
 				}
 
+				@Override
 				public void resume(LinkedModeModel environment, int flags) {
 				}
 			});
@@ -584,6 +591,7 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	 * @param contextInformationPosition
 	 *            the replaced position.
 	 */
+	@Override
 	public void setContextInformationPosition(int contextInformationPosition) {
 		fContextInformationPosition = contextInformationPosition;
 	}

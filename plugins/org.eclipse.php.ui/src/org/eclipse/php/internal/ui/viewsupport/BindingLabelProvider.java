@@ -18,8 +18,8 @@ import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.dltk.ui.viewsupport.ImageDescriptorRegistry;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.core.ast.nodes.*;
 import org.eclipse.php.internal.ui.corext.util.Strings;
 import org.eclipse.php.internal.ui.util.PHPElementImageDescriptor;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
@@ -562,6 +562,7 @@ public class BindingLabelProvider extends LabelProvider {
 	/*
 	 * @see org.eclipse.jface.viewers.ILabelProvider#getImage(java.lang.Object)
 	 */
+	@Override
 	public Image getImage(Object element) {
 		if (element instanceof IBinding) {
 			ImageDescriptor baseImage = getBindingImageDescriptor((IBinding) element, fImageFlags);
@@ -581,6 +582,7 @@ public class BindingLabelProvider extends LabelProvider {
 	/*
 	 * @see org.eclipse.jface.viewers.ILabelProvider#getText(java.lang.Object)
 	 */
+	@Override
 	public String getText(Object element) {
 		if (element instanceof IBinding) {
 			return getBindingLabel((IBinding) element, fTextFlags);

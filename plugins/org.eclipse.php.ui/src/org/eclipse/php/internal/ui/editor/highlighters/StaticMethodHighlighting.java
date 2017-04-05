@@ -10,10 +10,10 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.highlighters;
 
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Expression;
-import org.eclipse.php.internal.core.ast.nodes.FunctionInvocation;
-import org.eclipse.php.internal.core.ast.nodes.Variable;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Expression;
+import org.eclipse.php.core.ast.nodes.FunctionInvocation;
+import org.eclipse.php.core.ast.nodes.Variable;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -49,6 +49,7 @@ public class StaticMethodHighlighting extends AbstractSemanticHighlighting {
 		getStyle().setItalicByDefault(true);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.StaticMethodHighlighting_0;
 	}

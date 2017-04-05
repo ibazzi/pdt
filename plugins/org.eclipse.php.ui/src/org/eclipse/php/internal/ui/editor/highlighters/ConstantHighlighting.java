@@ -12,8 +12,8 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 
 import java.util.List;
 
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.locator.PhpElementConciliator;
-import org.eclipse.php.internal.core.ast.nodes.*;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -31,11 +31,13 @@ public class ConstantHighlighting extends AbstractSemanticHighlighting {
 			return true;
 		}
 
+		@Override
 		public boolean visit(Quote quote) {
 			isInQuote = true;
 			return true;
 		}
 
+		@Override
 		public void endVisit(Quote quote) {
 			isInQuote = false;
 		}
@@ -100,6 +102,7 @@ public class ConstantHighlighting extends AbstractSemanticHighlighting {
 				.setItalicByDefault(true);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.ConstantHighlighting_0;
 	}

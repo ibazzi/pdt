@@ -13,7 +13,7 @@ package org.eclipse.php.internal.ui.editor.highlighters;
 
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.typeinference.PHPSimpleTypes;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
@@ -88,6 +88,7 @@ public class ClassHighlighting extends AbstractSemanticHighlighting {
 			return true;
 		}
 
+		@Override
 		public boolean visit(InstanceOfExpression instanceOfExpression) {
 			Expression name = instanceOfExpression.getClassName().getName();
 			if (name instanceof NamespaceName) {
@@ -127,6 +128,7 @@ public class ClassHighlighting extends AbstractSemanticHighlighting {
 			return true;
 		}
 
+		@Override
 		public boolean visit(TraitUseStatement node) {
 			List<NamespaceName> traitList = node.getTraitList();
 			for (NamespaceName namespaceName : traitList) {
@@ -180,6 +182,7 @@ public class ClassHighlighting extends AbstractSemanticHighlighting {
 		getStyle().setEnabledByDefault(false).setDefaultTextColor(0, 80, 50);
 	}
 
+	@Override
 	public String getDisplayName() {
 		return Messages.ClassHighlighting_0;
 	}

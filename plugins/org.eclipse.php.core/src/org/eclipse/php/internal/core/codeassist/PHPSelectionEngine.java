@@ -40,12 +40,13 @@ import org.eclipse.dltk.ti.IContext;
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.*;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocTag.TagKind;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.Logger;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.PHPVersion;
-import org.eclipse.php.internal.core.compiler.ast.nodes.*;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag.TagKind;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 import org.eclipse.php.internal.core.documentModel.parser.PHPRegionContext;
 import org.eclipse.php.internal.core.documentModel.parser.regions.IPhpScriptRegion;
@@ -54,7 +55,6 @@ import org.eclipse.php.internal.core.documentModel.partitioner.PHPPartitionTypes
 import org.eclipse.php.internal.core.documentModel.provisional.contenttype.ContentTypeIdForPHP;
 import org.eclipse.php.internal.core.model.PerFileModelAccessCache;
 import org.eclipse.php.internal.core.model.PhpModelAccess;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.IModelAccessCache;
 import org.eclipse.php.internal.core.typeinference.PHPClassType;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
@@ -99,7 +99,7 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 		}
 
 		ISourceModule sourceModule = (ISourceModule) sourceUnit.getModelElement();
-		phpVersion = ProjectOptions.getPhpVersion(sourceModule.getScriptProject().getProject());
+		phpVersion = ProjectOptions.getPHPVersion(sourceModule.getScriptProject().getProject());
 
 		// First, try to resolve using AST (if we have parsed it well):
 		IModelAccessCache cache = new PerFileModelAccessCache(sourceModule);
@@ -307,20 +307,18 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 				IEvaluatedType dispatcherType = PHPTypeInferenceUtils.resolveExpression(sourceModule, parsedUnit,
 						context, dispatch.getDispatcher());
 				if (dispatcherType != null) {
-					IModelElement[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType,
+					IType[] elements = PHPTypeInferenceUtils.getModelElements(dispatcherType,
 							(ISourceModuleContext) context, offset);
 					List<IModelElement> fields = new LinkedList<IModelElement>();
 					if (elements != null) {
 						for (IModelElement element : elements) {
-							if (element instanceof IType) {
-								IType type = (IType) element;
-								try {
-									fields.addAll(Arrays.asList(PHPModelUtils.getTypeHierarchyField(type,
-											cache.getSuperTypeHierarchy(type, new NullProgressMonitor()), fieldName,
-											true, new NullProgressMonitor())));
-								} catch (Exception e) {
-									PHPCorePlugin.log(e);
-								}
+							IType type = (IType) element;
+							try {
+								fields.addAll(Arrays.asList(PHPModelUtils.getTypeHierarchyField(type,
+										cache.getSuperTypeHierarchy(type, new NullProgressMonitor()), fieldName, true,
+										new NullProgressMonitor())));
+							} catch (Exception e) {
+								PHPCorePlugin.log(e);
 							}
 						}
 					}
@@ -687,6 +685,14 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 			if (elementName.isEmpty()) {
 				return EMPTY;
 			}
+
+			if (tRegion.getType() == PHPRegionTypes.PHP_ENCAPSED_VARIABLE) {
+				// Handle the case of variables defined in back-quoted
+				// strings, double-quoted strings or heredoc sections like
+				// "${a}" or "${a[0]}"
+				elementName = "$" + elementName; //$NON-NLS-1$
+			}
+
 			IType containerType = PHPModelUtils.getCurrentType(sourceModule, offset);
 			if (containerType == null) {
 				containerType = PHPModelUtils.getCurrentNamespace(sourceModule, offset);
@@ -765,7 +771,7 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 			// If this is variable:
 			if (elementName.charAt(0) == '$' && !PAAMAYIM_NEKUDOTAIM.equals(trigger)) {
 				// Don't show escaped variables within PHP string:
-				if (PHPPartitionTypes.isPHPQuotesState(tRegion.getType())) {
+				if (PHPPartitionTypes.isPhpQuotesState(tRegion.getType())) {
 					try {
 						char charBefore = sDoc.get(elementStart - 2, 1).charAt(0);
 						if (charBefore == NamespaceReference.NAMESPACE_SEPARATOR) {

@@ -71,7 +71,7 @@ public class ListDialogField<E> extends DialogField {
 	protected ILabelProvider fLabelProvider;
 	protected ListViewerAdapter fListViewerAdapter;
 	protected List<E> fElements;
-	protected ViewerSorter fViewerSorter;
+	protected ViewerComparator fViewerSorter;
 	protected TableSorter fTableSorter;
 
 	protected String[] fButtonLabels;
@@ -88,7 +88,7 @@ public class ListDialogField<E> extends DialogField {
 	private Composite fButtonsControl;
 	private ISelection fSelectionWhenEnabled;
 
-	private IListAdapter fListAdapter;
+	private IListAdapter<E> fListAdapter;
 
 	private Object fParentElement;
 
@@ -106,7 +106,7 @@ public class ListDialogField<E> extends DialogField {
 	 * @param lprovider
 	 *            The label provider to render the table entries
 	 */
-	public ListDialogField(IListAdapter adapter, String[] buttonLabels, ILabelProvider lprovider) {
+	public ListDialogField(IListAdapter<E> adapter, String[] buttonLabels, ILabelProvider lprovider) {
 		this(adapter, buttonLabels, lprovider, null);
 	}
 
@@ -124,7 +124,8 @@ public class ListDialogField<E> extends DialogField {
 	 * @param sorter
 	 *            The sorter to sort table entries
 	 */
-	public ListDialogField(IListAdapter adapter, String[] buttonLabels, ILabelProvider lprovider, TableSorter sorter) {
+	public ListDialogField(IListAdapter<E> adapter, String[] buttonLabels, ILabelProvider lprovider,
+			TableSorter sorter) {
 		super();
 		fListAdapter = adapter;
 
@@ -133,7 +134,7 @@ public class ListDialogField<E> extends DialogField {
 		fListViewerAdapter = new ListViewerAdapter();
 		fParentElement = this;
 
-		fElements = new ArrayList<E>(10);
+		fElements = new ArrayList<>(10);
 
 		fButtonLabels = buttonLabels;
 		if (fButtonLabels != null) {
@@ -208,7 +209,7 @@ public class ListDialogField<E> extends DialogField {
 	 * @see ListDialogField#ListDialogField(IListAdapter, String[],
 	 *      ILabelProvider, TableSorter)
 	 */
-	public void setViewerSorter(ViewerSorter viewerSorter) {
+	public void setViewerSorter(ViewerComparator viewerSorter) {
 		fViewerSorter = viewerSorter;
 	}
 
@@ -253,6 +254,7 @@ public class ListDialogField<E> extends DialogField {
 	/*
 	 * @see DialogField#doFillIntoGrid
 	 */
+	@Override
 	public Control[] doFillIntoGrid(Composite parent, int nColumns) {
 		PixelConverter converter = new PixelConverter(parent);
 
@@ -290,6 +292,7 @@ public class ListDialogField<E> extends DialogField {
 	/*
 	 * @see DialogField#getNumberOfControls
 	 */
+	@Override
 	public int getNumberOfControls() {
 		return 3;
 	}
@@ -338,7 +341,6 @@ public class ListDialogField<E> extends DialogField {
 				for (int i = 0; i < columns.length; i++) {
 					composite.addColumnData(columns[i]);
 					TableColumn column = new TableColumn(tableControl, SWT.NONE);
-					// tableLayout.addColumnData(columns[i]);
 					if (fTableColumns.headers != null) {
 						column.setText(fTableColumns.headers[i]);
 					}
@@ -346,12 +348,11 @@ public class ListDialogField<E> extends DialogField {
 			}
 
 			fTable.getTable().addKeyListener(new KeyAdapter() {
+				@Override
 				public void keyPressed(KeyEvent e) {
 					handleKeyPressed(e);
 				}
 			});
-
-			// fTableControl.setLayout(tableLayout);
 
 			fTable.setContentProvider(fListViewerAdapter);
 			fTable.setLabelProvider(fLabelProvider);
@@ -365,7 +366,7 @@ public class ListDialogField<E> extends DialogField {
 			}
 
 			if (fViewerSorter != null) {
-				fTable.setSorter(fViewerSorter);
+				fTable.setComparator(fViewerSorter);
 			}
 
 			fTableControl.setEnabled(isEnabled());
@@ -441,10 +442,12 @@ public class ListDialogField<E> extends DialogField {
 			assertCompositeNotNull(parent);
 
 			SelectionListener listener = new SelectionListener() {
+				@Override
 				public void widgetDefaultSelected(SelectionEvent e) {
 					doButtonSelected(e);
 				}
 
+				@Override
 				public void widgetSelected(SelectionEvent e) {
 					doButtonSelected(e);
 				}
@@ -508,6 +511,7 @@ public class ListDialogField<E> extends DialogField {
 	/*
 	 * @see DialogField#dialogFieldChanged
 	 */
+	@Override
 	public void dialogFieldChanged() {
 		super.dialogFieldChanged();
 		updateButtonState();
@@ -542,6 +546,7 @@ public class ListDialogField<E> extends DialogField {
 	/*
 	 * @see DialogField#updateEnableState
 	 */
+	@Override
 	protected void updateEnableState() {
 		super.updateEnableState();
 
@@ -580,7 +585,7 @@ public class ListDialogField<E> extends DialogField {
 	 * Sets the elements shown in the list.
 	 */
 	public void setElements(Collection<E> elements) {
-		fElements = new ArrayList<E>(elements);
+		fElements = new ArrayList<>(elements);
 		if (isOkToUse(fTableControl)) {
 			fTable.refresh();
 		}
@@ -592,7 +597,7 @@ public class ListDialogField<E> extends DialogField {
 	 * can be modified by the user.
 	 */
 	public List<E> getElements() {
-		return new ArrayList<E>(fElements);
+		return new ArrayList<>(fElements);
 	}
 
 	/**
@@ -675,7 +680,7 @@ public class ListDialogField<E> extends DialogField {
 
 		if (nElements > 0) {
 			// filter duplicated
-			List<E> elementsToAdd = new ArrayList<E>(nElements);
+			List<E> elementsToAdd = new ArrayList<>(nElements);
 			for (E element : elements) {
 				if (!fElements.contains(element)) {
 					elementsToAdd.add(element);
@@ -744,6 +749,7 @@ public class ListDialogField<E> extends DialogField {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void selectFirstElement() {
 		E element = null;
 		if (fViewerSorter != null) {
@@ -765,11 +771,9 @@ public class ListDialogField<E> extends DialogField {
 	public void postSetSelection(final ISelection selection) {
 		if (isOkToUse(fTableControl)) {
 			Display d = fTableControl.getDisplay();
-			d.asyncExec(new Runnable() {
-				public void run() {
-					if (isOkToUse(fTableControl)) {
-						selectElements(selection);
-					}
+			d.asyncExec(() -> {
+				if (isOkToUse(fTableControl)) {
+					selectElements(selection);
 				}
 			});
 		}
@@ -778,6 +782,7 @@ public class ListDialogField<E> extends DialogField {
 	/**
 	 * Refreshes the table.
 	 */
+	@Override
 	public void refresh() {
 		super.refresh();
 		if (isOkToUse(fTableControl)) {
@@ -789,7 +794,7 @@ public class ListDialogField<E> extends DialogField {
 
 	private List<E> moveUp(List<E> elements, List<E> move) {
 		int nElements = elements.size();
-		List<E> res = new ArrayList<E>(nElements);
+		List<E> res = new ArrayList<>(nElements);
 		E floating = null;
 		for (E curr : elements) {
 			if (move.contains(curr)) {
@@ -822,7 +827,7 @@ public class ListDialogField<E> extends DialogField {
 	}
 
 	private List<E> reverse(List<E> p) {
-		List<E> reverse = new ArrayList<E>(p.size());
+		List<E> reverse = new ArrayList<>(p.size());
 		for (int i = p.size() - 1; i >= 0; i--) {
 			reverse.add(p.get(i));
 		}
@@ -869,8 +874,9 @@ public class ListDialogField<E> extends DialogField {
 	/**
 	 * Returns the selected elements.
 	 */
+	@SuppressWarnings("unchecked")
 	public List<E> getSelectedElements() {
-		List<E> result = new ArrayList<E>();
+		List<E> result = new ArrayList<>();
 		if (isOkToUse(fTableControl)) {
 			ISelection selection = fTable.getSelection();
 			if (selection instanceof IStructuredSelection) {
@@ -890,33 +896,28 @@ public class ListDialogField<E> extends DialogField {
 
 		// ------- ITableContentProvider Interface ------------
 
+		@Override
 		public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			// will never happen
 		}
 
-		public boolean isDeleted(Object element) {
-			return false;
-		}
-
+		@Override
 		public void dispose() {
 		}
 
+		@Override
 		public Object[] getElements(Object obj) {
 			return fElements.toArray();
 		}
 
 		// ------- ISelectionChangedListener Interface ------------
 
+		@Override
 		public void selectionChanged(SelectionChangedEvent event) {
 			doListSelected(event);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.eclipse.jface.viewers.IDoubleClickListener#doubleClick(org.
-		 * eclipse .jface.viewers.DoubleClickEvent)
-		 */
+		@Override
 		public void doubleClick(DoubleClickEvent event) {
 			doDoubleClick(event);
 		}

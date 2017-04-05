@@ -21,10 +21,10 @@ import org.eclipse.dltk.evaluation.types.MultiTypeType;
 import org.eclipse.dltk.evaluation.types.UnknownType;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.dltk.ui.ScriptElementLabels;
+import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.visitor.AbstractVisitor;
+import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.Constants;
-import org.eclipse.php.internal.core.ast.nodes.*;
-import org.eclipse.php.internal.core.ast.visitor.AbstractVisitor;
-import org.eclipse.php.internal.core.project.ProjectOptions;
 import org.eclipse.php.internal.core.typeinference.PHPSimpleTypes;
 import org.eclipse.php.internal.core.typeinference.evaluators.PHPEvaluationUtils;
 import org.eclipse.php.internal.ui.corext.codemanipulation.StubUtility;
@@ -682,6 +682,7 @@ public class CodeGeneration {
 		}
 		final List<String> exceptions = new ArrayList<String>();
 		elementAt.accept(new AbstractVisitor() {
+			@Override
 			public boolean visit(ThrowStatement throwStatement) {
 				Expression expression = throwStatement.getExpression();
 				if (expression instanceof ClassInstanceCreation) {
@@ -820,7 +821,7 @@ public class CodeGeneration {
 	public static Program generateProgram(IMember member, Program program) {
 		ISourceModule source = member.getSourceModule();
 		ASTParser parserForExpected = ASTParser
-				.newParser(ProjectOptions.getPhpVersion(source.getScriptProject().getProject()), source);
+				.newParser(ProjectOptions.getPHPVersion(source.getScriptProject().getProject()), source);
 		try {
 			parserForExpected.setSource(source);
 			program = parserForExpected.createAST(new NullProgressMonitor());

@@ -3,7 +3,7 @@ package org.eclipse.php.internal.ui.text.correction;
 import java.util.Iterator;
 import java.util.List;
 
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 
 public class ASTResolving {
 

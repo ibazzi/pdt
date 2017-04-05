@@ -12,15 +12,13 @@
 package org.eclipse.php.internal.ui.wizards;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.php.internal.ui.util.StatusInfo;
 import org.eclipse.php.internal.ui.util.StatusUtil;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
@@ -186,6 +184,7 @@ public abstract class BasicPHPWizardPage extends WizardPage {
 	/*
 	 * @see WizardPage#becomesVisible
 	 */
+	@Override
 	public void setVisible(boolean visible) {
 		super.setVisible(visible);
 		fPageVisible = visible;
@@ -198,7 +197,7 @@ public abstract class BasicPHPWizardPage extends WizardPage {
 		updateStatus(fCurrStatus);
 	}
 
-	public ArrayList setComboItems(Combo combo, ArrayList arrItems) {
+	public List<String> setComboItems(Combo combo, List<String> arrItems) {
 		arrItems.clear();
 		arrItems.add(combo.getText()); // must be first
 		String[] items = combo.getItems();
@@ -211,54 +210,5 @@ public abstract class BasicPHPWizardPage extends WizardPage {
 		return arrItems;
 
 	}
-
-	@Deprecated
-	protected static class EnableSelectionAdapter extends SelectionAdapter {
-		private Control[] fEnable;
-		private Control[] fDisable;
-
-		protected EnableSelectionAdapter(Control[] enable, Control[] disable) {
-			super();
-			fEnable = enable;
-			fDisable = disable;
-		}
-
-		public void widgetSelected(SelectionEvent e) {
-			for (int i = 0; i < fEnable.length; i++) {
-				fEnable[i].setEnabled(true);
-			}
-			for (int i = 0; i < fDisable.length; i++) {
-				fDisable[i].setEnabled(false);
-			}
-			validate();
-		}
-
-		// copied from WizardNewProjectCreationPage
-		public void validate() {
-		}
-
-	} // end class EnableSelectionAdapter
-
-	@Deprecated
-	protected static class ToggleSelectionAdapter extends SelectionAdapter {
-		Control[] controls;
-
-		protected ToggleSelectionAdapter(Control[] controls) {
-			this.controls = controls;
-		}
-
-		public void widgetSelected(SelectionEvent e) {
-
-			for (int i = 0; i < controls.length; i++) {
-				Control control = controls[i];
-				control.setEnabled(!control.getEnabled());
-			}
-			validate();
-		}
-
-		public void validate() {
-		}
-
-	} // end class ToggleSelection Adapter
 
 }
