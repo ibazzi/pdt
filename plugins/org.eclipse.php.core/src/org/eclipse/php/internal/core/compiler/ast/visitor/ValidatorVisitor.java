@@ -402,19 +402,23 @@ public class ValidatorVisitor extends PHPASTVisitor {
 						namespaceName = usePartInfo.get(namespaceName).getFullyQualifiedName();
 					}
 				}
+				// for type reference in phpdoc
+			} else if (typeReference.getName().charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+				hasNamespace = true;
+				namespaceName = PHPModelUtils.extractNameSpaceName(typeReference.getName());
 			}
 
 			if (fullTypeReference != null && hasNamespace) {
 				isGlobal = fullTypeReference.getNamespace().isGlobal();
 				typeName = fullTypeReference.getFullyQualifiedName();
 			} else {
-				typeName = typeReference.getName();
+				typeName = PHPModelUtils.extractElementName(typeReference.getName());
 			}
 
 			if (fullTypeReference != null && isGlobal) {
 				fullyQualifiedName = fullTypeReference.getFullyQualifiedName();
 			} else if (hasNamespace) {
-				fullyQualifiedName = namespaceName + NAMESPACE_SEPARATOR + typeReference.getName();
+				fullyQualifiedName = namespaceName + NAMESPACE_SEPARATOR + typeName;
 			} else {
 				fullyQualifiedName = typeName;
 			}

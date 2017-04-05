@@ -158,10 +158,11 @@ public class ParameterGuesser {
 
 		String type = null;
 		String prefix = "";
+		boolean isStatic = false;
 		switch (elementType) {
 		case IModelElement.FIELD: {
 			IField field = (IField) element;
-			boolean isStatic = Flags.isStatic(field.getFlags());
+			isStatic = Flags.isStatic(field.getFlags());
 			if (field.getDeclaringType() == null) {
 				variableType = Variable.LOCAL;
 				type = field.getType();
@@ -182,7 +183,7 @@ public class ParameterGuesser {
 		case IModelElement.METHOD: {
 			IMethod method = (IMethod) element;
 			if (isMethodToSuggest(method)) {
-				boolean isStatic = Flags.isStatic(method.getFlags());
+				isStatic = Flags.isStatic(method.getFlags());
 				if (!PHPFlags.isNamespace(method.getDeclaringType().getFlags()) && method.getDeclaringType() != null
 						&& method.getDeclaringType().equals(enclosingType)) {
 					variableType = Variable.METHOD;
@@ -207,7 +208,10 @@ public class ParameterGuesser {
 		default:
 			return null;
 		}
-		elementName = prefix + displayName;
+		if (variableType == Variable.FIELD && !isStatic)
+			elementName = prefix + displayName.substring(1);
+		else
+			elementName = prefix + displayName;
 		return new Variable(type, elementName, displayName, variableType, false, positionScore, NO_TRIGGERS,
 				getImageDescriptor(element));
 	}

@@ -562,7 +562,7 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		PHPDocBlock docBlock = phpMethodDeclaration.getPHPDoc();
 		TypeReference returnType = phpMethodDeclaration.getReturnType();
 		if (returnType != null) {
-			mi.returnType = returnType.getName();
+			mi.returnType = processNameNode(returnType);
 			if (returnType instanceof FullyQualifiedReference) {
 				if (((FullyQualifiedReference) returnType).isNullable()) {
 					mi.modifiers |= IPHPModifiers.AccNullable;
@@ -571,6 +571,13 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		} else if (docBlock != null) {
 			for (PHPDocTag tag : docBlock.getTags(TagKind.RETURN)) {
 				if (tag.getTypeReferences().size() > 0) {
+					tag.getTypeReferences().forEach(new Consumer<TypeReference>() {
+
+						@Override
+						public void accept(TypeReference arg0) {
+							arg0.setName(processNameNode(arg0));
+						}
+					});
 					mi.returnType = PHPModelUtils.appendTypeReferenceNames(tag.getTypeReferences());
 				}
 			}
@@ -657,20 +664,23 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		}
 		if (name == null || PHPSimpleTypes.isSimpleType(name))
 			return name;
+		// process type reference in phpdoc
 		String[] types = name.split("\\|");
 		StringBuffer parameterName = new StringBuffer();
 		for (int i = 0; i < types.length; i++) {
 			String typeName = types[i];
 			if (!PHPSimpleTypes.isSimpleType(typeName)) {
+				typeName = PHPModelUtils.extractElementName(typeName);
 				if (fLastUseParts.containsKey(typeName)) {
 					typeName = fLastUseParts.get(typeName).getNamespace().getFullyQualifiedName();
-					if (typeName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
-						typeName = typeName.substring(1);
+					if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+						typeName = NamespaceReference.NAMESPACE_SEPARATOR + typeName;
 					}
 				} else {
 					if (fLastNamespace != null) {
-						typeName = new StringBuilder(fLastNamespace.getName())
-								.append(NamespaceReference.NAMESPACE_SEPARATOR).append(typeName).toString();
+						typeName = new StringBuilder(NamespaceReference.NAMESPACE_SEPARATOR)
+								.append(fLastNamespace.getName()).append(NamespaceReference.NAMESPACE_SEPARATOR)
+								.append(typeName).toString();
 					}
 				}
 			}
