@@ -38,7 +38,7 @@ public class UnaryOperationEvaluator extends GoalEvaluator {
 		case UnaryOperation.OP_TILDA:
 			return new IGoal[] { new ExpressionTypeGoal(goal.getContext(), unaryOp.getExpr()) };
 		case UnaryOperation.OP_NOT:
-			result = PHPSimpleTypes.BOOLEAN;
+			result = PHPSimpleTypes.BOOL;
 			break;
 		}
 		return IGoal.NO_GOALS;

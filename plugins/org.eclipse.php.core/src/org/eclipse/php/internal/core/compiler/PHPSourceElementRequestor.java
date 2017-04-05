@@ -12,6 +12,7 @@
 package org.eclipse.php.internal.core.compiler;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.CoreException;
@@ -38,6 +39,8 @@ import org.eclipse.dltk.compiler.ISourceElementRequestor;
 import org.eclipse.dltk.compiler.SourceElementRequestVisitor;
 import org.eclipse.dltk.compiler.env.IModuleSource;
 import org.eclipse.dltk.core.Flags;
+import org.eclipse.dltk.core.ISourceModule;
+import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.php.core.compiler.IPHPModifiers;
 import org.eclipse.php.core.compiler.PHPSourceElementRequestorExtension;
 import org.eclipse.php.core.compiler.ast.nodes.*;
@@ -49,6 +52,8 @@ import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 import org.eclipse.php.internal.core.index.PhpIndexingVisitor;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
+import org.eclipse.php.internal.core.typeinference.PHPSimpleTypes;
+import org.eclipse.php.internal.core.typeinference.PHPTypeInferenceUtils;
 import org.eclipse.php.internal.core.util.MagicMemberUtil;
 import org.eclipse.php.internal.core.util.MagicMemberUtil.MagicMethod;
 
@@ -94,10 +99,11 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 	protected NamespaceDeclaration fLastNamespace;
 	protected Map<String, UsePart> fLastUseParts = new HashMap<String, UsePart>();
 	protected ClassInstanceCreation fLastInstanceCreation = null;
+	private IModuleSource fSourceModule;
 
 	public PHPSourceElementRequestor(ISourceElementRequestor requestor, IModuleSource sourceModule) {
 		super(requestor);
-
+		fSourceModule = sourceModule;
 		// Load PHP source element requester extensions
 		IConfigurationElement[] elements = Platform.getExtensionRegistry().getConfigurationElementsFor(PHPCorePlugin.ID,
 				"phpSourceElementRequestors"); //$NON-NLS-1$
@@ -271,10 +277,13 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 			for (Argument arg : arguments) {
 				ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
 				info.name = arg.getName();
-				info.modifiers = Modifiers.AccPublic;
+				info.modifiers = IPHPModifiers.AccLocal;
 				info.nameSourceStart = arg.getNameStart();
 				info.nameSourceEnd = arg.getNameEnd() - 1;
 				info.declarationStart = arg.sourceStart();
+				if (arg instanceof FormalParameter && ((FormalParameter) arg).getParameterType() != null) {
+					info.type = ((FormalParameter) arg).getParameterType().getName();
+				}
 				fRequestor.enterField(info);
 				fRequestor.exitField(arg.sourceEnd() - 1);
 			}
@@ -394,7 +403,7 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 			for (Argument arg : arguments) {
 				ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
 				info.name = arg.getName();
-				info.modifiers = Modifiers.AccPublic;
+				info.modifiers = IPHPModifiers.AccLocal;
 				info.nameSourceStart = arg.getNameStart();
 				info.nameSourceEnd = arg.getNameEnd() - 1;
 				info.declarationStart = arg.sourceStart();
@@ -534,11 +543,11 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 			if (arg instanceof FormalParameter) {
 				SimpleReference type = ((FormalParameter) arg).getParameterType();
 				if (type != null) {
-					parameterType[a] = type.getName();
+					parameterType[a] = processNameNode(type);
 				} else if (docBlock != null) {
 					for (PHPDocTag tag : docBlock.getTags(TagKind.PARAM)) {
 						if (tag.isValidParamTag() && tag.getVariableReference().getName().equals(arg.getName())) {
-							parameterType[a] = tag.getSingleTypeReference().getName();
+							parameterType[a] = processNameNode(tag.getSingleTypeReference());
 							break;
 						}
 					}
@@ -615,13 +624,15 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 	}
 
 	private String processNameNode(ASTNode nameNode) {
+		String name = null;
 		if (nameNode instanceof FullyQualifiedReference) {
-			String name;
 			FullyQualifiedReference fullyQualifiedName = (FullyQualifiedReference) nameNode;
 			name = fullyQualifiedName.getFullyQualifiedName();
+
+			if (PHPSimpleTypes.isSimpleType(name))
+				return name;
 			if (fullyQualifiedName.getNamespace() != null) {
 				String namespace = fullyQualifiedName.getNamespace().getName();
-
 				String subnamespace = ""; //$NON-NLS-1$
 				if (namespace.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR
 						&& namespace.indexOf(NamespaceReference.NAMESPACE_SEPARATOR) > 0) {
@@ -639,22 +650,36 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 					name = new StringBuilder(fLastNamespace.getName()).append(NamespaceReference.NAMESPACE_SEPARATOR)
 							.append(name).toString();
 				}
-			} else if (fLastUseParts.containsKey(name)) {
-				name = fLastUseParts.get(name).getNamespace().getFullyQualifiedName();
-				if (name.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
-					name = name.substring(1);
-				}
-			} else {
-				if (fLastNamespace != null) {
-					name = new StringBuilder(fLastNamespace.getName()).append(NamespaceReference.NAMESPACE_SEPARATOR)
-							.append(name).toString();
+				return name;
+			}
+		} else if (nameNode instanceof SimpleReference) {
+			name = ((SimpleReference) nameNode).getName();
+		}
+		if (name == null || PHPSimpleTypes.isSimpleType(name))
+			return name;
+		String[] types = name.split("\\|");
+		StringBuffer parameterName = new StringBuffer();
+		for (int i = 0; i < types.length; i++) {
+			String typeName = types[i];
+			if (!PHPSimpleTypes.isSimpleType(typeName)) {
+				if (fLastUseParts.containsKey(typeName)) {
+					typeName = fLastUseParts.get(typeName).getNamespace().getFullyQualifiedName();
+					if (typeName.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+						typeName = typeName.substring(1);
+					}
+				} else {
+					if (fLastNamespace != null) {
+						typeName = new StringBuilder(fLastNamespace.getName())
+								.append(NamespaceReference.NAMESPACE_SEPARATOR).append(typeName).toString();
+					}
 				}
 			}
-			return name;
-		} else if (nameNode instanceof SimpleReference) {
-			return ((SimpleReference) nameNode).getName();
+			parameterName.append(typeName);
+			if (i < types.length - 1) {
+				parameterName.append("|");
+			}
 		}
-		return null;
+		return parameterName.toString();
 	}
 
 	protected void modifyClassInfo(TypeDeclaration typeDeclaration, TypeInfo ti) {
@@ -821,6 +846,13 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 				}
 
 				if (tag.getTypeReferences().size() > 0) {
+					tag.getTypeReferences().forEach(new Consumer<TypeReference>() {
+
+						@Override
+						public void accept(TypeReference arg0) {
+							arg0.setName(processNameNode(arg0));
+						}
+					});
 					return PHPModelUtils.appendTypeReferenceNames(tag.getTypeReferences());
 				}
 			}
@@ -1002,11 +1034,15 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 				return false;
 			}
 			ISourceElementRequestor.FieldInfo info = new ISourceElementRequestor.FieldInfo();
-			info.modifiers = Modifiers.AccPublic;
+			info.modifiers = IPHPModifiers.AccLocal;
 			info.name = ((VariableReference) left).getName();
 			info.nameSourceEnd = left.sourceEnd() - 1;
 			info.nameSourceStart = left.sourceStart();
 			info.declarationStart = assignment.sourceStart();
+			IEvaluatedType type = PHPTypeInferenceUtils.resolveExpression((ISourceModule) fSourceModule, left);
+			if (type != null) {
+				info.type = type.getTypeName();
+			}
 
 			fInfoStack.push(info);
 			ISourceElementRequestor sourceElementRequestor = (ISourceElementRequestor) fRequestor;

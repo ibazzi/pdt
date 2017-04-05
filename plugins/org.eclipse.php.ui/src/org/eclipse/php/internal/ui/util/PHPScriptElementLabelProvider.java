@@ -11,8 +11,10 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.util;
 
+import org.eclipse.dltk.core.IField;
 import org.eclipse.dltk.core.IType;
 import org.eclipse.dltk.core.ModelException;
+import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.php.core.compiler.PHPFlags;
@@ -28,6 +30,9 @@ public class PHPScriptElementLabelProvider extends LabelProvider implements ILab
 		try {
 			if (o instanceof IType && PHPFlags.isTrait(((IType) o).getFlags())) {
 				return PHPPluginImages.get(PHPPluginImages.IMG_OBJS_TRAIT);
+			}
+			if (o instanceof IField && PHPFlags.isLocal(((IField) o).getFlags())) {
+				return DLTKPluginImages.get(DLTKPluginImages.IMG_OBJS_LOCAL_VARIABLE);
 			}
 		} catch (ModelException e) {
 		}

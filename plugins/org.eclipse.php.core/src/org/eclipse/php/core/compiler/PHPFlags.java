@@ -150,4 +150,11 @@ public class PHPFlags extends Flags implements IPHPModifiers {
 	public static boolean isNullable(int flags) {
 		return (flags & AccNullable) != 0;
 	}
+
+	/**
+	 * @since 5.0
+	 */
+	public static boolean isLocal(int flags) {
+		return (flags & AccLocal) != 0;
+	}
 }

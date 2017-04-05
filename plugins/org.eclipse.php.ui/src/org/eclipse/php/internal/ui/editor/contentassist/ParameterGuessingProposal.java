@@ -12,12 +12,15 @@
 package org.eclipse.php.internal.ui.editor.contentassist;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.ui.ScriptElementLabels;
 import org.eclipse.dltk.ui.text.completion.ReplacementBuffer;
+import org.eclipse.dltk.ui.text.completion.ScriptCompletionProposal;
 import org.eclipse.dltk.ui.text.completion.ScriptContentAssistInvocationContext;
 import org.eclipse.dltk.ui.text.completion.ScriptMethodCompletionProposal;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -29,11 +32,13 @@ import org.eclipse.jface.text.link.*;
 import org.eclipse.jface.text.link.LinkedModeUI.ExitFlags;
 import org.eclipse.osgi.util.TextProcessor;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
+import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.editor.EditorHighlightingSynchronizer;
 import org.eclipse.php.internal.ui.editor.PHPStructuredEditor;
@@ -342,6 +347,9 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 		if (parameters != null) {
 			for (int i = 0; i < parameters.length; i++) {
 				IParameter parameter = parameters[i];
+				if (parameter.getDefaultValue() != null) {
+					break;
+				}
 				paramList.add(parameter.getName());
 			}
 		}
@@ -398,40 +406,158 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	}
 
 	private ICompletionProposal[][] guessParameters(char[][] parameterNames) throws ModelException {
-		// find matches in reverse order. Do this because people tend to declare
-		// the variable meant for the last
-		// parameter last. That is, local variables for the last parameter in
-		// the method completion are more
-		// likely to be closer to the point of code completion. As an example
-		// consider a "delegation" completion:
-		//
-		// public void myMethod(int param1, int param2, int param3) {
-		// someOtherObject.yourMethod(param1, param2, param3);
-		// }
-		//
-		// The other consideration is giving preference to variables that have
-		// not previously been used in this
-		// code completion (which avoids
-		// "someOtherObject.yourMethod(param1, param1, param1)";
-
 		int count = parameterNames.length;
 		fPositions = new Position[count];
 		fChoices = new ICompletionProposal[count][];
 
-		IParameter[] parameters = method.getParameters();
+		String[] parameterTypes = getParameterTypes();
+		ParameterGuesser guesser = new ParameterGuesser(getEnclosingElement());
+		IModelElement[][] assignableElements = getAssignableElements(parameterTypes);
 
 		for (int i = count - 1; i >= 0; i--) {
 			String paramName = new String(parameterNames[i]);
 			Position position = new Position(0, 0);
 
-			ICompletionProposal[] argumentProposals = parameterProposals(parameters[i].getDefaultValue(), paramName,
-					position, fFillBestGuess);
+			boolean isLastParameter = i == count - 1;
+			ICompletionProposal[] argumentProposals = null;
+			if (parameterTypes[i] != null) {
+				argumentProposals = guesser.parameterProposals(parameterTypes[i], paramName, position,
+						assignableElements[i], fFillBestGuess, isLastParameter);
+			} else {
+				argumentProposals = new ICompletionProposal[0];
+			}
+			if (argumentProposals.length == 0) {
+				ScriptCompletionProposal proposal = new ScriptCompletionProposal(paramName, 0, paramName.length(), null,
+						paramName, 0);
+				if (isLastParameter)
+					proposal.setTriggerCharacters(new char[] { ',' });
+				argumentProposals = new ICompletionProposal[] { proposal };
+			}
 
 			fPositions[i] = position;
 			fChoices[i] = argumentProposals;
 		}
 
 		return fChoices;
+	}
+
+	private IModelElement getEnclosingElement() throws ModelException {
+		return fInvocationContext.getSourceModule().getElementAt(getReplacementOffset());
+	}
+
+	private IModelElement[][] getAssignableElements(String[] parameterTypes) throws ModelException {
+		IModelElement[][] assignableElements = new IModelElement[parameterTypes.length][];
+		IModelElement enclosingElement = getEnclosingElement();
+		for (int i = 0; i < parameterTypes.length; i++) {
+			List<IModelElement> elementsList = new ArrayList<>();
+
+			int flags = 0;
+			if (enclosingElement instanceof IMember) {
+				flags = ((IMember) enclosingElement).getFlags();
+				getVisibleElements(((IMember) enclosingElement).getChildren(), parameterTypes[i], elementsList);
+				if (enclosingElement instanceof IMethod || PHPFlags.isNamespace(flags)) {
+					IModelElement parent = enclosingElement.getParent();
+					IModelElement[] children = getParentChildren(parent, enclosingElement);
+					getVisibleElements(children, parameterTypes[i], elementsList);
+				}
+			} else {
+				getVisibleElements(fInvocationContext.getSourceModule().getChildren(), parameterTypes[i], elementsList);
+			}
+
+			assignableElements[i] = elementsList.toArray(new IModelElement[elementsList.size()]);
+		}
+		return assignableElements;
+	}
+
+	private IModelElement[] getParentChildren(IModelElement parent, IModelElement currentElement)
+			throws ModelException {
+		IModelElement[] result = null;
+		boolean isMethodOnly = false;
+		if (parent instanceof IParent) {
+			result = ((IParent) parent).getChildren();
+		}
+		if (result == null)
+			return new IModelElement[0];
+
+		if (parent instanceof IMember) {
+			if (currentElement instanceof IMethod && !PHPFlags.isClass(((IMember) parent).getFlags())) {
+				isMethodOnly = true;
+			}
+		} else if (parent instanceof ISourceModule && currentElement instanceof IMethod) {
+			isMethodOnly = true;
+		}
+		IType currentType = (IType) currentElement.getAncestor(IModelElement.TYPE);
+		List<IModelElement> filtered = new ArrayList<>();
+		boolean isFiltered = false;
+		for (IModelElement e : result) {
+			if (e instanceof IField) {
+				IType declaringType = ((IField) e).getDeclaringType();
+				if (!currentType.equals(declaringType) && Flags.isPrivate(((IField) e).getFlags()))
+					isFiltered = true;
+				if (isMethodOnly)
+					isFiltered = true;
+			} else if (e instanceof IMethod) {
+				IType declaringType = ((IMethod) e).getDeclaringType();
+				if (!currentType.equals(declaringType) && Flags.isPrivate(((IMethod) e).getFlags()))
+					isFiltered = true;
+			} else {
+				isFiltered = true;
+			}
+
+			if (!isFiltered) {
+				filtered.add(e);
+			}
+		}
+		result = filtered.toArray(new IModelElement[filtered.size()]);
+		return result;
+	}
+
+	private void getVisibleElements(IModelElement[] elements, String parmeterType, List<IModelElement> lists)
+			throws ModelException {
+		List<String> parameterTypes = Arrays.asList(parmeterType.split("\\|"));
+		for (IModelElement m : elements) {
+			String typeName = null;
+			if (m instanceof IMethod) {
+				typeName = ((IMethod) m).getType();
+			} else if (m instanceof IField) {
+				typeName = ((IField) m).getType();
+			}
+			if (typeName == null)
+				continue;
+			if (typeName.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+				typeName = typeName.substring(1);
+			}
+			if (parameterTypes.contains(typeName)) {
+				lists.add(m);
+			} else {
+				IType[] types = PHPModelUtils.getTypes(NamespaceReference.NAMESPACE_DELIMITER + typeName,
+						fInvocationContext.getSourceModule(), getReplacementOffset(), null);
+				for (IType type : types) {
+					String[] superClasses = type.getSuperClasses();
+					if (superClasses != null) {
+						for (String superClass : superClasses) {
+							if (parameterTypes.contains(superClass)) {
+								lists.add(m);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private String[] getParameterTypes() throws ModelException {
+		IParameter[] parameters = method.getParameters();
+		String[] parameterTypes = new String[parameters.length];
+		for (int i = 0; i < parameters.length; i++) {
+			IParameter parameter = parameters[i];
+			if (!StringUtils.isBlank(parameter.getType())) {
+				parameterTypes[i] = parameter.getType();
+			} else {
+				parameterTypes[i] = null;
+			}
+		}
+		return parameterTypes;
 	}
 
 	/*
@@ -595,4 +721,12 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 	public void setContextInformationPosition(int contextInformationPosition) {
 		fContextInformationPosition = contextInformationPosition;
 	}
+
+	@Override
+	public int getPrefixCompletionStart(IDocument document, int completionOffset) {
+		if (fProposal.isConstructor())
+			return fTypeProsoal.getReplacementOffset();
+		return super.getPrefixCompletionStart(document, completionOffset);
+	}
+
 }

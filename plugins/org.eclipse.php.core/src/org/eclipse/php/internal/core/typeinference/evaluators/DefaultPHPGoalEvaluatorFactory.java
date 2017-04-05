@@ -130,7 +130,7 @@ public class DefaultPHPGoalEvaluatorFactory implements IGoalEvaluatorFactory {
 			return new CloneEvaluator(exprGoal);
 		}
 		if (expressionClass == InstanceOfExpression.class) {
-			return new FixedAnswerEvaluator(exprGoal, PHPSimpleTypes.BOOLEAN);
+			return new FixedAnswerEvaluator(exprGoal, PHPSimpleTypes.BOOL);
 		}
 		if (expressionClass == ConditionalExpression.class) {
 			return new ConditionalExpressionEvaluator(exprGoal);
