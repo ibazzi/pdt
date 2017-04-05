@@ -115,7 +115,7 @@ public class PHPDebugTextHover extends AbstractScriptEditorTextHover implements 
 			}
 			ASTNode node = NodeFinder.perform(root, hoverRegion.getOffset(), hoverRegion.getLength());
 
-			// variables
+			// local variables
 			if (node instanceof Variable || (node instanceof Identifier && node.getParent() instanceof Variable
 					&& !((Variable) node.getParent()).isDollared())) {
 				String variableName = null;
@@ -127,7 +127,7 @@ public class PHPDebugTextHover extends AbstractScriptEditorTextHover implements 
 					IDocument document = textViewer.getDocument();
 					if (document != null) {
 						Variable var = (Variable) node;
-						// local variable
+						// $a
 						if (var.isDollared()) {
 							variableName = document.get(hoverRegion.getOffset(), hoverRegion.getLength());
 							// $$a
