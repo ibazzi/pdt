@@ -17,7 +17,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.internal.ui.DLTKUIStatus;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.swt.graphics.Image;

@@ -12,7 +12,7 @@ import org.eclipse.dltk.ast.references.TypeReference;
 import org.eclipse.dltk.internal.core.search.matching.MatchingNodeSet;
 import org.eclipse.dltk.internal.core.search.matching.MethodLocator;
 import org.eclipse.dltk.internal.core.search.matching.MethodPattern;
-import org.eclipse.php.internal.core.compiler.ast.nodes.ClassInstanceCreation;
+import org.eclipse.php.core.compiler.ast.nodes.ClassInstanceCreation;
 
 public class PHPMethodLocator extends MethodLocator {
 

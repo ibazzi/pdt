@@ -9,10 +9,15 @@ import org.eclipse.dltk.compiler.problem.IProblemIdentifier;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.ui.text.completion.IScriptCompletionProposal;
 import org.eclipse.php.internal.core.compiler.ast.parser.PhpProblemIdentifier;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
+import org.eclipse.php.ui.text.correction.IQuickFixProcessor;
+import org.eclipse.php.ui.text.correction.IQuickFixProcessorExtension;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessorExtension {
 
+	@Override
 	public IScriptCompletionProposal[] getCorrections(IInvocationContext context, IProblemLocation[] locations)
 			throws CoreException {
 		if (locations == null || locations.length == 0) {
@@ -32,6 +37,7 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 				.toArray(new IScriptCompletionProposal[resultingCollections.size()]);
 	}
 
+	@Override
 	public boolean hasCorrections(ISourceModule unit, int problemId) {
 		return false;
 	}
@@ -49,7 +55,8 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 			ReorgCorrectionsSubProcessor.removeImportStatementProposals(context, problem, proposals);
 			break;
 		case ClassExtendFinalClass:
-			ModifierCorrectionSubProcessor.addNonAccessibleReferenceProposal(context, problem, proposals, ModifierCorrectionSubProcessor.TO_NON_FINAL, IProposalRelevance.REMOVE_FINAL_MODIFIER);
+			ModifierCorrectionSubProcessor.addNonAccessibleReferenceProposal(context, problem, proposals,
+					ModifierCorrectionSubProcessor.TO_NON_FINAL, IProposalRelevance.REMOVE_FINAL_MODIFIER);
 			break;
 		case AbstractMethodInAbstractClass:
 		case BodyForAbstractMethod:

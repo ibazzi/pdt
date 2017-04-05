@@ -8,6 +8,8 @@ import org.eclipse.jface.text.IDocument;
 import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.text.correction.proposals.AbstractCorrectionProposal;
 import org.eclipse.php.internal.ui.text.correction.proposals.RemoveUnusedUseStatementProposal;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
 

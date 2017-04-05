@@ -9,7 +9,7 @@ import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.ltk.core.refactoring.CategorizedTextEditGroup;
 import org.eclipse.ltk.core.refactoring.GroupCategory;
 import org.eclipse.ltk.core.refactoring.GroupCategorySet;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ListRewrite;

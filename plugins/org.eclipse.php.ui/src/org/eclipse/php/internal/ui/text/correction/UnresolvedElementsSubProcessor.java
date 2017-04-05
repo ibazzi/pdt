@@ -7,10 +7,10 @@ import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.internal.corext.util.QualifiedTypeNameHistory;
 import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.dltk.ui.viewsupport.BasicElementLabels;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.Comment;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.Comment;
+import org.eclipse.php.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
@@ -18,6 +18,8 @@ import org.eclipse.php.internal.ui.text.correction.proposals.ASTRewriteCorrectio
 import org.eclipse.php.internal.ui.text.correction.proposals.AddImportCorrectionProposal;
 import org.eclipse.php.internal.ui.text.correction.proposals.CUCorrectionProposal;
 import org.eclipse.php.internal.ui.util.Messages;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
 import org.eclipse.swt.graphics.Image;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })

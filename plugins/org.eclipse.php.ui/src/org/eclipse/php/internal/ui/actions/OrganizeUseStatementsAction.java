@@ -32,7 +32,7 @@ import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.window.Window;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.ui.PHPUILanguageToolkit;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.corext.codemanipulation.OrganizeUseStatementsOperation;

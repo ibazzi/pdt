@@ -4,11 +4,13 @@ import java.util.Collection;
 
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.ui.DLTKPluginImages;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ListRewrite;
 import org.eclipse.php.internal.ui.text.correction.proposals.ASTRewriteCorrectionProposal;
 import org.eclipse.php.internal.ui.text.correction.proposals.UnimplementedMethodsCorrectionProposal;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
 import org.eclipse.swt.graphics.Image;
 
 @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -77,17 +79,23 @@ public class LocalCorrectionsSubProcessor {
 			proposals.add(proposal);
 		}
 		{
-//			ASTRewrite rewrite = ASTRewrite.create(context.getASTRoot().getAST());
-//
-//			rewrite.set(typeDecl, ClassDeclaration.INTERFACES_PROPERTY, Boolean.TRUE, null);
-//
-//			String typeName = typeDecl.getName().getName();
-//			String label = Messages.format(CorrectionMessages.LocalCorrectionsSubProcessor_classtointerface_description,
-//					BasicElementLabels.getJavaElementName(typeName));
-//			Image image = DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
-//			ASTRewriteCorrectionProposal proposal = new ASTRewriteCorrectionProposal(label,
-//					context.getCompilationUnit(), rewrite, IProposalRelevance.CHANGE_CLASS_TO_INTERFACE, image);
-//			proposals.add(proposal);
+			// ASTRewrite rewrite =
+			// ASTRewrite.create(context.getASTRoot().getAST());
+			//
+			// rewrite.set(typeDecl, ClassDeclaration.INTERFACES_PROPERTY,
+			// Boolean.TRUE, null);
+			//
+			// String typeName = typeDecl.getName().getName();
+			// String label =
+			// Messages.format(CorrectionMessages.LocalCorrectionsSubProcessor_classtointerface_description,
+			// BasicElementLabels.getJavaElementName(typeName));
+			// Image image =
+			// DLTKPluginImages.get(DLTKPluginImages.IMG_CORRECTION_CHANGE);
+			// ASTRewriteCorrectionProposal proposal = new
+			// ASTRewriteCorrectionProposal(label,
+			// context.getCompilationUnit(), rewrite,
+			// IProposalRelevance.CHANGE_CLASS_TO_INTERFACE, image);
+			// proposals.add(proposal);
 		}
 	}
 }

@@ -6,12 +6,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.ui.DLTKPluginImages;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.internal.core.compiler.ast.parser.PhpProblemIdentifier;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.text.correction.CorrectionMessages;
-import org.eclipse.php.internal.ui.text.correction.IInvocationContext;
-import org.eclipse.php.internal.ui.text.correction.IProblemLocation;
+import org.eclipse.php.ui.text.correction.IInvocationContext;
+import org.eclipse.php.ui.text.correction.IProblemLocation;
 import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.TextEdit;
 
@@ -48,13 +48,7 @@ public class RemoveUnusedUseStatementProposal extends CUCorrectionProposal {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.jdt.internal.ui.text.correction.CUCorrectionProposal#addEdits
-	 * (org.eclipse.jdt.internal.corext.textmanipulation.TextBuffer)
-	 */
+	@Override
 	protected void addEdits(IDocument doc, TextEdit root) throws CoreException {
 		super.addEdits(doc, root);
 		try {

@@ -4,7 +4,7 @@ import org.eclipse.dltk.ti.GoalState;
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.goals.GoalEvaluator;
 import org.eclipse.dltk.ti.goals.IGoal;
-import org.eclipse.php.internal.core.compiler.ast.nodes.AnonymousClassDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.AnonymousClassDeclaration;
 import org.eclipse.php.internal.core.typeinference.AnonymousClassInstanceType;
 
 public class PHPAnonymousClassEvaluator extends GoalEvaluator {

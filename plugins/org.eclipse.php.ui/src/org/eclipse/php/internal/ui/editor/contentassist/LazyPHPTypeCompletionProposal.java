@@ -14,11 +14,11 @@ import org.eclipse.dltk.ui.text.completion.TypeProposalInfo;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.IContextInformation;
-import org.eclipse.php.internal.core.ast.nodes.Program;
+import org.eclipse.php.core.ast.nodes.Program;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite.ImportRewriteContext;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
@@ -366,12 +366,6 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		return baseRelevance + rhsBoost + recencyBoost;
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeContextInformation()
-	 * 
-	 * @since 3.3
-	 */
 	@Override
 	protected IContextInformation computeContextInformation() {
 
@@ -391,6 +385,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 	}
 
+	@Override
 	public IModelElement getModelElement() {
 		IModelElement element = super.getModelElement();
 		while (!(element instanceof IType)) {

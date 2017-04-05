@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.dltk.core.IModelElement;
-import org.eclipse.php.internal.core.ast.nodes.ASTNode;
-import org.eclipse.php.internal.core.ast.nodes.IBinding;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.ast.visitor.AbstractVisitor;
+import org.eclipse.php.core.ast.nodes.ASTNode;
+import org.eclipse.php.core.ast.nodes.IBinding;
+import org.eclipse.php.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 
 /**
  * Find all nodes connected to a given binding or node. e.g. Declaration of a

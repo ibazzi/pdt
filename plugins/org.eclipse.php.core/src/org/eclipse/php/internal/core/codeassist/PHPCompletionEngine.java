@@ -21,10 +21,10 @@ import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.core.ModelManager;
 import org.eclipse.php.core.codeassist.*;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.contexts.CompletionContextResolver;
 import org.eclipse.php.internal.core.codeassist.strategies.CompletionStrategyFactory;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 
 /**

@@ -1,7 +1,7 @@
 package org.eclipse.php.internal.ui.text.correction.proposals;
 
 import org.eclipse.dltk.core.ISourceModule;
-import org.eclipse.php.internal.core.ast.nodes.ITypeBinding;
+import org.eclipse.php.core.ast.nodes.ITypeBinding;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ITrackedNodePosition;
 import org.eclipse.swt.graphics.Image;

@@ -4,13 +4,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.internal.corext.util.QualifiedTypeNameHistory;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
+import org.eclipse.php.core.ast.nodes.Identifier;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.ui.text.correction.SimilarElementsRequestor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.IEditorPart;
 
-@SuppressWarnings({ "restriction" })
 public class AddImportCorrectionProposal extends ASTRewriteCorrectionProposal {
 
 	private final String fTypeName;
@@ -27,6 +26,7 @@ public class AddImportCorrectionProposal extends ASTRewriteCorrectionProposal {
 		return fQualifierName + SimilarElementsRequestor.ENCLOSING_TYPE_SEPARATOR + fTypeName;
 	}
 
+	@Override
 	protected void performChange(IEditorPart activeEditor, IDocument document) throws CoreException {
 		super.performChange(activeEditor, document);
 		rememberSelection();

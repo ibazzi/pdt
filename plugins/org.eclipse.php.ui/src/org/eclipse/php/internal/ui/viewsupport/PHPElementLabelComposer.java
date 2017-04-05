@@ -10,9 +10,9 @@ import org.eclipse.dltk.ui.viewsupport.ScriptElementLabelComposer;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.core.compiler.IPHPModifiers;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocBlock;
+import org.eclipse.php.core.compiler.ast.nodes.PHPDocTag;
 import org.eclipse.php.internal.core.codeassist.CodeAssistUtils;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocBlock;
-import org.eclipse.php.internal.core.compiler.ast.nodes.PHPDocTag;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUIMessages;
 
@@ -63,6 +63,7 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		super(buffer);
 	}
 
+	@Override
 	public void getTypeLabel(IType type, long flags) {
 		if (getFlag(flags, ScriptElementLabels.T_FULLY_QUALIFIED | ScriptElementLabels.T_CONTAINER_QUALIFIED)) {
 			IModelElement elem = type.getParent();
@@ -155,6 +156,7 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		}
 	}
 
+	@Override
 	protected void getMethodLabel(IMethod method, long flags) {
 		try {
 			InternalClassType classType = getReturnType(method);
@@ -214,6 +216,7 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		}
 	}
 
+	@Override
 	protected void getMethodParameters(IMethod method, long flags) throws ModelException {
 		if (getFlag(flags, ScriptElementLabels.M_PARAMETER_TYPES | ScriptElementLabels.M_PARAMETER_NAMES)) {
 			if (method.exists()) {
@@ -275,6 +278,7 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		}
 	}
 
+	@Override
 	protected void getFieldLabel(IField field, long flags) {
 		String typeName = getFieldType(field);
 		if (getFlag(flags, ScriptElementLabels.F_PRE_TYPE_SIGNATURE) && field.exists()) {
@@ -323,9 +327,7 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		return PHPModelUtils.extractElementName(typeName);
 	}
 
-	/**
-	 * @since 2.0
-	 */
+	@Override
 	protected void getImportContainerLabel(IModelElement element, long flags) {
 		fBuffer.append(PHPUIMessages.PHPOutlineContentProvider_useStatementsNode);
 	}

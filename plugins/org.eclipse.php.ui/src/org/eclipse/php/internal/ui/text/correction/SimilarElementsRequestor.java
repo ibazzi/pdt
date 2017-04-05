@@ -5,9 +5,9 @@ import java.util.HashSet;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.corext.util.TypeFilter;
 import org.eclipse.dltk.ui.DLTKUILanguageManager;
+import org.eclipse.php.core.ast.nodes.Identifier;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.internal.core.ast.nodes.Identifier;
-import org.eclipse.php.internal.core.compiler.ast.nodes.NamespaceReference;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.project.PHPNature;
 import org.eclipse.php.internal.core.typeinference.FakeConstructor;
 import org.eclipse.php.internal.core.typeinference.FakeMethod;
@@ -104,6 +104,7 @@ public class SimilarElementsRequestor extends CompletionRequestor {
 		}
 	}
 
+	@Override
 	public void accept(CompletionProposal proposal) {
 		if (proposal.getKind() == CompletionProposal.TYPE_REF || proposal.getKind() == CompletionProposal.METHOD_REF) {
 			String name = null;

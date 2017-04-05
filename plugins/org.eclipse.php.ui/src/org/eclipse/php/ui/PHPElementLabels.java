@@ -110,7 +110,6 @@ public class PHPElementLabels extends ScriptElementLabels {
 		}
 	}
 
-	@Override
 	protected void getMethodLabel(IMethod method, long flags, StringBuffer buf) {
 
 		try {
@@ -159,7 +158,6 @@ public class PHPElementLabels extends ScriptElementLabels {
 		}
 	}
 
-	@Override
 	protected void getMethodParameters(IMethod method, long flags, StringBuffer buf) throws ModelException {
 		if (getFlag(flags, M_PARAMETER_TYPES | M_PARAMETER_NAMES)) {
 			if (method.exists()) {
@@ -219,14 +217,17 @@ public class PHPElementLabels extends ScriptElementLabels {
 		}
 	}
 
+	@Override
 	protected ScriptElementLabelComposer getScriptElementLabelComposer(StringBuffer buf) {
 		return new PHPElementLabelComposer(buf);
 	}
 
+	@Override
 	protected ScriptElementLabelComposer getScriptElementLabelComposer(StyledString buf) {
 		return new PHPElementLabelComposer(buf);
 	}
 
+	@Override
 	public StyledString getStyledTextLabel(Object obj, long flags) {
 		if (obj instanceof IModelElement) {
 			return getStyledElementLabel((IModelElement) obj, flags);

@@ -25,9 +25,9 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.viewers.StyledString;
+import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.core.PHPCorePlugin;
-import org.eclipse.php.internal.core.ast.nodes.Program;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.util.Signature;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
@@ -80,6 +80,7 @@ public class PHPTypeCompletionProposal extends ScriptCompletionProposal implemen
 		fUnqualifiedTypeName = fullyQualifiedTypeName != null ? Signature.getSimpleName(fullyQualifiedTypeName) : null;
 	}
 
+	@Override
 	public void apply(IDocument document, char trigger, int offset) {
 		try {
 			ImportRewrite impRewrite = null;
@@ -130,6 +131,7 @@ public class PHPTypeCompletionProposal extends ScriptCompletionProposal implemen
 		return false;
 	}
 
+	@Override
 	protected boolean isValidPrefix(String prefix) {
 		String word = getDisplayString();
 		if (word.startsWith("$") && !prefix.startsWith("$")) { //$NON-NLS-1$ //$NON-NLS-2$
@@ -147,14 +149,17 @@ public class PHPTypeCompletionProposal extends ScriptCompletionProposal implemen
 		return fUnqualifiedTypeName;
 	}
 
+	@Override
 	protected boolean isSmartTrigger(char trigger) {
 		return trigger == '$';
 	}
 
+	@Override
 	public Object getExtraInfo() {
 		return ProposalExtraInfo.DEFAULT;
 	}
 
+	@Override
 	public IContextInformation getContextInformation() {
 		String displayString = getDisplayString();
 		if (displayString.indexOf('(') == -1) {
@@ -163,15 +168,18 @@ public class PHPTypeCompletionProposal extends ScriptCompletionProposal implemen
 		return super.getContextInformation();
 	}
 
+	@Override
 	protected boolean isCamelCaseMatching() {
 		return true;
 	}
 
+	@Override
 	protected boolean insertCompletion() {
 		return Platform.getPreferencesService().getBoolean(PHPCorePlugin.ID,
 				PHPCoreConstants.CODEASSIST_INSERT_COMPLETION, true, null);
 	}
 
+	@Override
 	protected ScriptTextTools getTextTools() {
 		return PHPUiPlugin.getDefault().getTextTools();
 	}
