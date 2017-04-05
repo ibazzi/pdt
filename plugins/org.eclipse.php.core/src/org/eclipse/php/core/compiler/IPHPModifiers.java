@@ -71,4 +71,6 @@ public interface IPHPModifiers extends Modifiers {
 	public static final int AccessMask = AccPublic | AccPrivate | AccProtected;
 
 	public static final int USER_MODIFIER = Modifiers.USER_MODIFIER + 11;
+
+	public static final int AccLocal = (1 << Modifiers.USER_MODIFIER + 12);
 }

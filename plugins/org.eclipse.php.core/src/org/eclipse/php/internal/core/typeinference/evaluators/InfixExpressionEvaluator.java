@@ -48,7 +48,7 @@ public class InfixExpressionEvaluator extends GoalEvaluator {
 		case InfixExpression.OP_OR:
 		case InfixExpression.OP_AND:
 		case InfixExpression.OP_XOR:
-			result = PHPSimpleTypes.BOOLEAN;
+			result = PHPSimpleTypes.BOOL;
 			break;
 		case InfixExpression.OP_CONCAT:
 			result = PHPSimpleTypes.STRING;

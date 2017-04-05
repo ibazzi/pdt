@@ -33,8 +33,10 @@ public class ScalarEvaluator extends FixedAnswerEvaluator {
 		IEvaluatedType simpleType = PHPSimpleTypes.VOID;
 		switch (scalarType) {
 		case Scalar.TYPE_INT:
+			simpleType = PHPSimpleTypes.INT;
+			break;
 		case Scalar.TYPE_REAL:
-			simpleType = PHPSimpleTypes.NUMBER;
+			simpleType = PHPSimpleTypes.FLOAT;
 			break;
 		case Scalar.TYPE_STRING:
 			if ("null".equalsIgnoreCase(scalar.getValue())) { //$NON-NLS-1$
@@ -62,7 +64,7 @@ public class ScalarEvaluator extends FixedAnswerEvaluator {
 			String value = scalar.getValue();
 			if ("true".equalsIgnoreCase(value) //$NON-NLS-1$
 					|| "false".equalsIgnoreCase(value)) { //$NON-NLS-1$
-				simpleType = PHPSimpleTypes.BOOLEAN;
+				simpleType = PHPSimpleTypes.BOOL;
 			} else {
 				simpleType = PHPSimpleTypes.STRING;
 			}

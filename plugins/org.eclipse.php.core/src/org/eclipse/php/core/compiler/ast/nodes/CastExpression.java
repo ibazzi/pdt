@@ -66,7 +66,7 @@ public class CastExpression extends Expression {
 		case TYPE_INT:
 			return "int"; //$NON-NLS-1$
 		case TYPE_REAL:
-			return "real"; //$NON-NLS-1$
+			return "float"; //$NON-NLS-1$
 		case TYPE_STRING:
 			return "string"; //$NON-NLS-1$
 		case TYPE_ARRAY:

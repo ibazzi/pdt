@@ -34,8 +34,10 @@ public class CastEvaluator extends GoalEvaluator {
 		int operator = castExpression.getCastType();
 		switch (operator) {
 		case CastExpression.TYPE_INT:
+			result = PHPSimpleTypes.INT;
+			break;
 		case CastExpression.TYPE_REAL:
-			result = PHPSimpleTypes.NUMBER;
+			result = PHPSimpleTypes.FLOAT;
 			break;
 		case CastExpression.TYPE_STRING:
 			result = PHPSimpleTypes.STRING;
@@ -46,7 +48,7 @@ public class CastEvaluator extends GoalEvaluator {
 		case CastExpression.TYPE_OBJECT:
 			return new IGoal[] { new ExpressionTypeGoal(typedGoal.getContext(), castExpression.getExpr()) };
 		case CastExpression.TYPE_BOOL:
-			result = PHPSimpleTypes.BOOLEAN;
+			result = PHPSimpleTypes.BOOL;
 			break;
 		case CastExpression.TYPE_UNSET:
 			result = PHPSimpleTypes.NULL;

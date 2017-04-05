@@ -324,7 +324,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 					buffer.append(' ');
 				}
 				if (parameters[i].getType() != null) {
-					buffer.append(parameters[i].getType());
+					buffer.append(PHPModelUtils.extractElementName(parameters[i].getType()));
 					buffer.append(' ');
 				}
 				if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {

@@ -29,6 +29,45 @@ import org.eclipse.php.core.PHPVersion;
  */
 public class PHPSimpleTypes {
 
+	private static class PHPSimpleType extends SimpleType {
+
+		public final static int TYPE_INT = 11;
+		public final static int TYPE_FLOAT = 12;
+		public final static int TYPE_BOOL = 13;
+		private int fType;
+
+		public PHPSimpleType(int type) {
+			super(type);
+			fType = type;
+		}
+
+		@Override
+		public String getTypeName() {
+			String name = getTypeString(this.fType);
+			if (name == null)
+				name = super.getTypeName();
+			return name;
+		}
+
+		/**
+		 * Return type string for selected type.
+		 *
+		 * @param type
+		 * @return
+		 */
+		public static String getTypeString(int type) {
+			switch (type) {
+			case TYPE_INT:
+				return "int"; //$NON-NLS-1$
+			case TYPE_FLOAT:
+				return "float"; //$NON-NLS-1$
+			case TYPE_BOOL:
+				return "bool"; //$NON-NLS-1$
+			}
+			return null;
+		}
+	}
+
 	private static class TypeInfo {
 		public IEvaluatedType type;
 		public PHPVersion hintableSince;
@@ -56,7 +95,10 @@ public class PHPSimpleTypes {
 
 	private static final Map<String, TypeInfo> SIMPLE_TYPES;
 
+	public static final IEvaluatedType INT = new PHPSimpleType(PHPSimpleType.TYPE_INT);
+	public static final IEvaluatedType FLOAT = new PHPSimpleType(PHPSimpleType.TYPE_FLOAT);
 	public static final IEvaluatedType NUMBER = new SimpleType(SimpleType.TYPE_NUMBER);
+	public static final IEvaluatedType BOOL = new PHPSimpleType(PHPSimpleType.TYPE_BOOL);
 	public static final IEvaluatedType BOOLEAN = new SimpleType(SimpleType.TYPE_BOOLEAN);
 	public static final IEvaluatedType STRING = new SimpleType(SimpleType.TYPE_STRING);
 	public static final IEvaluatedType OBJECT = new PHPClassType("object"); //$NON-NLS-1$
@@ -91,13 +133,12 @@ public class PHPSimpleTypes {
 
 		SIMPLE_TYPES = new HashMap<String, TypeInfo>();
 		SIMPLE_TYPES.put("array", new TypeInfo(ARRAY, PHPVersion.PHP5)); //$NON-NLS-1$
-		SIMPLE_TYPES.put("bool", new TypeInfo(BOOLEAN, PHPVersion.PHP7_0)); //$NON-NLS-1$
+		SIMPLE_TYPES.put("bool", new TypeInfo(BOOL, PHPVersion.PHP7_0)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("boolean", new TypeInfo(BOOLEAN, null)); //$NON-NLS-1$
-		SIMPLE_TYPES.put("int", new TypeInfo(NUMBER, PHPVersion.PHP7_0)); //$NON-NLS-1$
+		SIMPLE_TYPES.put("int", new TypeInfo(INT, PHPVersion.PHP7_0)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("integer", new TypeInfo(NUMBER, null)); //$NON-NLS-1$
-		SIMPLE_TYPES.put("float", new TypeInfo(NUMBER, PHPVersion.PHP7_0)); //$NON-NLS-1$
+		SIMPLE_TYPES.put("float", new TypeInfo(FLOAT, PHPVersion.PHP7_0)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("double", new TypeInfo(NUMBER, null)); //$NON-NLS-1$
-		SIMPLE_TYPES.put("number", new TypeInfo(NUMBER, null)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("string", new TypeInfo(STRING, PHPVersion.PHP7_0)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("resource", new TypeInfo(RESOURCE, null)); //$NON-NLS-1$
 		SIMPLE_TYPES.put("object", new TypeInfo(OBJECT, null)); //$NON-NLS-1$
@@ -207,4 +248,5 @@ public class PHPSimpleTypes {
 
 		return false;
 	}
+
 }
