@@ -29,6 +29,7 @@ import org.eclipse.php.internal.debug.core.zend.debugger.ExpressionsUtil;
 import org.eclipse.php.internal.debug.core.zend.model.PHPDebugTarget;
 import org.eclipse.php.internal.debug.core.zend.model.PHPStackFrame;
 import org.eclipse.php.internal.debug.core.zend.model.PHPVariable;
+import org.eclipse.php.internal.debug.ui.PHPDebugUIPlugin;
 import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.php.ui.editor.hover.IHoverMessageDecorator;
 import org.eclipse.php.ui.editor.hover.IPHPTextHover;
@@ -114,7 +115,30 @@ public class PHPDebugTextHover extends AbstractScriptEditorTextHover implements 
 			}
 			ASTNode node = NodeFinder.perform(root, hoverRegion.getOffset(), hoverRegion.getLength());
 
-			if (node instanceof Scalar) {
+			// variables
+			if (node instanceof Variable || (node instanceof Identifier && node.getParent() instanceof Variable
+					&& !((Variable) node.getParent()).isDollared())) {
+				String variableName = null;
+				// ${a}
+				if (node instanceof Identifier && node.getParent() instanceof Variable
+						&& !((Variable) node.getParent()).isDollared()) {
+					variableName = "$" + ((Identifier) node).getName();
+				} else {
+					IDocument document = textViewer.getDocument();
+					if (document != null) {
+						Variable var = (Variable) node;
+						// local variable
+						if (var.isDollared()) {
+							variableName = document.get(hoverRegion.getOffset(), hoverRegion.getLength());
+							// $$a
+						} else if (var instanceof ReflectionVariable) {
+							variableName = document.get(((ReflectionVariable) var).getName().getStart(),
+									((ReflectionVariable) node).getName().getLength());
+						}
+					}
+				}
+				variable = frame.findVariable(variableName);
+			} else if (node instanceof Scalar) {
 				Scalar scalar = (Scalar) node;
 				if (node.getParent() instanceof ArrayAccess) {
 					ArrayAccess access = (ArrayAccess) node.getParent();
@@ -133,8 +157,10 @@ public class PHPDebugTextHover extends AbstractScriptEditorTextHover implements 
 					}
 				} else if (!(scalar.getParent() instanceof Include) && scalar.getScalarType() == Scalar.TYPE_STRING) {
 					if (!(scalar.getStringValue().startsWith("\"") && scalar.getStringValue().endsWith("\""))) {
-						Expression constant = expressionsUtil.fetchConstant(scalar.getStringValue());
-						variable = new PHPVariable(getDebugTarget(), constant);
+						if (!scalar.getStringValue().trim().equals("")) {
+							Expression constant = expressionsUtil.fetchConstant(scalar.getStringValue());
+							variable = new PHPVariable(getDebugTarget(), constant);
+						}
 					}
 				}
 			} else if (node.getParent() instanceof Variable && node.getParent().getParent() instanceof FieldAccess) {
@@ -195,15 +221,9 @@ public class PHPDebugTextHover extends AbstractScriptEditorTextHover implements 
 				} else {
 					variable = fetchStaticMember(typeName, nodeName);
 				}
-			} else {
-				IDocument document = textViewer.getDocument();
-				if (document != null) {
-					String variableName = document.get(hoverRegion.getOffset(), hoverRegion.getLength());
-					variable = frame.findVariable(variableName);
-				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			PHPDebugUIPlugin.log(e);
 		}
 		return variable;
 	}
