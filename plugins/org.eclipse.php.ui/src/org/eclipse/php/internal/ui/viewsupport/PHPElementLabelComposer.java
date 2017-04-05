@@ -24,9 +24,9 @@ public class PHPElementLabelComposer extends ScriptElementLabelComposer {
 		private String typeName;
 	}
 
-	private final String MIXED_RETURN_TYPE = "mixed"; //$NON-NLS-1$
-	private final String VOID_RETURN_TYPE = "void"; //$NON-NLS-1$
-	private final String QUESTION_MARK = "?"; //$NON-NLS-1$
+	private final static String MIXED_RETURN_TYPE = "mixed"; //$NON-NLS-1$
+	private final static String VOID_RETURN_TYPE = "void"; //$NON-NLS-1$
+	private final static String QUESTION_MARK = "?"; //$NON-NLS-1$
 
 	/**
 	 * User-readable string for reference ("&").

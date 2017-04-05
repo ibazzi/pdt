@@ -36,7 +36,7 @@ import org.eclipse.php.internal.ui.Logger;
 import org.eclipse.php.internal.ui.preferences.PreferenceConstants;
 import org.eclipse.php.internal.ui.text.PHPTextMessages;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
-import org.eclipse.php.ui.PHPElementLabels;
+import org.eclipse.php.internal.ui.viewsupport.PHPElementLabelComposer;
 
 public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelProvider
 		implements ICompletionProposalLabelProviderExtension {
@@ -328,7 +328,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 					buffer.append(' ');
 				}
 				if (parameters != null && i < parameters.length && PHPFlags.isReference(parameters[i].getFlags())) {
-					buffer.append(PHPElementLabels.REFERENCE_STRING);
+					buffer.append(PHPElementLabelComposer.REFERENCE_STRING);
 				}
 				if (isVariadic && i + 1 == parameters.length) {
 					buffer.append(ScriptElementLabels.ELLIPSIS_STRING);
