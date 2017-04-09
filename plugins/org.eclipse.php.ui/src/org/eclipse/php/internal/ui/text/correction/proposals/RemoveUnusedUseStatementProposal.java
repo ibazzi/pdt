@@ -30,6 +30,9 @@ public class RemoveUnusedUseStatementProposal extends CUCorrectionProposal {
 	private static String getMessage(IProblemLocation location) {
 		String message = "";
 		PhpProblemIdentifier id = PhpProblemIdentifier.getProblem(location.getProblemIdentifier());
+		if (id == null)
+			return message;
+
 		switch (id) {
 		case UnusedImport:
 		case ImportNotFound:

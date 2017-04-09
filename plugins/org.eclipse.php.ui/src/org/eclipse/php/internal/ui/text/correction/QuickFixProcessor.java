@@ -45,6 +45,9 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 	private void process(IInvocationContext context, IProblemLocation problem, Collection proposals)
 			throws CoreException {
 		PhpProblemIdentifier id = PhpProblemIdentifier.getProblem(problem.getProblemIdentifier());
+		if (id == null)
+			return;
+
 		switch (id) {
 		case UnusedImport:
 		case DuplicateImport:
@@ -85,6 +88,9 @@ public class QuickFixProcessor implements IQuickFixProcessor, IQuickFixProcessor
 	@Override
 	public boolean hasCorrections(ISourceModule unit, IProblemIdentifier identifier) {
 		PhpProblemIdentifier problem = PhpProblemIdentifier.getProblem(identifier);
+		if (problem == null)
+			return false;
+
 		switch (problem) {
 		case AbstractMethodInAbstractClass:
 		case AbstractMethodsInConcreteClass:
