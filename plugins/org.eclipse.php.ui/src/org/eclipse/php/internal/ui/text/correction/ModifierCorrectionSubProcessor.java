@@ -160,7 +160,7 @@ public class ModifierCorrectionSubProcessor {
 		while ((parent = parent.getParent()) != null) {
 			if (parent instanceof ClassDeclaration) {
 				parentTypeDecl = (ClassDeclaration) parent;
-				if (Flags.isAbstract(parentTypeDecl.getFlags())) {
+				if (Flags.isAbstract(parentTypeDecl.getModifier())) {
 					parentIsAbstractClass = true;
 				}
 				break;
