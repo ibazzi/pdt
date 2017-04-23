@@ -84,6 +84,7 @@ public class PHPPluginImages {
 
 	public static final String IMG_TEMPLATE = NAME_PREFIX + "phptpldata16.png"; //$NON-NLS-1$
 	public static final String IMG_OBJS_EXTJAR = NAME_PREFIX + "jar_l_obj.png"; //$NON-NLS-1$
+	public static final String IMG_OBJS_EXTSRC = NAME_PREFIX + "cf_obj.png"; //$NON-NLS-1$
 
 	public static final String IMG_CORRECTION_MULTI_FIX = NAME_PREFIX + "correction_multi_fix.gif"; //$NON-NLS-1$
 
@@ -122,6 +123,7 @@ public class PHPPluginImages {
 	public static final ImageDescriptor DESC_OVR_ABSTRACT = DLTKPluginImages.DESC_OVR_ABSTRACT;
 	public static final ImageDescriptor DESC_OVR_FINAL = DLTKPluginImages.DESC_OVR_FINAL;
 	public static final ImageDescriptor DESC_OVR_STATIC = DLTKPluginImages.DESC_OVR_STATIC;
+	public static final ImageDescriptor DESC_OVR_LIBRARY = create(T_OVR, "library_ovr.png"); //$NON-NLS-1$
 
 	public static final ImageDescriptor DESC_OBJ_OVERRIDES = create(T_OBJ, "over_co.png"); //$NON-NLS-1$
 	public static final ImageDescriptor DESC_OBJ_IMPLEMENTS = create(T_OBJ, "implm_co.png"); //$NON-NLS-1$
@@ -133,6 +135,8 @@ public class PHPPluginImages {
 
 	public static final ImageDescriptor DESC_OBJS_LIBRARY = createManaged(T_OBJ, IMG_OBJS_LIBRARY);
 	public static final ImageDescriptor DESC_OBJS_PHP_PROJECT = createManaged(T_OBJ, IMG_OBJS_PHP_PROJECT);
+	public static final ImageDescriptor DESC_OBJS_EXTJAR = createManaged(T_OBJ, IMG_OBJS_EXTJAR);
+	public static final ImageDescriptor DESC_OBJS_EXTSRC = createManaged(T_OBJ, IMG_OBJS_EXTSRC);
 	public static final ImageDescriptor DESC_OBJS_TRAIT = createManaged(T_OBJ, IMG_OBJS_TRAIT);
 
 	public static final ImageDescriptor DESC_DLCL_CONFIGURE_ANNOTATIONS = create(T_DLCL, "configure_annotations.gif"); //$NON-NLS-1$

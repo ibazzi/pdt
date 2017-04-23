@@ -118,7 +118,7 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 			if (entry instanceof IBuildpathEntry) {
 				int entryKind = ((IBuildpathEntry) entry).getEntryKind();
 				if (entryKind == IBuildpathEntry.BPE_CONTAINER || entryKind == IBuildpathEntry.BPE_LIBRARY) {
-					return getBuildPathEntryChildren(parentElement, entry);
+					return getBuildPathEntryChildren(parentElement, (IBuildpathEntry) entry);
 				}
 			}
 		}
@@ -214,7 +214,8 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 					} else {
 						Object[] children = super.getChildren(parentElement);
 						for (Object child : children) {
-							if (child instanceof BuildPathContainer) {
+							if (child instanceof BuildPathContainer || child instanceof ArchiveProjectFragment
+									| child instanceof ExternalProjectFragment) {
 								continue;
 							}
 							returnChildren.add(child);
@@ -422,10 +423,13 @@ public class PHPExplorerContentProvider extends ScriptExplorerContentProvider
 	 * @param entry
 	 * @return
 	 */
-	private Object[] getBuildPathEntryChildren(Object parentElement, Object entry) {
+	private Object[] getBuildPathEntryChildren(Object parentElement, IBuildpathEntry entry) {
 		IScriptProject scriptProject = DLTKCore.create(((IncludePath) parentElement).getProject());
-		IProjectFragment[] findProjectFragments = scriptProject.findProjectFragments((IBuildpathEntry) entry);
-		List<Object> children = new LinkedList<>();
+		IProjectFragment[] findProjectFragments = scriptProject.findProjectFragments(entry);
+		if (entry.getEntryKind() == IBuildpathEntry.BPE_CONTAINER) {
+			return findProjectFragments;
+		}
+		List<Object> children = new LinkedList<Object>();
 		for (IProjectFragment projectFragment : findProjectFragments) {
 			Object[] fragmentChildren = getChildren(projectFragment);
 			children.addAll(Arrays.asList(fragmentChildren));
