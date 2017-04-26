@@ -50,6 +50,8 @@ public class Messages extends NLS {
 	public static String SuperclassMustBeAClass;
 	public static String SuperInterfaceMustBeAnInterface;
 	public static String CannotUseTypeAsTrait;
+	public static String UnexpectedNamespaceDeclaration;
+	public static String FirstTypeMustMatchFileName;
 
 	static {
 		// initialize resource bundle
