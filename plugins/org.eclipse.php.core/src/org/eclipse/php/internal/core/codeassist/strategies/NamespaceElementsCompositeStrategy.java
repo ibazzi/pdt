@@ -17,6 +17,7 @@ import java.util.Collection;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
 import org.eclipse.php.core.codeassist.ICompletionStrategy;
+import org.eclipse.php.internal.core.codeassist.contexts.ClassExtendsContext;
 import org.eclipse.php.internal.core.codeassist.contexts.ClassInstantiationContext;
 import org.eclipse.php.internal.core.codeassist.contexts.ExceptionClassInstantiationContext;
 import org.eclipse.php.internal.core.codeassist.contexts.InstanceOfContext;
@@ -37,6 +38,7 @@ public class NamespaceElementsCompositeStrategy extends AbstractCompletionStrate
 		boolean hasNewClassContext = false;
 		boolean hasNewExceptionClassContext = false;
 		boolean hasInstanceOfContext = false;
+		boolean hasClassExtendsContext = false;
 		for (ICompletionContext c : allContexts) {
 			if (c instanceof ExceptionClassInstantiationContext) {
 				hasNewExceptionClassContext = true;
@@ -46,6 +48,9 @@ public class NamespaceElementsCompositeStrategy extends AbstractCompletionStrate
 				break;
 			} else if (c instanceof InstanceOfContext) {
 				hasInstanceOfContext = true;
+				break;
+			} else if (c instanceof ClassExtendsContext) {
+				hasClassExtendsContext = true;
 				break;
 			}
 		}
@@ -60,8 +65,10 @@ public class NamespaceElementsCompositeStrategy extends AbstractCompletionStrate
 				strategies.add(new InstanceOfStrategy(context));
 			} else {
 				strategies.add(new GlobalTypesStrategy(context));
-				strategies.add(new GlobalFunctionsStrategy(context));
-				strategies.add(new GlobalConstantsStrategy(context));
+				if (!hasClassExtendsContext) {
+					strategies.add(new GlobalFunctionsStrategy(context));
+					strategies.add(new GlobalConstantsStrategy(context));
+				}
 			}
 		} else {
 			if (hasNewClassContext) {
@@ -72,8 +79,10 @@ public class NamespaceElementsCompositeStrategy extends AbstractCompletionStrate
 				strategies.add(new NamespaceInstanceOfStrategy(context));
 			} else {
 				strategies.add(new NamespaceTypesStrategy(context));
-				strategies.add(new NamespaceFunctionsStrategy(context));
-				strategies.add(new NamespaceConstantsStrategy(context));
+				if (!hasClassExtendsContext) {
+					strategies.add(new NamespaceFunctionsStrategy(context));
+					strategies.add(new NamespaceConstantsStrategy(context));
+				}
 			}
 		}
 	}

@@ -23,12 +23,13 @@ import org.eclipse.dltk.ui.text.completion.ScriptContentAssistInvocationContext;
 import org.eclipse.dltk.ui.text.completion.TypeProposalInfo;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.php.core.ast.nodes.NamespaceDeclaration;
 import org.eclipse.php.core.ast.nodes.Program;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ImportRewrite.ImportRewriteContext;
+import org.eclipse.php.internal.core.codeassist.AliasType;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
@@ -50,13 +51,16 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 	private String fQualifiedName;
 	private String fSimpleName;
+	private String fAlias;
 	private ImportRewrite fImportRewrite;
 	private ImportRewriteContext fImportContext;
+	private boolean fSortStringComputed;
 
 	public LazyPHPTypeCompletionProposal(CompletionProposal proposal, ScriptContentAssistInvocationContext context) {
 		super(proposal, context);
 		fSourceModule = context.getSourceModule();
 		fQualifiedName = null;
+		initAlias();
 	}
 
 	void setImportRewrite(ImportRewrite importRewrite) {
@@ -64,14 +68,19 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	}
 
 	public final String getQualifiedTypeName() {
-		if (fQualifiedName == null)
+		if (fQualifiedName == null) {
 			fQualifiedName = ((IType) getModelElement()).getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+		}
 		return fQualifiedName;
 	}
 
 	protected final String getSimpleTypeName() {
-		if (fSimpleName == null)
+		if (fSimpleName == null) {
 			fSimpleName = fProposal.getModelElement().getElementName();
+		}
+		if (fAlias != null) {
+			return fAlias;
+		}
 		return fSimpleName;
 	}
 
@@ -81,6 +90,15 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	 */
 	@Override
 	protected String computeReplacementString() {
+		if (fAlias != null) {
+			return fAlias;
+		}
+		boolean isNamespace = false;
+		try {
+			isNamespace = PHPFlags.isNamespace(((IType) getModelElement()).getFlags());
+		} catch (ModelException e) {
+		}
+
 		String replacement = super.computeReplacementString();
 
 		/* No import rewriting ever from within the import section. */
@@ -89,15 +107,17 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 		String qualifiedTypeName = getQualifiedTypeName();
 
+		// for use statements context
 		if (ProposalExtraInfo.isClassInNamespace(fProposal.getExtraInfo())) {
-			if (ProposalExtraInfo.isFullName(fProposal.getExtraInfo()))
+			if (ProposalExtraInfo.isFullName(fProposal.getExtraInfo())) {
 				return qualifiedTypeName;
+			}
 			return getSimpleTypeName();
 		}
 
-		if (isGlobalNamespace(fSourceModule)
+		if (!isNamespace && isGlobalNamespace(fSourceModule)
 				&& qualifiedTypeName.indexOf(NamespaceReference.NAMESPACE_DELIMITER) == -1) {
-			return qualifiedTypeName;
+			return getSimpleTypeName();
 		}
 
 		/*
@@ -110,9 +130,23 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 			int dotIndex = prefix.lastIndexOf(NamespaceReference.NAMESPACE_DELIMITER);
 			// match up to the last dot in order to make higher level matching
 			// still work (camel case...)
+			int start = 0;
+			if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+				start++;
+			}
+			String typeName = null;
+			if (isNamespace) {
+				typeName = replacement;
+			} else {
+				typeName = qualifiedTypeName;
+			}
 			if (dotIndex != -1
-					&& qualifiedTypeName.toLowerCase().startsWith(prefix.substring(0, dotIndex + 1).toLowerCase()))
-				return qualifiedTypeName;
+					&& typeName.toLowerCase().startsWith(prefix.substring(start, dotIndex + 1).toLowerCase())) {
+				if (start == 1) {
+					return NamespaceReference.NAMESPACE_DELIMITER + typeName;
+				}
+				return typeName;
+			}
 		}
 
 		/*
@@ -130,7 +164,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		if (fImportRewrite != null) {
 			NamespaceDeclaration namespace = fImportRewrite.getProgram()
 					.getNamespaceDeclaration(getReplacementOffset());
-			return fImportRewrite.addImport(namespace, qualifiedTypeName, fImportContext);
+			return fImportRewrite.addImport(namespace, qualifiedTypeName, fAlias, fImportContext);
 		}
 
 		// fall back for the case we don't have an import rewrite (see
@@ -149,6 +183,9 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	}
 
 	protected final boolean isImportCompletion() {
+		if (!ProposalExtraInfo.isClassInNamespace(fProposal.getExtraInfo())) {
+			return false;
+		}
 		String completion = fProposal.getCompletion();
 		if (completion.length() == 0)
 			return false;
@@ -160,6 +197,14 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		 * in static imports.
 		 */
 		return last == ';' || last == NamespaceReference.NAMESPACE_SEPARATOR;
+	}
+
+	private void initAlias() {
+		fAlias = null;
+		IType type = (IType) getModelElement();
+		if (type instanceof AliasType) {
+			fAlias = ((AliasType) type).getAlias();
+		}
 	}
 
 	private ImportRewrite createImportRewrite() {
@@ -271,23 +316,24 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		return true;
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * isValidPrefix(java.lang.String)
-	 */
+	@Override
+	protected String getPrefix(IDocument document, int offset) {
+		String prefix = super.getPrefix(document, offset);
+		return prefix;
+	}
+
 	@Override
 	protected boolean isValidPrefix(String prefix) {
 		boolean isPrefix = isPrefix(prefix, getSimpleTypeName());
 		if (!isPrefix && prefix.indexOf(NamespaceReference.NAMESPACE_DELIMITER) != -1) {
+			if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+				prefix = prefix.substring(1);
+			}
 			isPrefix = isPrefix(prefix, getQualifiedTypeName());
 		}
 		return isPrefix;
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.JavaCompletionProposal#
-	 * getCompletionText()
-	 */
 	@Override
 	public CharSequence getPrefixCompletionText(IDocument document, int completionOffset) {
 		String prefix = getPrefix(document, completionOffset);
@@ -299,25 +345,39 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		else
 			completion = getSimpleTypeName();
 
-		if (isCamelCaseMatching())
-			return getCamelCaseCompound(prefix, completion);
+		if (isCamelCaseMatching()) {
+			completion = getCamelCaseCompound(prefix, completion);
+		}
+
+		if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+			completion = NamespaceReference.NAMESPACE_DELIMITER + completion;
+		}
 
 		return completion;
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeTriggerCharacters()
-	 */
 	@Override
 	protected char[] computeTriggerCharacters() {
 		return isInDoc() ? JDOC_TYPE_TRIGGERS : TYPE_TRIGGERS;
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeProposalInfo()
-	 */
+	@Override
+	public final String getSortString() {
+		if (!fSortStringComputed)
+			setSortString(computeSortString());
+		return super.getSortString();
+	}
+
+	@Override
+	public int getPrefixCompletionStart(IDocument document, int completionOffset) {
+		int start = super.getPrefixCompletionStart(document, completionOffset);
+		// String prefix = getPrefix(document, completionOffset);
+		// if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+		// start++;
+		// }
+		return start;
+	}
+
 	@Override
 	protected ICompletionProposalInfo computeProposalInfo() {
 		IScriptProject project;
@@ -331,21 +391,11 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		return super.computeProposalInfo();
 	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeSortString()
-	 */
-	// @Override
-	// protected String computeSortString() {
-	// // try fast sort string to avoid display string creation
-	// return getSimpleTypeName() + Character.MIN_VALUE +
-	// getQualifiedTypeName();
-	// }
+	protected String computeSortString() {
+		// try fast sort string to avoid display string creation
+		return getSimpleTypeName() + Character.MIN_VALUE + getQualifiedTypeName();
+	}
 
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeRelevance()
-	 */
 	@Override
 	protected int computeRelevance() {
 		/*
@@ -369,31 +419,6 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		int baseRelevance = super.computeRelevance();
 
 		return baseRelevance + rhsBoost + recencyBoost;
-	}
-
-	/*
-	 * @see org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#
-	 * computeContextInformation()
-	 * 
-	 * @since 3.3
-	 */
-	@Override
-	protected IContextInformation computeContextInformation() {
-
-		// IParameter[] parameters = method.getParameters();
-		// char[] signature = fProposal.getSignature();
-		// char[][] typeParameters = Signature.getTypeArguments(signature);
-		// if (typeParameters.length == 0)
-		// return super.computeContextInformation();
-		//
-		// ProposalContextInformation contextInformation = new
-		// ProposalContextInformation(fProposal);
-		// if (fContextInformationPosition != 0 &&
-		// fProposal.getCompletion().length == 0)
-		// contextInformation.setContextInformationPosition(fContextInformationPosition);
-		// return contextInformation;
-		return null;
-
 	}
 
 	@Override

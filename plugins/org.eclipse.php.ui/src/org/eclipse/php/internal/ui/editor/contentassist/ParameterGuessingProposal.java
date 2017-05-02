@@ -193,9 +193,6 @@ public final class ParameterGuessingProposal extends ScriptMethodCompletionPropo
 			return null;
 	}
 
-	/**
-	 * @since 3.0
-	 */
 	@Override
 	protected void computeReplacement(ReplacementBuffer buffer) {
 		try {

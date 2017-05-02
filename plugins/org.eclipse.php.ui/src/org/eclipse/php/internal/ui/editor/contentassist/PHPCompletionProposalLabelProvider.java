@@ -25,7 +25,6 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.core.compiler.IPHPModifiers;
 import org.eclipse.php.core.compiler.PHPFlags;
-import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.codeassist.AliasField;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
@@ -43,8 +42,6 @@ import org.eclipse.php.internal.ui.viewsupport.PHPElementLabelComposer;
 public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelProvider
 		implements ICompletionProposalLabelProviderExtension {
 	private static final PHPModelLabelProvider fLabelProvider = new PHPModelLabelProvider();
-
-	private static final String ENCLOSING_TYPE_SEPARATOR = String.valueOf(NamespaceReference.NAMESPACE_SEPARATOR);
 
 	@Override
 	protected StyledString createMethodProposalLabel(CompletionProposal methodProposal) {
@@ -281,12 +278,19 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 
 	protected StyledString createStyledMethodProposalLabel(CompletionProposal methodProposal) {
 		StyledString nameBuffer = new StyledString();
-		boolean isAlias = methodProposal.getModelElement() instanceof AliasMethod;
+		String alias = null;
+		if (methodProposal.getModelElement() instanceof FakeConstructor
+				&& methodProposal.getModelElement().getParent() instanceof AliasType) {
+			AliasType type = (AliasType) methodProposal.getModelElement().getParent();
+			alias = type.getAlias();
+		} else if (methodProposal.getModelElement() instanceof AliasMethod) {
+			AliasMethod aliasMethod = (AliasMethod) methodProposal.getModelElement();
+			alias = aliasMethod.getAlias();
+		}
 
 		// method name
-		if (isAlias) {
-			AliasMethod aliasMethod = (AliasMethod) methodProposal.getModelElement();
-			nameBuffer.append(aliasMethod.getAlias());
+		if (alias != null) {
+			nameBuffer.append(alias);
 		} else {
 			nameBuffer.append(methodProposal.getName());
 		}
@@ -297,7 +301,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		nameBuffer.append(')');
 
 		appendMethodType(nameBuffer, methodProposal);
-		if (isAlias) {
+		if (alias != null) {
 			return nameBuffer;
 		}
 

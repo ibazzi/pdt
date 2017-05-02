@@ -378,6 +378,15 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 			String elementName = type.getElementName();
 			String completionName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
 
+			try {
+				// use statement context
+				if (!PHPFlags.isNamespace(type.getFlags())
+						&& ProposalExtraInfo.isNotInsertUse(proposal.getExtraInfo())) {
+					suffix = ";"; //$NON-NLS-1$
+				}
+			} catch (ModelException e1) {
+			}
+
 			proposal.setModelElement(type);
 			proposal.setName(elementName);
 

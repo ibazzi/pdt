@@ -233,6 +233,8 @@ public class GlobalTypesStrategy extends GlobalElementStrategy {
 		String prefix = context.getPrefix();
 		if (prefix.startsWith("$")) { //$NON-NLS-1$
 			return EMPTY;
+		} else if (prefix.startsWith("\\")) { //$NON-NLS-1$
+			prefix = prefix.substring(1);
 		}
 
 		IDLTKSearchScope scope = createSearchScope();

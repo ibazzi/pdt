@@ -22,6 +22,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
 import org.eclipse.php.core.codeassist.IElementFilter;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.codeassist.contexts.AbstractCompletionContext;
@@ -60,12 +61,15 @@ public class NamespaceTypesStrategy extends NamespaceMembersStrategy {
 
 	public IType[] getTypes(NamespaceMemberContext context) throws BadLocationException {
 		String prefix = context.getPrefix();
-
 		List<IType> result = new LinkedList<IType>();
 		for (IType ns : context.getNamespaces()) {
 			try {
 				for (IType type : ns.getTypes()) {
-					if (StringUtils.startsWithIgnoreCase(type.getElementName(), prefix)) {
+					String typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					if (typeName.charAt(0) != NamespaceReference.NAMESPACE_SEPARATOR) {
+						typeName = NamespaceReference.NAMESPACE_SEPARATOR + typeName;
+					}
+					if (StringUtils.startsWithIgnoreCase(typeName, prefix)) {
 						result.add(type);
 					}
 				}

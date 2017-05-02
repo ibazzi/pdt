@@ -21,6 +21,7 @@ import org.eclipse.dltk.core.ModelException;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.codeassist.contexts.AbstractCompletionContext;
@@ -55,7 +56,11 @@ public class NamespaceUseNameStrategy extends AbstractCompletionStrategy {
 		for (IType ns : context.getNamespaces()) {
 			try {
 				for (IType type : ns.getTypes()) {
-					if (StringUtils.startsWithIgnoreCase(type.getElementName(), prefix)) {
+					String typeName = type.getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+					if (prefix.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
+						prefix = prefix.substring(1);
+					}
+					if (StringUtils.startsWithIgnoreCase(typeName, prefix)) {
 						result.add(type);
 					}
 				}

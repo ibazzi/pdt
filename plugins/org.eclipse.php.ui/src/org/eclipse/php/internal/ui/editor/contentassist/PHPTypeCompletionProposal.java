@@ -61,9 +61,6 @@ public class PHPTypeCompletionProposal extends ScriptCompletionProposal implemen
 				relevance, null);
 	}
 
-	/**
-	 * @since 5.5
-	 */
 	public PHPTypeCompletionProposal(String replacementString, ISourceModule cu, int replacementOffset,
 			int replacementLength, Image image, StyledString displayString, int relevance,
 			String fullyQualifiedTypeName) {
