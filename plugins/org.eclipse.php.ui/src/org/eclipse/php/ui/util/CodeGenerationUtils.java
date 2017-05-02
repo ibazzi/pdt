@@ -39,6 +39,8 @@ import org.eclipse.php.core.ast.nodes.*;
 import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.core.project.ProjectOptions;
+import org.eclipse.php.formatter.core.PHPCodeFormatter;
+import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
 import org.eclipse.php.internal.core.ast.rewrite.ASTRewrite;
 import org.eclipse.php.internal.core.ast.rewrite.ListRewrite;
 import org.eclipse.php.internal.core.ast.scanner.php5.PhpAstLexer;
@@ -715,6 +717,19 @@ public class CodeGenerationUtils {
 		}
 
 		return toImplement.toArray(new IMethodBinding[toImplement.size()]);
+	}
+
+	public static CodeGenerationSettings getCodeGenerationSettings(IProject project) {
+		CodeGenerationSettings res = new CodeGenerationSettings();
+		try {
+			CodeFormatterPreferences preferences = PHPCodeFormatter.getPreferences(project);
+			res.createComments = false;
+			res.tabWidth = preferences.tabSize;
+			res.indentWidth = preferences.indentationSize;
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		}
+		return res;
 	}
 
 	private static void findUnimplementedInterfaceMethods(ITypeBinding typeBinding, Set<ITypeBinding> visited,

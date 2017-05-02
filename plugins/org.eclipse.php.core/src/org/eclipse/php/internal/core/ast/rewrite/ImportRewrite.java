@@ -320,9 +320,10 @@ public final class ImportRewrite {
 		}
 
 		curr = curr.substring(1); // remove the prefix
+		curr = NamespaceReference.NAMESPACE_SEPARATOR + curr;
 
 		if (curr.length() == name.length()) {
-			if (qualifier.length() == 0) {
+			if (qualifier.length() == 1) {
 				return ImportRewriteContext.RES_NAME_FOUND;
 			}
 			return ImportRewriteContext.RES_NAME_CONFLICT;

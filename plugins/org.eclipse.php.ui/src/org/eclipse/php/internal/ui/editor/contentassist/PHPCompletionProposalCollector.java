@@ -11,6 +11,12 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.contentassist;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.compiler.CharOperation;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.ui.text.completion.*;
@@ -21,6 +27,7 @@ import org.eclipse.php.internal.core.codeassist.CompletionFlag;
 import org.eclipse.php.internal.core.codeassist.IPHPCompletionRequestor;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.project.PHPNature;
+import org.eclipse.php.internal.ui.PHPUiPlugin;
 import org.eclipse.php.internal.ui.util.PHPPluginImages;
 import org.eclipse.swt.graphics.Image;
 
@@ -29,6 +36,7 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 
 	private static final String DOUBLE_COLON = "::";//$NON-NLS-1$
 	private static final String EMPTY_STRING = "";//$NON-NLS-1$
+	private final Set<String> fSuggestedMethodNames = new HashSet<String>();
 	private IDocument document;
 	private boolean explicit;
 	private int offset;
@@ -38,6 +46,46 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 		super(cu);
 		this.document = document;
 		this.explicit = explicit;
+	}
+
+	@Override
+	protected void processUnprocessedProposal(CompletionProposal proposal) {
+		if (proposal.getKind() == CompletionProposal.POTENTIAL_METHOD_DECLARATION) {
+			acceptPotentialMethodDeclaration(proposal);
+		} else {
+			super.processUnprocessedProposal(proposal);
+		}
+	}
+
+	private void acceptPotentialMethodDeclaration(CompletionProposal proposal) {
+		ISourceModule sourceModule = getSourceModule();
+		if (sourceModule == null)
+			return;
+		try {
+			IModelElement element = sourceModule.getElementAt(proposal.getCompletionLocation());
+			if (element != null) {
+				IType type = (IType) element.getAncestor(IModelElement.TYPE);
+				if (type != null) {
+
+					List<IScriptCompletionProposal> scriptProposals = new ArrayList<IScriptCompletionProposal>();
+					String prefix = String.valueOf(proposal.getName());
+					int completionStart = proposal.getReplaceStart();
+					int completionEnd = proposal.getReplaceEnd();
+					int relevance = computeRelevance(proposal);
+					// GetterSetterCompletionProposal.evaluateProposals(type,
+					// prefix, completionStart, completionEnd
+					// - completionStart, relevance + 1,
+					// fSuggestedMethodNames, fJavaProposals);
+					PHPMethodDeclarationCompletionProposal.evaluateProposals(type, prefix, completionStart,
+							completionEnd - completionStart, relevance, fSuggestedMethodNames, scriptProposals);
+					for (IScriptCompletionProposal p : scriptProposals) {
+						this.addProposal(p, proposal);
+					}
+				}
+			}
+		} catch (CoreException e) {
+			PHPUiPlugin.log(e);
+		}
 	}
 
 	protected ScriptCompletionProposal createMagicMethodOverloadCompletionProposal(IMethod method,
@@ -133,6 +181,7 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 		scriptProposal.setProposalInfo(info);
 
 		scriptProposal.setRelevance(computeRelevance(proposal));
+		fSuggestedMethodNames.add(name);
 		return scriptProposal;
 	}
 

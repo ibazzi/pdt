@@ -24,9 +24,10 @@ public final class ProposalExtraInfo {
 	public static final int CLASS_IN_NAMESPACE = 1 << 7;
 	public static final int ADD_QUOTES = 1 << 8;
 	public static final int NO_INSERT_USE = 1 << 9;
-	public static final int METHOD_OVERRIDE = 1 << 10;
-	public static final int MAGIC_METHOD_OVERLOAD = 1 << 11;
-	public static final int INSERT_THIS = 1 << 12;
+	public static final int POTENTIAL_METHOD_DECLARATION = 1 << 10;
+	public static final int METHOD_OVERRIDE = 1 << 11;
+	public static final int MAGIC_METHOD_OVERLOAD = 1 << 12;
+	public static final int INSERT_THIS = 1 << 13;
 
 	public static boolean isMethodOverride(int flags) {
 		return (flags & METHOD_OVERRIDE) != 0;
@@ -123,6 +124,14 @@ public final class ProposalExtraInfo {
 	public static boolean isNotInsertUse(Object flags) {
 		if (flags instanceof Integer) {
 			return contain(((Integer) flags).intValue(), NO_INSERT_USE);
+		} else {
+			return false;
+		}
+	}
+
+	public static boolean isPotentialMethodDeclaration(Object flags) {
+		if (flags instanceof Integer) {
+			return contain(((Integer) flags).intValue(), POTENTIAL_METHOD_DECLARATION);
 		} else {
 			return false;
 		}

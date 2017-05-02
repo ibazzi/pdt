@@ -77,6 +77,7 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 		relevanceVar = RELEVANCE_VAR;
 		relevanceConst = RELEVANCE_CONST;
 
+		actualCompletionPosition = position - 1;
 		try {
 			ICompletionContextResolver[] contextResolvers;
 			ICompletionStrategyFactory[] strategyFactories;
@@ -262,6 +263,8 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 		int completionKind = CompletionProposal.METHOD_REF;
 		if (ProposalExtraInfo.isMagicMethodOverload(extraInfo) || ProposalExtraInfo.isMethodOverride(extraInfo)) {
 			completionKind = CompletionProposal.METHOD_DECLARATION;
+		} else if (ProposalExtraInfo.isPotentialMethodDeclaration(extraInfo)) {
+			completionKind = CompletionProposal.POTENTIAL_METHOD_DECLARATION;
 		}
 
 		if (!requestor.isIgnored(completionKind)) {
@@ -289,7 +292,7 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 			try {
 				proposal.setIsConstructor(elementName.equals("__construct") //$NON-NLS-1$
 						|| method.isConstructor());
-				if (proposal.isConstructor()) {
+				if (proposal.isConstructor() && completionKind == CompletionProposal.METHOD_REF) {
 					CompletionProposal typeProposal = createProposal(CompletionProposal.TYPE_REF,
 							actualCompletionPosition);
 					typeProposal.setModelElement(method.getParent());

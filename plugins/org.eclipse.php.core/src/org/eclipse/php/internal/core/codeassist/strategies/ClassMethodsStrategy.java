@@ -15,6 +15,7 @@ import java.util.*;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.internal.core.ModelElement;
 import org.eclipse.dltk.internal.core.SourceType;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -31,6 +32,8 @@ import org.eclipse.php.internal.core.codeassist.contexts.ClassMemberContext.Trig
 import org.eclipse.php.internal.core.codeassist.contexts.ClassStatementContext;
 import org.eclipse.php.internal.core.codeassist.contexts.GlobalMethodStatementContext;
 import org.eclipse.php.internal.core.language.PHPMagicMethods;
+import org.eclipse.php.internal.core.typeinference.FakeConstructor;
+import org.eclipse.php.internal.core.typeinference.FakeMethod;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 
 /**
@@ -94,6 +97,7 @@ public class ClassMethodsStrategy extends ClassMembersStrategy {
 			return;
 		}
 		try {
+			boolean hasConstructor = false;
 			ITypeHierarchy hierarchy = getCompanion().getSuperTypeHierarchy(type, null);
 			IMethod[] methods = PHPModelUtils.getSuperTypeHierarchyMethod(type, hierarchy, fPrefix, fExactName, null);
 			for (IMethod method : removeOverriddenElements(Arrays.asList(methods))) {
@@ -105,12 +109,24 @@ public class ClassMethodsStrategy extends ClassMembersStrategy {
 					}
 					fReporter.reportMethod(method, fSuffix, fReplaceRange, ProposalExtraInfo.METHOD_OVERRIDE, 10);
 				}
+				if (!hasConstructor) {
+					hasConstructor = method.isConstructor();
+				}
 			}
 			for (String magicMethod : fMagicMethods) {
 				if (!type.getMethod(magicMethod).exists() && magicMethod.startsWith(fPrefix)) {
 					IMethod fakeMethod = PHPMagicMethods.createMethod((SourceType) type, magicMethod);
 					fReporter.reportMethod(fakeMethod, fSuffix, fReplaceRange, ProposalExtraInfo.MAGIC_METHOD_OVERLOAD);
 				}
+			}
+			if (PHPFlags.isClass(type.getFlags()) && !hasConstructor && "__construct".startsWith(fPrefix)) { //$NON-NLS-1$
+				ISourceRange sourceRange = type.getSourceRange();
+				IMethod ctor = new FakeConstructor((ModelElement) type, "__construct", sourceRange.getOffset(), //$NON-NLS-1$
+						sourceRange.getLength(), sourceRange.getOffset(), sourceRange.getLength(), false);
+				fReporter.reportMethod(ctor, fSuffix, fReplaceRange, ProposalExtraInfo.POTENTIAL_METHOD_DECLARATION);
+			} else {
+				IMethod method = new FakeMethod((ModelElement) type, fPrefix);
+				fReporter.reportMethod(method, fSuffix, fReplaceRange, ProposalExtraInfo.POTENTIAL_METHOD_DECLARATION);
 			}
 		} catch (CoreException e) {
 			PHPCorePlugin.log(e);

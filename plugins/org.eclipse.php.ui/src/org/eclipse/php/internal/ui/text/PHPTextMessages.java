@@ -5,7 +5,7 @@ import org.eclipse.osgi.util.NLS;
 /**
  * Helper class to get NLSed messages.
  *
- * @since 3.1
+ * @since 5.0
  */
 final public class PHPTextMessages extends NLS {
 
@@ -18,6 +18,10 @@ final public class PHPTextMessages extends NLS {
 	public static String ResultCollector_anonymous_type;
 	public static String ResultCollector_overridingmethod;
 	public static String ResultCollector_overloadingmagicmethod;
+	public static String GetterSetterCompletionProposal_getter_label;
+	public static String GetterSetterCompletionProposal_setter_label;
+	public static String MethodCompletionProposal_method_label;
+	public static String MethodCompletionProposal_constructor_label;
 
 	static {
 		NLS.initializeMessages(BUNDLE_NAME, PHPTextMessages.class);

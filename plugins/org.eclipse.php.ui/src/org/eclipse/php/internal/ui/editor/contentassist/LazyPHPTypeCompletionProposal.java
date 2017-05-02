@@ -41,7 +41,7 @@ import org.eclipse.text.edits.TextEdit;
  */
 public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal {
 	/** Triggers for types. Do not modify. */
-	protected static final char[] TYPE_TRIGGERS = new char[] { '.', '\t', '[', '(', ' ' };
+	protected static final char[] TYPE_TRIGGERS = new char[] { '\\', '\t', '[', '(', ' ' };
 	/** Triggers for types in javadoc. Do not modify. */
 	protected static final char[] JDOC_TYPE_TRIGGERS = new char[] { '#', '}', ' ', '.' };
 
