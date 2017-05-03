@@ -118,7 +118,7 @@ public class PHPMethodDeclarationCompletionProposal extends AbstractMethodDeclar
 	@Override
 	protected MethodDeclaration getMethodDeclaration(ASTRewrite rewrite, ImportRewrite importRewrite, int offset,
 			ITypeBinding declaringType) throws CoreException {
-		boolean isInterface = declaringType.isInterface();
+		boolean isInterface = PHPFlags.isInterface(fType.getFlags());
 		// if (addComments) {
 		// String comment = CodeGeneration.getMethodComment(project,
 		// declTypeName, fMethodName, empty, empty,

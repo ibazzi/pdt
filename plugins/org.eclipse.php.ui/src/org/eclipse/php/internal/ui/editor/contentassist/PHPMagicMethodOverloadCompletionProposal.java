@@ -36,6 +36,9 @@ public class PHPMagicMethodOverloadCompletionProposal extends AbstractMethodDecl
 	@Override
 	protected MethodDeclaration getMethodDeclaration(ASTRewrite rewrite, ImportRewrite importRewrite, int offset,
 			ITypeBinding declaringType) throws CoreException {
+		if (declaringType == null) {
+			return null;
+		}
 		NamespaceDeclaration namesapce = importRewrite.getProgram().getNamespaceDeclaration(offset);
 		return StubUtility.createMethodStub(fSourceModule, namesapce, rewrite, importRewrite, fMagicMethod,
 				declaringType.isInterface());

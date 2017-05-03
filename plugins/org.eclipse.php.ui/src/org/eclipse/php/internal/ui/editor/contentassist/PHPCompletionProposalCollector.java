@@ -72,10 +72,8 @@ public class PHPCompletionProposalCollector extends ScriptCompletionProposalColl
 					int completionStart = proposal.getReplaceStart();
 					int completionEnd = proposal.getReplaceEnd();
 					int relevance = computeRelevance(proposal);
-					// GetterSetterCompletionProposal.evaluateProposals(type,
-					// prefix, completionStart, completionEnd
-					// - completionStart, relevance + 1,
-					// fSuggestedMethodNames, fJavaProposals);
+					GetterSetterCompletionProposal.evaluateProposals(type, prefix, completionStart,
+							completionEnd - completionStart, relevance + 1, fSuggestedMethodNames, scriptProposals);
 					PHPMethodDeclarationCompletionProposal.evaluateProposals(type, prefix, completionStart,
 							completionEnd - completionStart, relevance, fSuggestedMethodNames, scriptProposals);
 					for (IScriptCompletionProposal p : scriptProposals) {

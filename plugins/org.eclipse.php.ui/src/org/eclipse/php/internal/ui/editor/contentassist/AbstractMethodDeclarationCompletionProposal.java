@@ -74,42 +74,40 @@ public abstract class AbstractMethodDeclarationCompletionProposal extends PHPTyp
 			declaringType = declaration.resolveTypeBinding();
 			rewriter = rewrite.getListRewrite(((TypeDeclaration) node).getBody(), Block.STATEMENTS_PROPERTY);
 		}
-		if (declaringType != null && rewriter != null) {
-			MethodDeclaration stub = getMethodDeclaration(rewrite, importRewrite, offset, declaringType);
-			if (stub != null) {
-				int indentWidth = FormatterUtils.getFormatterCommonPrferences().getIndentationSize(document);
-				int tabWidth = FormatterUtils.getFormatterCommonPrferences().getTabSize(document);
+		MethodDeclaration stub = getMethodDeclaration(rewrite, importRewrite, offset, declaringType);
+		if (stub != null && rewriter != null) {
+			int indentWidth = FormatterUtils.getFormatterCommonPrferences().getIndentationSize(document);
+			int tabWidth = FormatterUtils.getFormatterCommonPrferences().getTabSize(document);
 
-				rewriter.insertFirst(stub, null);
+			rewriter.insertFirst(stub, null);
 
-				ITrackedNodePosition position = rewrite.track(stub);
-				try {
-					rewrite.rewriteAST(recoveredDocument, fSourceModule.getScriptProject().getOptions(true))
-							.apply(recoveredDocument);
+			ITrackedNodePosition position = rewrite.track(stub);
+			try {
+				rewrite.rewriteAST(recoveredDocument, fSourceModule.getScriptProject().getOptions(true))
+						.apply(recoveredDocument);
 
-					String generatedCode = recoveredDocument.get(position.getStartPosition(), position.getLength());
-					int generatedIndent = IndentManipulation.measureIndentUnits(
-							getIndentAt(recoveredDocument, position.getStartPosition(), tabWidth, indentWidth),
-							tabWidth, indentWidth);
+				String generatedCode = recoveredDocument.get(position.getStartPosition(), position.getLength());
+				int generatedIndent = IndentManipulation.measureIndentUnits(
+						getIndentAt(recoveredDocument, position.getStartPosition(), tabWidth, indentWidth), tabWidth,
+						indentWidth);
 
-					String indent = getIndentAt(document, getReplacementOffset(), tabWidth, indentWidth);
-					setReplacementString(IndentManipulation.changeIndent(generatedCode, generatedIndent, tabWidth,
-							indentWidth, indent, TextUtilities.getDefaultLineDelimiter(document)));
+				String indent = getIndentAt(document, getReplacementOffset(), tabWidth, indentWidth);
+				setReplacementString(IndentManipulation.changeIndent(generatedCode, generatedIndent, tabWidth,
+						indentWidth, indent, TextUtilities.getDefaultLineDelimiter(document)));
 
-					int replacementLength = getReplacementLength();
-					if (document.get(getReplacementOffset() + replacementLength, 1).equals(")")) { //$NON-NLS-1$
-						setReplacementLength(replacementLength + 1);
-					}
-
-					int oldLen = document.getLength();
-					importRewrite.rewriteImports(new NullProgressMonitor()).apply(document, TextEdit.UPDATE_REGIONS);
-					setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
-
-				} catch (MalformedTreeException exception) {
-					PHPUiPlugin.log(exception);
-				} catch (BadLocationException exception) {
-					PHPUiPlugin.log(exception);
+				int replacementLength = getReplacementLength();
+				if (document.get(getReplacementOffset() + replacementLength, 1).equals(")")) { //$NON-NLS-1$
+					setReplacementLength(replacementLength + 1);
 				}
+
+				int oldLen = document.getLength();
+				importRewrite.rewriteImports(new NullProgressMonitor()).apply(document, TextEdit.UPDATE_REGIONS);
+				setReplacementOffset(getReplacementOffset() + document.getLength() - oldLen);
+
+			} catch (MalformedTreeException exception) {
+				PHPUiPlugin.log(exception);
+			} catch (BadLocationException exception) {
+				PHPUiPlugin.log(exception);
 			}
 		}
 		return true;
@@ -131,7 +129,7 @@ public abstract class AbstractMethodDeclarationCompletionProposal extends PHPTyp
 	protected Program getRecoveredAST(IDocument document, int offset, Document recoveredDocument) {
 		try {
 			// Program ast = SharedASTProvider.getAST(fSourceModule,
-			// SharedASTProvider.WAIT_YES, null);
+			// SharedASTProvider.WAIT_ACTIVE_ONLY, null);
 			// if (ast != null) {
 			// recoveredDocument.set(document.get());
 			// return ast;

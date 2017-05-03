@@ -51,6 +51,9 @@ public class PHPOverrideCompletionProposal extends AbstractMethodDeclarationComp
 	@Override
 	protected MethodDeclaration getMethodDeclaration(ASTRewrite rewrite, ImportRewrite importRewrite, int offset,
 			ITypeBinding declaringType) throws CoreException {
+		if (declaringType == null) {
+			return null;
+		}
 		IMethodBinding methodToOverride = Bindings.findMethodInHierarchy(declaringType, fMethodName);
 		if (methodToOverride != null) {
 			NamespaceDeclaration namespace = importRewrite.getProgram().getNamespaceDeclaration(offset);
