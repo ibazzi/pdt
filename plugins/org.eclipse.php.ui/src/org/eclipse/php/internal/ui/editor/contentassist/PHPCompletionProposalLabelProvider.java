@@ -388,6 +388,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 		if (type instanceof AliasType) {
 			AliasType aliasType = (AliasType) type;
 			nameBuffer.append(aliasType.getAlias());
+			return nameBuffer;
 		} else {
 			nameBuffer.append(typeProposal.getName());
 		}

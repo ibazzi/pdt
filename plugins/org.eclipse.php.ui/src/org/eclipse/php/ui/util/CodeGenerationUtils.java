@@ -291,7 +291,7 @@ public class CodeGenerationUtils {
 				parentType.getTypeQualifiedName(), setterName, fieldName, field.getElementName(), lineDelim);
 
 		if (bodyContent != null) {
-			ASTNode todoNode = rewrite.createStringPlaceholder(bodyContent, ASTNode.EMPTY_STATEMENT);
+			ASTNode todoNode = rewrite.createStringPlaceholder(bodyContent, ASTNode.EXPRESSION_STATEMENT);
 			body.statements().add((Statement) todoNode);
 		}
 
@@ -464,7 +464,7 @@ public class CodeGenerationUtils {
 				parentType.getElementName(), getterName, fieldName, lineDelim);
 
 		if (bodyContent != null) {
-			ASTNode todoNode = rewrite.createStringPlaceholder(bodyContent, ASTNode.EMPTY_STATEMENT);
+			ASTNode todoNode = rewrite.createStringPlaceholder(bodyContent, ASTNode.EXPRESSION_STATEMENT);
 			body.statements().add((Statement) todoNode);
 		}
 

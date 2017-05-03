@@ -43,8 +43,8 @@ import org.eclipse.text.edits.TextEdit;
 public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal {
 	/** Triggers for types. Do not modify. */
 	protected static final char[] TYPE_TRIGGERS = new char[] { '\\', '\t', '[', '(', ' ' };
-	/** Triggers for types in javadoc. Do not modify. */
-	protected static final char[] JDOC_TYPE_TRIGGERS = new char[] { '#', '}', ' ', '.' };
+	/** Triggers for types in phpdoc. Do not modify. */
+	protected static final char[] PHPDOC_TYPE_TRIGGERS = new char[] { '#', '}', ' ', '\\' };
 
 	/** The compilation unit, or <code>null</code> if none is available. */
 	protected final ISourceModule fSourceModule;
@@ -128,21 +128,27 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		if (document != null) {
 			String prefix = getPrefix(document, getReplacementOffset() + getReplacementLength());
 			int dotIndex = prefix.lastIndexOf(NamespaceReference.NAMESPACE_DELIMITER);
-			// match up to the last dot in order to make higher level matching
-			// still work (camel case...)
-			int start = 0;
+			int subStart = 0;
 			if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
-				start++;
+				subStart++;
 			}
 			String typeName = null;
 			if (isNamespace) {
+				// use ns|
+				if (dotIndex == -1) {
+					return replacement;
+				}
+				// \ns|
 				typeName = replacement;
 			} else {
+				// \ns\Type|
 				typeName = qualifiedTypeName;
 			}
+			// match up to the last dot in order to make higher level matching
+			// still work (camel case...)
 			if (dotIndex != -1
-					&& typeName.toLowerCase().startsWith(prefix.substring(start, dotIndex + 1).toLowerCase())) {
-				if (start == 1) {
+					&& typeName.toLowerCase().startsWith(prefix.substring(subStart, dotIndex + 1).toLowerCase())) {
+				if (subStart == 1) {
 					return NamespaceReference.NAMESPACE_DELIMITER + typeName;
 				}
 				return typeName;
@@ -358,7 +364,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 	@Override
 	protected char[] computeTriggerCharacters() {
-		return isInDoc() ? JDOC_TYPE_TRIGGERS : TYPE_TRIGGERS;
+		return isInDoc() ? PHPDOC_TYPE_TRIGGERS : TYPE_TRIGGERS;
 	}
 
 	@Override

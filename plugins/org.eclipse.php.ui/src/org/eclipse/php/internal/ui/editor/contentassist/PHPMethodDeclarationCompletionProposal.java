@@ -50,14 +50,14 @@ public class PHPMethodDeclarationCompletionProposal extends AbstractMethodDeclar
 		IMethod[] methods = type.getMethods();
 		if (PHPFlags.isClass(type.getFlags())) {
 			String constructorName = "__construct"; //$NON-NLS-1$
-			if (constructorName.startsWith(prefix) && !hasMethod(methods, constructorName)
+			if (constructorName.startsWith(prefix) && !hasMethod(methods, constructorName) // $NON-NLS-1$
 					&& suggestedMethods.add(constructorName)) {
 				result.add(new PHPMethodDeclarationCompletionProposal(type, constructorName, null, offset, length,
 						relevance + 500));
 			}
 		}
 
-		if (prefix.length() > 0 && !hasMethod(methods, prefix) // $NON-NLS-1$
+		if (prefix.length() > 0 && !prefix.startsWith("$") && !hasMethod(methods, prefix) // $NON-NLS-1$
 				&& suggestedMethods.add(prefix)) {
 			result.add(new PHPMethodDeclarationCompletionProposal(type, prefix, "void", offset, length, relevance)); //$NON-NLS-1$
 		}

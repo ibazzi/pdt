@@ -90,8 +90,12 @@ public class PHPCompletionEngine extends ScriptCompletionEngine implements IComp
 			}
 
 			CompletionCompanion companion = new CompletionCompanion();
-			org.eclipse.dltk.core.ISourceModule sourceModule = (org.eclipse.dltk.core.ISourceModule) module
-					.getModelElement();
+			ISourceModule sourceModule = (ISourceModule) module.getModelElement();
+
+			try {
+				ScriptModelUtil.reconcile(sourceModule);
+			} catch (ModelException e1) {
+			}
 
 			for (ICompletionContextResolver resolver : contextResolvers) {
 				ICompletionContext[] contexts = resolver.resolve(sourceModule, position, requestor, companion);
