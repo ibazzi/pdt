@@ -25,6 +25,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.php.core.compiler.IPHPModifiers;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.codeassist.AliasField;
 import org.eclipse.php.internal.core.codeassist.AliasMethod;
 import org.eclipse.php.internal.core.codeassist.AliasType;
@@ -343,7 +344,7 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 
 	protected StyledString appendParameterSignature(StyledString buffer, IParameter[] parameters, boolean isVariadic,
 			int paramLimit) {
-		if (parameters != null) {
+		if (parameters != null && parameters.length >= paramLimit) {
 			for (int i = 0; i < paramLimit; i++) {
 				if (i > 0) {
 					buffer.append(',');
@@ -360,6 +361,9 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 					buffer.append(ScriptElementLabels.ELLIPSIS_STRING);
 				}
 				buffer.append(parameters[i].getName());
+				if (parameters[i].getDefaultValue() != null) {
+					buffer.append('=').append(parameters[i].getDefaultValue());
+				}
 			}
 		}
 		return buffer;
@@ -432,7 +436,15 @@ public class PHPCompletionProposalLabelProvider extends CompletionProposalLabelP
 			return;
 		}
 		buffer.append(" - ", StyledString.QUALIFIER_STYLER); //$NON-NLS-1$
-		buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
+		if (modelElement instanceof IType) {
+			String name = ((IType) modelElement).getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+			if (name == null) {
+				name = modelElement.getElementName();
+			}
+			buffer.append(name, StyledString.QUALIFIER_STYLER);
+		} else {
+			buffer.append(modelElement.getElementName(), StyledString.QUALIFIER_STYLER);
+		}
 	}
 
 }

@@ -65,7 +65,7 @@ public abstract class AbstractClassInstantiationStrategy extends GlobalTypesStra
 			if (!concreteContext.getCompletionRequestor().isContextInformationMode()) {
 				// here we use fake method,and do the real work in class
 				// ParameterGuessingProposal
-				IMethod ctorMethod = type.getMethod("__construct");
+				IMethod ctorMethod = type.getMethod("__construct"); //$NON-NLS-1$
 				boolean isAccessable = false;
 				if (ctorMethod.exists()) {
 					try {

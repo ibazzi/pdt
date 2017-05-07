@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.contentassist;
 
-import java.io.IOException;
-
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.corext.util.QualifiedTypeNameHistory;
@@ -23,6 +22,7 @@ import org.eclipse.dltk.ui.text.completion.ScriptContentAssistInvocationContext;
 import org.eclipse.dltk.ui.text.completion.TypeProposalInfo;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.php.core.ast.nodes.ASTParser;
 import org.eclipse.php.core.ast.nodes.NamespaceDeclaration;
 import org.eclipse.php.core.ast.nodes.Program;
 import org.eclipse.php.core.compiler.PHPFlags;
@@ -37,8 +37,8 @@ import org.eclipse.php.ui.editor.SharedASTProvider;
 import org.eclipse.text.edits.TextEdit;
 
 /**
- * If passed compilation unit is not null, the replacement string will be seen
- * as a qualified type name.
+ * If passed source module is not null, the replacement string will be seen as a
+ * qualified type name.
  */
 public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal {
 	/** Triggers for types. Do not modify. */
@@ -46,7 +46,9 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	/** Triggers for types in phpdoc. Do not modify. */
 	protected static final char[] PHPDOC_TYPE_TRIGGERS = new char[] { '#', '}', ' ', '\\' };
 
-	/** The compilation unit, or <code>null</code> if none is available. */
+	protected static final String NAMESPACE_DELIMITER = NamespaceReference.NAMESPACE_DELIMITER;
+
+	/** The source module, or <code>null</code> if none is available. */
 	protected final ISourceModule fSourceModule;
 
 	private String fQualifiedName;
@@ -69,7 +71,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 	public final String getQualifiedTypeName() {
 		if (fQualifiedName == null) {
-			fQualifiedName = ((IType) getModelElement()).getFullyQualifiedName(NamespaceReference.NAMESPACE_DELIMITER);
+			fQualifiedName = ((IType) getModelElement()).getFullyQualifiedName(NAMESPACE_DELIMITER);
 		}
 		return fQualifiedName;
 	}
@@ -107,61 +109,35 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 		String qualifiedTypeName = getQualifiedTypeName();
 
-		// for use statements context
+		// for namespace in use statement context
 		if (ProposalExtraInfo.isClassInNamespace(fProposal.getExtraInfo())) {
-			if (ProposalExtraInfo.isFullName(fProposal.getExtraInfo())) {
-				return qualifiedTypeName;
-			}
+			return qualifiedTypeName;
+		}
+
+		if (!isNamespace && isGlobalNamespace(fSourceModule) && qualifiedTypeName.indexOf(NAMESPACE_DELIMITER) == -1) {
 			return getSimpleTypeName();
 		}
 
-		if (!isNamespace && isGlobalNamespace(fSourceModule)
-				&& qualifiedTypeName.indexOf(NamespaceReference.NAMESPACE_DELIMITER) == -1) {
-			return getSimpleTypeName();
-		}
-
-		/*
-		 * If the user types in the qualification, don't force import rewriting
-		 * on him - insert the qualified name.
-		 */
+		// If the user types in the qualification, don't force import rewriting
+		// on him - insert the qualified name.
 		IDocument document = fInvocationContext.getDocument();
 		if (document != null) {
 			String prefix = getPrefix(document, getReplacementOffset() + getReplacementLength());
-			int dotIndex = prefix.lastIndexOf(NamespaceReference.NAMESPACE_DELIMITER);
-			int subStart = 0;
-			if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
-				subStart++;
+			// always consider namespace qualified
+			if (isNamespace && !prefix.startsWith(NAMESPACE_DELIMITER)) {
+				prefix = NAMESPACE_DELIMITER + prefix;
 			}
-			String typeName = null;
-			if (isNamespace) {
-				// use ns|
-				if (dotIndex == -1) {
-					return replacement;
+			if (prefix.startsWith(NAMESPACE_DELIMITER)) {
+				// match up to the last dot in order to make higher level
+				// matching still work (camel case...)
+				int dotIndex = prefix.lastIndexOf(NAMESPACE_DELIMITER);
+				if (qualifiedTypeName.toLowerCase().startsWith(prefix.substring(1, dotIndex + 1).toLowerCase())) {
+					if (!qualifiedTypeName.startsWith(NAMESPACE_DELIMITER)) {
+						qualifiedTypeName = NAMESPACE_DELIMITER + qualifiedTypeName;
+					}
+					return qualifiedTypeName;
 				}
-				// \ns|
-				typeName = replacement;
-			} else {
-				// \ns\Type|
-				typeName = qualifiedTypeName;
 			}
-			// match up to the last dot in order to make higher level matching
-			// still work (camel case...)
-			if (dotIndex != -1
-					&& typeName.toLowerCase().startsWith(prefix.substring(subStart, dotIndex + 1).toLowerCase())) {
-				if (subStart == 1) {
-					return NamespaceReference.NAMESPACE_DELIMITER + typeName;
-				}
-				return typeName;
-			}
-		}
-
-		/*
-		 * The replacement does not contain a qualification (e.g. an inner type
-		 * qualified by its parent) - use the replacement directly.
-		 */
-		if (replacement.indexOf(NamespaceReference.NAMESPACE_DELIMITER) == -1 && isInDoc()) {
-			return getSimpleTypeName(); // don't use the braces added for
-										// javadoc link proposals
 		}
 
 		/* Add imports if the preference is on. */
@@ -223,20 +199,21 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 		return null;
 	}
 
-	private Program getASTRoot(ISourceModule compilationUnit) {
+	private Program getASTRoot(ISourceModule sourceModule) {
+		Program root = null;
 		try {
-			return SharedASTProvider.getAST(compilationUnit, SharedASTProvider.WAIT_YES, new NullProgressMonitor());
-		} catch (ModelException | IOException e) {
+			IProgressMonitor monitor = new NullProgressMonitor();
+			root = SharedASTProvider.getAST(sourceModule, SharedASTProvider.WAIT_NO, monitor);
+			if (root == null) {
+				ASTParser parser = ASTParser.newParser(sourceModule);
+				root = parser.createAST(monitor);
+			}
+		} catch (Exception e) {
 			PHPUiPlugin.log(e);
 		}
-		return null;
+		return root;
 	}
 
-	/*
-	 * @see
-	 * org.eclipse.jdt.internal.ui.text.java.LazyJavaCompletionProposal#apply(
-	 * org.eclipse.jface.text.IDocument, char, int)
-	 */
 	@Override
 	public void apply(IDocument document, char trigger, int offset) {
 		try {
@@ -278,7 +255,6 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	 *
 	 * @throws JavaModelException
 	 *             if anything goes wrong
-	 * @since 3.2
 	 */
 	protected final void rememberSelection() {
 		IType lhs = fInvocationContext.getExpectedType();
@@ -320,19 +296,17 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 				return false;
 		}
 		return true;
-	}
-
-	@Override
-	protected String getPrefix(IDocument document, int offset) {
-		String prefix = super.getPrefix(document, offset);
-		return prefix;
+		// IPreferenceStore preferenceStore=
+		// JavaPlugin.getDefault().getPreferenceStore();
+		// return
+		// preferenceStore.getBoolean(PreferenceConstants.CODEASSIST_ADDIMPORT);
 	}
 
 	@Override
 	protected boolean isValidPrefix(String prefix) {
 		boolean isPrefix = isPrefix(prefix, getSimpleTypeName());
-		if (!isPrefix && prefix.indexOf(NamespaceReference.NAMESPACE_DELIMITER) != -1) {
-			if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
+		if (!isPrefix && prefix.indexOf(NAMESPACE_DELIMITER) != -1) {
+			if (prefix.startsWith(NAMESPACE_DELIMITER)) {
 				prefix = prefix.substring(1);
 			}
 			isPrefix = isPrefix(prefix, getQualifiedTypeName());
@@ -346,7 +320,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 		String completion;
 		// return the qualified name if the prefix is already qualified
-		if (prefix.indexOf(NamespaceReference.NAMESPACE_DELIMITER) != -1)
+		if (prefix.indexOf(NAMESPACE_DELIMITER) != -1)
 			completion = getQualifiedTypeName();
 		else
 			completion = getSimpleTypeName();
@@ -355,8 +329,8 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 			completion = getCamelCaseCompound(prefix, completion);
 		}
 
-		if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
-			completion = NamespaceReference.NAMESPACE_DELIMITER + completion;
+		if (prefix.startsWith(NAMESPACE_DELIMITER)) {
+			completion = NAMESPACE_DELIMITER + completion;
 		}
 
 		return completion;
@@ -377,10 +351,10 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	@Override
 	public int getPrefixCompletionStart(IDocument document, int completionOffset) {
 		int start = super.getPrefixCompletionStart(document, completionOffset);
-		// String prefix = getPrefix(document, completionOffset);
-		// if (prefix.startsWith(NamespaceReference.NAMESPACE_DELIMITER)) {
-		// start++;
-		// }
+		String prefix = getPrefix(document, completionOffset);
+		if (prefix.startsWith(NAMESPACE_DELIMITER)) {
+			start++;
+		}
 		return start;
 	}
 
@@ -437,8 +411,7 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	}
 
 	private boolean isGlobalNamespace(ISourceModule sourceModule) {
-		IType namespace = PHPModelUtils.getCurrentNamespace(sourceModule, getReplacementOffset());
-		return namespace == null;
+		return PHPModelUtils.getCurrentNamespace(sourceModule, getReplacementOffset()) == null;
 	}
 
 }
