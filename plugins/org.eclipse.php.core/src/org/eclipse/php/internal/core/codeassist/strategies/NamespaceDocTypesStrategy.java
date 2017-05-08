@@ -55,7 +55,6 @@ public class NamespaceDocTypesStrategy extends AbstractCompletionStrategy {
 		NamespacePHPDocVarStartContext concreteContext = (NamespacePHPDocVarStartContext) context;
 		// now we compute type suffix in PHPCompletionProposalCollector
 		String suffix = "";//$NON-NLS-1$
-		String nsSuffix = getNSSuffix(concreteContext);
 		ISourceRange replaceRange = getReplacementRange(concreteContext);
 
 		for (IType type : getTypes(concreteContext)) {
@@ -63,7 +62,7 @@ public class NamespaceDocTypesStrategy extends AbstractCompletionStrategy {
 				int flags = type.getFlags();
 				int extraInfo = getExtraInfo();
 				boolean isNamespace = PHPFlags.isNamespace(flags);
-				reporter.reportType(type, isNamespace ? nsSuffix : suffix, replaceRange,
+				reporter.reportType(type, suffix, replaceRange,
 						isNamespace ? extraInfo : extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
 			} catch (ModelException e) {
 				PHPCorePlugin.log(e);
@@ -119,6 +118,6 @@ public class NamespaceDocTypesStrategy extends AbstractCompletionStrategy {
 	}
 
 	protected int getExtraInfo() {
-		return ProposalExtraInfo.TYPE_ONLY;
+		return ProposalExtraInfo.TYPE_ONLY | ProposalExtraInfo.IN_PHP_DOC;
 	}
 }

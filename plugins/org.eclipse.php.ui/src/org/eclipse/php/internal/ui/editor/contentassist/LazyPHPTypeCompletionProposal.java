@@ -109,8 +109,10 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 
 		String qualifiedTypeName = getQualifiedTypeName();
 
-		// for namespace in use statement context
-		if (ProposalExtraInfo.isClassInNamespace(fProposal.getExtraInfo())) {
+		// for namespace in use statement context, return qualified name without
+		// '\' prefix
+		// TODO isClassInNamespace?
+		if (ProposalExtraInfo.isClassInNamespace(fProposal.getExtraInfo()) && !isInDoc()) {
 			return qualifiedTypeName;
 		}
 
@@ -291,15 +293,16 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 	 *         not
 	 */
 	protected boolean allowAddingImports() {
-		if (isInDoc()) {
-			if (fProposal.getKind() == CompletionProposal.TYPE_REF && fInvocationContext.getCoreContext().isInDoc())
-				return false;
-		}
-		return true;
+		// if (isInDoc()) {
+		// if (fProposal.getKind() == CompletionProposal.TYPE_REF &&
+		// fInvocationContext.getCoreContext().isInDoc())
+		// return false;
+		// }
 		// IPreferenceStore preferenceStore=
 		// JavaPlugin.getDefault().getPreferenceStore();
 		// return
 		// preferenceStore.getBoolean(PreferenceConstants.CODEASSIST_ADDIMPORT);
+		return true;
 	}
 
 	@Override
@@ -408,6 +411,11 @@ public class LazyPHPTypeCompletionProposal extends LazyScriptCompletionProposal 
 			element = element.getParent();
 		}
 		return element;
+	}
+
+	@Override
+	protected boolean isInDoc() {
+		return ProposalExtraInfo.isInPHPDoc(fProposal.getExtraInfo());
 	}
 
 	private boolean isGlobalNamespace(ISourceModule sourceModule) {

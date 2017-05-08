@@ -28,6 +28,7 @@ public final class ProposalExtraInfo {
 	public static final int METHOD_OVERRIDE = 1 << 11;
 	public static final int MAGIC_METHOD_OVERLOAD = 1 << 12;
 	public static final int INSERT_THIS = 1 << 13;
+	public static final int IN_PHP_DOC = 1 << 14;
 
 	public static boolean isMethodOverride(int flags) {
 		return (flags & METHOD_OVERRIDE) != 0;
@@ -148,6 +149,14 @@ public final class ProposalExtraInfo {
 	public static boolean isInsertThis(Object flags) {
 		if (flags instanceof Integer) {
 			return contain(((Integer) flags).intValue(), INSERT_THIS);
+		} else {
+			return false;
+		}
+	}
+
+	public static boolean isInPHPDoc(Object flags) {
+		if (flags instanceof Integer) {
+			return contain(((Integer) flags).intValue(), IN_PHP_DOC);
 		} else {
 			return false;
 		}
