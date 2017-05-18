@@ -14,7 +14,6 @@ package org.eclipse.php.internal.core.codeassist.contexts;
 import org.eclipse.dltk.core.CompletionRequestor;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.Constants;
 import org.eclipse.php.internal.core.documentModel.partitioner.PHPPartitionTypes;
 import org.eclipse.php.internal.core.util.text.PHPTextSequenceUtilities;
@@ -57,9 +56,10 @@ public abstract class NamespacePHPDocContext extends AbstractCompletionContext {
 
 	public String getPrefix() throws BadLocationException {
 		String prefix = super.getPrefix();
-		if (prefix.length() > 0 && prefix.charAt(0) == NamespaceReference.NAMESPACE_SEPARATOR) {
-			return prefix.substring(1);
-		}
+		// if (prefix.length() > 0 && prefix.charAt(0) ==
+		// NamespaceReference.NAMESPACE_SEPARATOR) {
+		// return prefix.substring(1);
+		// }
 		return prefix;
 	}
 

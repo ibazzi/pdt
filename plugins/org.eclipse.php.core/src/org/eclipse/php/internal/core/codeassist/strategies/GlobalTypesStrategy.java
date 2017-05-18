@@ -27,7 +27,6 @@ import org.eclipse.dltk.internal.core.ModelElement;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
-import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.core.compiler.ast.nodes.UsePart;
 import org.eclipse.php.internal.core.PHPCorePlugin;
@@ -81,7 +80,6 @@ public class GlobalTypesStrategy extends GlobalElementStrategy {
 		IType[] types = getTypes(abstractContext);
 		// now we compute type suffix in PHPCompletionProposalCollector
 		String suffix = "";//$NON-NLS-1$
-		String nsSuffix = getNSSuffix(abstractContext);
 		int extraInfo = getExtraInfo();
 		if ((abstractContext.getOffset() - abstractContext.getPrefix().length() - 1 >= 0) && (abstractContext
 				.getDocument().getChar(abstractContext.getOffset() - abstractContext.getPrefix().length() - 1) == '\''
@@ -95,17 +93,10 @@ public class GlobalTypesStrategy extends GlobalElementStrategy {
 		}
 
 		for (IType type : types) {
-			try {
-				int flags = type.getFlags();
-				boolean isNamespace = PHPFlags.isNamespace(flags);
-				if (!isNamespace && isUseContext) {
-					reporter.reportType(type, isNamespace ? nsSuffix : suffix, replacementRange,
-							extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
-				} else {
-					reporter.reportType(type, isNamespace ? nsSuffix : suffix, replacementRange, extraInfo);
-				}
-			} catch (ModelException e) {
-				PHPCorePlugin.log(e);
+			if (isUseContext) {
+				reporter.reportType(type, suffix, replacementRange, extraInfo | ProposalExtraInfo.CLASS_IN_NAMESPACE);
+			} else {
+				reporter.reportType(type, suffix, replacementRange, extraInfo);
 			}
 		}
 		addAlias(reporter, suffix);
@@ -233,6 +224,8 @@ public class GlobalTypesStrategy extends GlobalElementStrategy {
 		String prefix = context.getPrefix();
 		if (prefix.startsWith("$")) { //$NON-NLS-1$
 			return EMPTY;
+		} else if (prefix.startsWith("\\")) { //$NON-NLS-1$
+			prefix = prefix.substring(1);
 		}
 
 		IDLTKSearchScope scope = createSearchScope();

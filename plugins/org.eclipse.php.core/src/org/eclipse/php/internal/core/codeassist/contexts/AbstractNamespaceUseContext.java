@@ -110,7 +110,7 @@ public class AbstractNamespaceUseContext extends UseStatementContext {
 		int statementLength = statementText.length();
 		int prefixEnd = PHPTextSequenceUtilities.readBackwardSpaces(statementText, statementLength); // read
 																										// whitespace
-		int prefixStart = PHPTextSequenceUtilities.readIdentifierStartIndex(statementText, prefixEnd, true);
+		int prefixStart = PHPTextSequenceUtilities.readNamespaceStartIndex(statementText, prefixEnd, true);
 		return prefixStart < 0 ? "" //$NON-NLS-1$
 				: statementText.subSequence(prefixStart, prefixEnd).toString();
 	}

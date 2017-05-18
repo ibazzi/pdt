@@ -15,7 +15,6 @@ import org.eclipse.dltk.core.ISourceRange;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.php.core.codeassist.ICompletionContext;
 import org.eclipse.php.core.codeassist.ICompletionReporter;
-import org.eclipse.php.core.compiler.ast.nodes.NamespaceReference;
 import org.eclipse.php.internal.core.codeassist.ProposalExtraInfo;
 import org.eclipse.php.internal.core.codeassist.contexts.AbstractCompletionContext;
 
@@ -34,11 +33,6 @@ public class UseNameStrategy extends GlobalTypesStrategy {
 
 	@Override
 	public void apply(ICompletionReporter reporter) throws BadLocationException {
-		AbstractCompletionContext completionContext = (AbstractCompletionContext) getContext();
-		if (completionContext.getPrefix().indexOf(NamespaceReference.NAMESPACE_SEPARATOR) >= 0) {
-			return;
-		}
-
 		reportKeyword(FUNCTION_KEYWORD, reporter);
 		reportKeyword(CONST_KEYWORD, reporter);
 		super.apply(reporter);
@@ -68,6 +62,6 @@ public class UseNameStrategy extends GlobalTypesStrategy {
 
 	@Override
 	protected int getExtraInfo() {
-		return ProposalExtraInfo.TYPE_ONLY;
+		return ProposalExtraInfo.TYPE_ONLY | ProposalExtraInfo.FULL_NAME;
 	}
 }

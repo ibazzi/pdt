@@ -128,9 +128,10 @@ public class CompletionStrategyFactory implements ICompletionStrategyFactory {
 			return new ICompletionStrategy[] { new GlobalConstantsStrategy(context), new GlobalTypesStrategy(context),
 					new MethodParameterKeywordStrategy(context) };
 		}
-		if (contextClass == MethodNameContext.class) {
-			return new ICompletionStrategy[] { new MethodNameStrategy(context) };
-		}
+		// if (contextClass == MethodNameContext.class) {
+		// return new ICompletionStrategy[] { new MethodNameStrategy(context)
+		// };
+		// }
 
 		if (contextClass == ClassStatementContext.class) {
 			if (((AbstractCompletionContext) context).isInUseTraitStatement()) {
@@ -147,9 +148,8 @@ public class CompletionStrategyFactory implements ICompletionStrategyFactory {
 						new GlobalConstantsStrategy(context), new GlobalTypesStrategy(context) };
 			} else {
 				return new ICompletionStrategy[] { new ClassKeywordsStrategy(context),
-						// new GlobalConstantsStrategy(context),
-						// new GlobalTypesStrategy(context)
-				};
+						new ClassMethodsStrategy(context) };
+
 			}
 		}
 		if (contextClass == GlobalStatementContext.class) {

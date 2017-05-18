@@ -79,6 +79,14 @@ public class NamespaceClassInstantiationStrategy extends NamespaceTypesStrategy 
 				} catch (ModelException e) {
 					PHPCorePlugin.log(e);
 				}
+			} else {
+				IMethod ctorMethod = type.getMethod("__construct"); //$NON-NLS-1$
+				if (!ctorMethod.exists()) {
+					ctorMethod = type.getMethod(type.getElementName());
+				}
+				if (ctorMethod.exists()) {
+					ctor = FakeConstructor.createFakeConstructor(ctorMethod, type, type.equals(enclosingClass));
+				}
 			}
 
 			try {
