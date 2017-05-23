@@ -35,9 +35,7 @@ import org.eclipse.php.internal.core.typeinference.ArrayDeclaration;
 import org.eclipse.php.internal.core.typeinference.Declaration;
 import org.eclipse.php.internal.core.typeinference.PHPSimpleTypes;
 import org.eclipse.php.internal.core.typeinference.PHPTypeInferenceUtils;
-import org.eclipse.php.internal.core.typeinference.context.ContextFinder;
-import org.eclipse.php.internal.core.typeinference.context.FileContext;
-import org.eclipse.php.internal.core.typeinference.context.MethodContext;
+import org.eclipse.php.internal.core.typeinference.context.*;
 import org.eclipse.php.internal.core.typeinference.goals.ArrayDeclarationGoal;
 import org.eclipse.php.internal.core.typeinference.goals.ForeachStatementGoal;
 import org.eclipse.php.internal.core.typeinference.goals.GlobalVariableReferencesGoal;
@@ -103,6 +101,10 @@ public class VariableReferenceEvaluator extends GoalEvaluator {
 				ASTNode localScopeNode = rootNode;
 				if (context instanceof MethodContext) {
 					localScopeNode = ((MethodContext) context).getMethodNode();
+				} else if (context instanceof LambdaFunctionContext) {
+					localScopeNode = ((LambdaFunctionContext) context).getMethodNode();
+				} else if (context instanceof NamespaceContext) {
+					localScopeNode = ((NamespaceContext) context).getNamespaceNode();
 				}
 				LocalReferenceDeclSearcher varDecSearcher = new LocalReferenceDeclSearcher(
 						typedContext.getSourceModule(), variableReference, localScopeNode);
@@ -270,7 +272,10 @@ public class VariableReferenceEvaluator extends GoalEvaluator {
 			if (node.sourceStart() <= variableOffset) {
 				if (node instanceof Assignment) {
 					Assignment tmp = (Assignment) node;
-					if (tmp.getValue().start() <= variableOffset && tmp.getValue().end() > variableOffset) {
+					if (tmp.getValue() instanceof LambdaFunctionDeclaration
+							|| tmp.getValue() instanceof AnonymousClassDeclaration) {
+						return true;
+					} else if (tmp.getValue().start() <= variableOffset && tmp.getValue().end() > variableOffset) {
 						return false;
 					}
 				}

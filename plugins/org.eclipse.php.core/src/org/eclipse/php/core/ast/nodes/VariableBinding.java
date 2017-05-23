@@ -39,12 +39,13 @@ public class VariableBinding implements IVariableBinding {
 	private boolean isFakeField;
 
 	private ITypeBinding declaringClassTypeBinding;
+	private ITypeBinding type;
 	private int id;
 
-	private Variable varialbe;
+	private Variable variable;
 
-	public Variable getVarialbe() {
-		return varialbe;
+	public Variable getVariable() {
+		return variable;
 	}
 
 	/**
@@ -60,7 +61,7 @@ public class VariableBinding implements IVariableBinding {
 		this.resolver = resolver;
 		this.modelElement = modelElement;
 		this.isFakeField = modelElement instanceof FakeField;
-		this.varialbe = variable;
+		this.variable = variable;
 		this.id = id;
 	}
 
@@ -106,7 +107,33 @@ public class VariableBinding implements IVariableBinding {
 	 * getDeclaringFunction ()
 	 */
 	public IFunctionBinding getDeclaringFunction() {
-		// TODO ?
+		if (!isField()) {
+			ASTNode node = this.resolver.findDeclaringNode(this);
+			while (true) {
+				if (node == null) {
+					// if (this.binding instanceof LocalVariableBinding) {
+					// LocalVariableBinding localVariableBinding =
+					// (LocalVariableBinding) this.binding;
+					// org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+					// enclosingMethod =
+					// localVariableBinding.getEnclosingMethod();
+					// if (enclosingMethod != null)
+					// return this.resolver.getMethodBinding(enclosingMethod);
+					// }
+					return null;
+				}
+				switch (node.getType()) {
+				case ASTNode.METHOD_DECLARATION:
+					MethodDeclaration methodDeclaration = (MethodDeclaration) node;
+					return methodDeclaration.resolveMethodBinding();
+				case ASTNode.LAMBDA_FUNCTION_DECLARATION:
+					LambdaFunctionDeclaration lambdaExpression = (LambdaFunctionDeclaration) node;
+					return lambdaExpression.resolveFunctionBinding();
+				default:
+					node = node.getParent();
+				}
+			}
+		}
 		return null;
 	}
 
@@ -125,8 +152,14 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#getType()
 	 */
 	public ITypeBinding getType() {
-		// TODO: Do we need type information for PHP Element?
-		return null;
+		if (this.type == null) {
+			if (variable.getParent() instanceof Assignment) {
+				this.type = this.resolver.resolveExpressionType(((Assignment) variable.getParent()).getRightHandSide());
+			} else {
+				this.type = this.resolver.resolveExpressionType(variable);
+			}
+		}
+		return this.type;
 	}
 
 	/*
@@ -154,7 +187,12 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isGlobal()
 	 */
 	public boolean isGlobal() {
-		// TODO Auto-generated method stub
+		if (IModelElement.FIELD == modelElement.getElementType()) {
+			if (variable.getLocationInParent() == GlobalStatement.VARIABLES_PROPERTY) {
+				return true;
+			}
+			return !isFakeField && getDeclaringFunction() == null;
+		}
 		return false;
 	}
 
@@ -164,7 +202,13 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isLocal()
 	 */
 	public boolean isLocal() {
-		return IModelElement.FIELD == modelElement.getElementType() && !isFakeField && getDeclaringClass() == null;
+		if (IModelElement.FIELD == modelElement.getElementType()) {
+			if (variable.getLocationInParent() == GlobalStatement.VARIABLES_PROPERTY) {
+				return false;
+			}
+			return !isFakeField && getDeclaringFunction() != null;
+		}
+		return false;
 	}
 
 	/*
@@ -174,8 +218,7 @@ public class VariableBinding implements IVariableBinding {
 	 * org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isParameter()
 	 */
 	public boolean isParameter() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.variable.getLocationInParent() == FormalParameter.PARAMETER_NAME_PROPERTY;
 	}
 
 	/*
@@ -240,5 +283,13 @@ public class VariableBinding implements IVariableBinding {
 		}
 
 		return false;
+	}
+
+	@Override
+	public IVariableBinding getVariableDeclaration() {
+		if (isField()) {
+			return this.resolver.getVariableBinding((IField) modelElement);
+		}
+		return this;
 	}
 }

@@ -123,6 +123,10 @@ public class PHPFlags extends Flags implements IPHPModifiers {
 		return (flags & AccAnonymous) != 0;
 	}
 
+	public static boolean isLambda(int flags) {
+		return (flags & AccLambda) != 0;
+	}
+
 	/**
 	 * @since 4.0
 	 */

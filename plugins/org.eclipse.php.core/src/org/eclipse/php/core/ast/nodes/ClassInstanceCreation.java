@@ -104,7 +104,7 @@ public class ClassInstanceCreation extends VariableBase {
 			node.accept(visitor);
 		}
 		if (anonymousClassDeclaration != null) {
-			anonymousClassDeclaration.childrenAccept(visitor);
+			anonymousClassDeclaration.accept(visitor);
 		}
 	}
 

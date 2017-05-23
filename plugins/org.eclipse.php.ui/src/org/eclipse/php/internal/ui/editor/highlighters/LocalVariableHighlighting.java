@@ -10,7 +10,8 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.highlighters;
 
-import org.eclipse.php.core.ast.nodes.*;
+import org.eclipse.php.core.ast.nodes.IVariableBinding;
+import org.eclipse.php.core.ast.nodes.Variable;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticApply;
 import org.eclipse.php.internal.ui.editor.highlighter.AbstractSemanticHighlighting;
 
@@ -18,19 +19,39 @@ public class LocalVariableHighlighting extends AbstractSemanticHighlighting {
 
 	protected class LocalVariableApply extends AbstractSemanticApply {
 
+		// private Collection<String> params = new LinkedList<>();
+		//
+		// @Override
+		// public boolean visit(FormalParameter param) {
+		// params.add(param.getParameterNameIdentifier().getName());
+		// return true;
+		// }
+		//
+		// @Override
+		// public boolean visit(Variable variable) {
+		// ASTNode parent = variable.getParent();
+		// boolean isLocal = false;
+		// while (parent != null) {
+		// if (parent instanceof FunctionDeclaration || parent instanceof
+		// LambdaFunctionDeclaration) {
+		// isLocal = true;
+		// break;
+		// }
+		// parent = parent.getParent();
+		// }
+		// String name = ((Identifier) variable.getName()).getName();
+		// if (isLocal && !(variable.getParent() instanceof FormalParameter) &&
+		// variable.isDollared()
+		// && !("this".equals(name)) && !params.contains(name)) { //$NON-NLS-1$
+		// highlight(variable);
+		// }
+		// return false;
+		// }
+
 		@Override
 		public boolean visit(Variable variable) {
-			ASTNode parent = variable.getParent();
-			boolean isLocal = false;
-			while (parent != null) {
-				if (parent instanceof FunctionDeclaration || parent instanceof LambdaFunctionDeclaration) {
-					isLocal = true;
-					break;
-				}
-				parent = parent.getParent();
-			}
-			if (isLocal && !(variable.getParent() instanceof FormalParameter) && variable.isDollared()
-					&& !("this".equals(((Identifier) variable.getName()).getName()))) { //$NON-NLS-1$
+			IVariableBinding variableBinding = variable.resolveVariableBinding();
+			if (variableBinding != null && variableBinding.isLocal() && !variableBinding.isParameter()) {
 				highlight(variable);
 			}
 			return false;

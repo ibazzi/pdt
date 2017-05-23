@@ -21,6 +21,7 @@ import org.eclipse.dltk.evaluation.types.MultiTypeType;
 import org.eclipse.dltk.evaluation.types.SimpleType;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.internal.core.typeinference.AnonymousClassInstanceType;
 import org.eclipse.php.internal.core.typeinference.PHPClassType;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.core.typeinference.evaluators.PHPTraitType;
@@ -560,7 +561,7 @@ public class TypeBinding implements ITypeBinding {
 		if (isUnknown()) {
 			return false;
 		}
-		return type.getClass() == PHPClassType.class;
+		return type.getClass() == PHPClassType.class || type.getClass() == AnonymousClassInstanceType.class;
 	}
 
 	/**

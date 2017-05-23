@@ -58,6 +58,16 @@ public class DefaultBindingResolver extends BindingResolver {
 	}
 
 	/**
+	 * This map is used to retrieve the corresponding block scope for a ast node
+	 */
+	Map astNodesToBlockScope;
+
+	/**
+	 * This map is used to get an ast node from its binding (new binding) or DOM
+	 */
+	Map<IBinding, ASTNode> bindingsToAstNodes;
+
+	/**
 	 * The shared binding tables accros ASTs.
 	 */
 	BindingTables bindingTables;
@@ -91,6 +101,7 @@ public class DefaultBindingResolver extends BindingResolver {
 		this.sourceModule = sourceModule;
 		this.workingCopyOwner = owner;
 		this.bindingTables = new BindingTables();
+		this.bindingsToAstNodes = new HashMap<>();
 		this.modelAccessCache = new PerFileModelAccessCache(sourceModule);
 		this.bindingUtil = new BindingUtility(this.sourceModule, this.modelAccessCache);
 	}
@@ -335,7 +346,9 @@ public class DefaultBindingResolver extends BindingResolver {
 		try {
 			IModelElement elementAt = sourceModule.getElementAt(method.getStart());
 			if (elementAt instanceof IMethod) {
-				return getMethodBinding((IMethod) elementAt);
+				IMethodBinding methodBinding = getMethodBinding((IMethod) elementAt);
+				this.bindingsToAstNodes.put(methodBinding, method);
+				return methodBinding;
 			}
 
 		} catch (ModelException e) {
@@ -378,16 +391,23 @@ public class DefaultBindingResolver extends BindingResolver {
 	}
 
 	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.php.internal.core.ast.nodes.BindingResolver#findDeclaringNode
-	 * (org.eclipse.php.internal.core.ast.nodes.IBinding)
+	 * Method declared on BindingResolver.
 	 */
-	@Override
-	org.eclipse.php.core.ast.nodes.ASTNode findDeclaringNode(IBinding binding) {
-		// TODO Auto-generated method stub
-		return super.findDeclaringNode(binding);
+	synchronized ASTNode findDeclaringNode(IBinding binding) {
+		if (binding == null) {
+			return null;
+		}
+		if (binding instanceof IMethodBinding) {
+			IMethodBinding methodBinding = (IMethodBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(methodBinding.getMethodDeclaration());
+		} else if (binding instanceof ITypeBinding) {
+			ITypeBinding typeBinding = (ITypeBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(typeBinding.getTypeDeclaration());
+		} else if (binding instanceof IVariableBinding) {
+			IVariableBinding variableBinding = (IVariableBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(variableBinding.getVariableDeclaration());
+		}
+		return (ASTNode) this.bindingsToAstNodes.get(binding);
 	}
 
 	/*
@@ -595,6 +615,29 @@ public class DefaultBindingResolver extends BindingResolver {
 		return super.resolveFunction(function);
 	}
 
+	@Override
+	IFunctionBinding resolveFunction(LambdaFunctionDeclaration function) {
+		IModelElement[] modelElements = null;
+		try {
+			modelElements = sourceModule.codeSelect(function.getStart(), function.getLength());
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				Logger.logException(e);
+			}
+			return null;
+		}
+		if (modelElements != null && modelElements.length > 0) {
+			for (IModelElement element : modelElements) {
+				if (element.getElementType() == IModelElement.METHOD) {
+					IFunctionBinding functionBinding = new FunctionBinding(this, (IMethod) element);
+					this.bindingsToAstNodes.put(functionBinding, function);
+					return functionBinding;
+				}
+			}
+		}
+		return super.resolveFunction(function);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -764,7 +807,9 @@ public class DefaultBindingResolver extends BindingResolver {
 		if (modelElements != null) {
 			if (modelElements.getElementType() == IModelElement.FIELD) {
 				int id = LocalVariableIndex.perform(variable.getEnclosingBodyNode(), variable);
-				return new VariableBinding(this, (IMember) modelElements, variable, id);
+				IVariableBinding variableBinding = new VariableBinding(this, (IMember) modelElements, variable, id);
+				this.bindingsToAstNodes.put(variableBinding, variable);
+				return variableBinding;
 			}
 
 		}

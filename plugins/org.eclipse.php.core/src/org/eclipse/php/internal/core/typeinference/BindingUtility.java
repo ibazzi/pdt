@@ -19,10 +19,10 @@ import java.util.Map;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.dltk.ast.ASTNode;
 import org.eclipse.dltk.ast.ASTVisitor;
-import org.eclipse.dltk.ast.declarations.MethodDeclaration;
 import org.eclipse.dltk.ast.declarations.ModuleDeclaration;
 import org.eclipse.dltk.ast.expressions.Expression;
 import org.eclipse.dltk.ast.references.VariableReference;
+import org.eclipse.dltk.ast.statements.Statement;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.evaluation.types.UnknownType;
 import org.eclipse.dltk.internal.core.SourceRefElement;
@@ -30,11 +30,14 @@ import org.eclipse.dltk.ti.IContext;
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.goals.ExpressionTypeGoal;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.core.compiler.ast.nodes.LambdaFunctionDeclaration;
 import org.eclipse.php.core.compiler.ast.nodes.ReturnStatement;
 import org.eclipse.php.core.compiler.ast.nodes.YieldExpression;
 import org.eclipse.php.internal.core.typeinference.context.IModelCacheContext;
+import org.eclipse.php.internal.core.typeinference.context.LambdaFunctionContext;
 import org.eclipse.php.internal.core.typeinference.context.MethodContext;
+import org.eclipse.php.internal.core.typeinference.context.NamespaceContext;
 import org.eclipse.php.internal.core.typeinference.evaluators.VariableReferenceEvaluator;
 
 /**
@@ -361,6 +364,10 @@ public class BindingUtility {
 			IContext context = contextFinder.getContext();
 			if (context instanceof MethodContext) {
 				localScopeNode = ((MethodContext) context).getMethodNode();
+			} else if (context instanceof LambdaFunctionContext) {
+				localScopeNode = ((LambdaFunctionContext) context).getMethodNode();
+			} else if (context instanceof NamespaceContext) {
+				localScopeNode = ((NamespaceContext) context).getNamespaceNode();
 			}
 			VariableReferenceEvaluator.LocalReferenceDeclSearcher varDecSearcher = new VariableReferenceEvaluator.LocalReferenceDeclSearcher(
 					sourceModule, (VariableReference) node, localScopeNode);
@@ -428,9 +435,13 @@ public class BindingUtility {
 
 		ISourceModule sourceModule = functionElement.getSourceModule();
 		ModuleDeclaration sourceModuleDeclaration = SourceParserUtil.getModuleDeclaration(sourceModule);
-		MethodDeclaration functionDeclaration = null;
+		Statement functionDeclaration = null;
 		try {
-			functionDeclaration = PHPModelUtils.getNodeByMethod(sourceModuleDeclaration, functionElement);
+			if (PHPFlags.isLambda(functionElement.getFlags())) {
+				functionDeclaration = PHPModelUtils.getNodeByLambdaFunction(sourceModuleDeclaration, functionElement);
+			} else {
+				functionDeclaration = PHPModelUtils.getNodeByMethod(sourceModuleDeclaration, functionElement);
+			}
 
 		} catch (ModelException e) {
 			if (DLTKCore.DEBUG) {
@@ -445,7 +456,7 @@ public class BindingUtility {
 		final List<Expression> yieldExpressions = new LinkedList<Expression>();
 
 		if (functionDeclaration != null) {
-			final MethodDeclaration topDeclaration = functionDeclaration;
+			final Statement topDeclaration = functionDeclaration;
 
 			ASTVisitor visitor = new ASTVisitor() {
 				public boolean visitGeneral(ASTNode node) throws Exception {

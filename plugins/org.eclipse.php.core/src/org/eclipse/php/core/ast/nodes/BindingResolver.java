@@ -475,6 +475,10 @@ public class BindingResolver {
 		return null;
 	}
 
+	IFunctionBinding resolveFunction(LambdaFunctionDeclaration function) {
+		return null;
+	}
+
 	/**
 	 * Resolves the given method declaration and returns the binding for it.
 	 * <p>

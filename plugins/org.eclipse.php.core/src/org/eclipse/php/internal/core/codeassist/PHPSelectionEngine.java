@@ -453,6 +453,13 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 
 			}
 		}
+		// lambda function declaration
+		else if (node instanceof LambdaFunctionDeclaration) {
+			IModelElement element = sourceModule.getElementAt(node.sourceStart());
+			if (element != null) {
+				return new IModelElement[] { element };
+			}
+		}
 		// Class name in declaration
 		else if ((node instanceof TypeDeclaration || node instanceof MethodDeclaration)
 				&& ((Declaration) node).getNameStart() <= offset && ((Declaration) node).getNameEnd() >= offset) {

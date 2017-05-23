@@ -112,6 +112,21 @@ public class VariableDeclarationSearcher extends ContextFinder {
 		return super.endvisit(node);
 	}
 
+	public final boolean visit(AnonymousClassDeclaration node) throws Exception {
+		if (!isInteresting(node)) {
+			visitGeneral(node);
+			return false;
+		}
+
+		postProcess(node);
+
+		return super.visit(node);
+	}
+
+	public final boolean endvisit(AnonymousClassDeclaration node) throws Exception {
+		return super.endvisit(node);
+	}
+
 	/**
 	 * Override to invoke additional processing on this kind of node
 	 * 
@@ -132,6 +147,21 @@ public class VariableDeclarationSearcher extends ContextFinder {
 	}
 
 	public final boolean endvisit(MethodDeclaration node) throws Exception {
+		return super.endvisit(node);
+	}
+
+	public final boolean visit(LambdaFunctionDeclaration node) throws Exception {
+		if (!isInteresting(node)) {
+			visitGeneral(node);
+			return false;
+		}
+
+		postProcess(node);
+
+		return super.visit(node);
+	}
+
+	public final boolean endvisit(LambdaFunctionDeclaration node) throws Exception {
 		return super.endvisit(node);
 	}
 

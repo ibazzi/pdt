@@ -226,6 +226,11 @@ public class TypeReferenceEvaluator extends GoalEvaluator {
 			// If the namespace was prefixed explicitly - use it:
 			if (typeReference instanceof FullyQualifiedReference) {
 				fullyQualifiedName = ((FullyQualifiedReference) typeReference).getFullyQualifiedName();
+				int elementType = ((FullyQualifiedReference) typeReference).getElementType();
+				if (elementType == FullyQualifiedReference.T_CONSTANT) {
+					result = PHPSimpleTypes.STRING;
+					return IGoal.NO_GOALS;
+				}
 			} else {
 				fullyQualifiedName = typeReference.getName();
 

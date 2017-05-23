@@ -226,7 +226,7 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		StringBuilder metadata = new StringBuilder();
 		String[] parameters;
 		ISourceElementRequestor.MethodInfo mi = new ISourceElementRequestor.MethodInfo();
-		mi.modifiers = Modifiers.AccPublic;
+		mi.modifiers = Modifiers.AccPublic | IPHPModifiers.AccLambda;
 		if (arguments != null) {
 			parameters = new String[arguments.size()];
 			Iterator<FormalParameter> i = arguments.iterator();
@@ -246,6 +246,8 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		} else {
 			parameters = new String[0];
 		}
+
+		declarations.push(lambdaMethod);
 
 		// Add method declaration:
 		for (PHPSourceElementRequestorExtension visitor : extensions) {
@@ -284,15 +286,6 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 	}
 
 	public boolean visit(AnonymousClassDeclaration anonymousClassDeclaration) throws Exception {
-		ASTNode parentDeclaration = null;
-		if (!declarations.empty()) {
-			parentDeclaration = declarations.peek();
-		}
-
-		if (parentDeclaration instanceof TypeDeclaration) {
-			return false;
-		}
-
 		fNodes.push(anonymousClassDeclaration);
 		declarations.push(anonymousClassDeclaration);
 
@@ -981,7 +974,8 @@ public class PHPSourceElementRequestor extends SourceElementRequestVisitor {
 		} else if (left instanceof VariableReference) {
 			if (!declarations.empty()) {
 				ASTNode parentDeclaration = declarations.peek();
-				if (parentDeclaration instanceof MethodDeclaration
+				if ((parentDeclaration instanceof MethodDeclaration
+						|| parentDeclaration instanceof LambdaFunctionDeclaration)
 						&& methodGlobalVars.peek().contains(((VariableReference) left).getName())
 						|| parentDeclaration == fLastNamespace) {
 					deferredDeclarations.add(assignment);

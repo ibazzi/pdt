@@ -86,8 +86,8 @@ public class LambdaFunctionDeclaration extends Expression {
 			if (this.body != null) {
 				this.body.traverse(visitor);
 			}
+			visitor.endvisit(this);
 		}
-		visitor.endvisit(this);
 	}
 
 	public Collection<? extends Expression> getLexicalVars() {

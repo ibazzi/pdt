@@ -11,16 +11,14 @@
  *******************************************************************************/
 package org.eclipse.php.internal.core.typeinference.context;
 
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
-import org.eclipse.dltk.ast.ASTVisitor;
 import org.eclipse.dltk.ast.declarations.Argument;
-import org.eclipse.dltk.ast.declarations.MethodDeclaration;
 import org.eclipse.dltk.ast.declarations.ModuleDeclaration;
 import org.eclipse.dltk.ast.declarations.TypeDeclaration;
-import org.eclipse.dltk.ast.expressions.Expression;
 import org.eclipse.dltk.ast.references.TypeReference;
 import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.IType;
@@ -29,9 +27,8 @@ import org.eclipse.dltk.evaluation.types.UnknownType;
 import org.eclipse.dltk.ti.IContext;
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
-import org.eclipse.php.core.compiler.ast.nodes.AnonymousClassDeclaration;
-import org.eclipse.php.core.compiler.ast.nodes.NamespaceDeclaration;
-import org.eclipse.php.core.compiler.ast.nodes.TraitDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.*;
+import org.eclipse.php.core.compiler.ast.visitor.PHPASTVisitor;
 import org.eclipse.php.internal.core.typeinference.PHPClassType;
 import org.eclipse.php.internal.core.typeinference.PHPNamespaceType;
 import org.eclipse.php.internal.core.typeinference.PHPThisClassType;
@@ -42,7 +39,7 @@ import org.eclipse.php.internal.core.typeinference.evaluators.PHPTraitType;
  * 
  * @author michael
  */
-public abstract class ContextFinder extends ASTVisitor {
+public abstract class ContextFinder extends PHPASTVisitor {
 
 	protected Stack<IContext> contextStack = new Stack<IContext>();
 	private ISourceModule sourceModule;
@@ -88,7 +85,7 @@ public abstract class ContextFinder extends ASTVisitor {
 			} else {
 				instanceType = new PHPNamespaceType(node.getName());
 			}
-			contextStack.push(new NamespaceContext(fileContext, instanceType));
+			contextStack.push(new NamespaceContext(fileContext, (NamespaceDeclaration) node, instanceType));
 			boolean visitGeneral = visitGeneral(node);
 			if (!visitGeneral) {
 				contextStack.pop();
@@ -150,7 +147,7 @@ public abstract class ContextFinder extends ASTVisitor {
 	}
 
 	@SuppressWarnings("unchecked")
-	public boolean visit(MethodDeclaration node) throws Exception {
+	public boolean visit(PHPMethodDeclaration node) throws Exception {
 		List<String> argumentsList = new LinkedList<String>();
 		List<IEvaluatedType> argTypes = new LinkedList<IEvaluatedType>();
 		List<Argument> args = node.getArguments();
@@ -162,6 +159,28 @@ public abstract class ContextFinder extends ASTVisitor {
 		ModuleDeclaration rootNode = ((ISourceModuleContext) parent).getRootNode();
 
 		contextStack.push(new MethodContext(parent, sourceModule, rootNode, node,
+				argumentsList.toArray(new String[argumentsList.size()]),
+				argTypes.toArray(new IEvaluatedType[argTypes.size()])));
+
+		boolean visitGeneral = visitGeneral(node);
+		if (!visitGeneral) {
+			contextStack.pop();
+		}
+		return visitGeneral;
+	}
+
+	public boolean visit(LambdaFunctionDeclaration node) throws Exception {
+		List<String> argumentsList = new LinkedList<String>();
+		List<IEvaluatedType> argTypes = new LinkedList<IEvaluatedType>();
+		Collection<FormalParameter> args = node.getArguments();
+		for (FormalParameter a : args) {
+			argumentsList.add(a.getName());
+			argTypes.add(UnknownType.INSTANCE);
+		}
+		IContext parent = contextStack.peek();
+		ModuleDeclaration rootNode = ((ISourceModuleContext) parent).getRootNode();
+
+		contextStack.push(new LambdaFunctionContext(parent, sourceModule, rootNode, node,
 				argumentsList.toArray(new String[argumentsList.size()]),
 				argTypes.toArray(new IEvaluatedType[argTypes.size()])));
 
@@ -184,7 +203,13 @@ public abstract class ContextFinder extends ASTVisitor {
 		return true;
 	}
 
-	public boolean endvisit(MethodDeclaration node) throws Exception {
+	public boolean endvisit(PHPMethodDeclaration node) throws Exception {
+		contextStack.pop();
+		endvisitGeneral(node);
+		return true;
+	}
+
+	public boolean endvisit(LambdaFunctionDeclaration node) throws Exception {
 		contextStack.pop();
 		endvisitGeneral(node);
 		return true;
@@ -196,19 +221,4 @@ public abstract class ContextFinder extends ASTVisitor {
 		return true;
 	}
 
-	@Override
-	public boolean visit(Expression s) throws Exception {
-		if (s instanceof AnonymousClassDeclaration) {
-			return visit((AnonymousClassDeclaration) s);
-		}
-		return super.visit(s);
-	}
-
-	@Override
-	public boolean endvisit(Expression s) throws Exception {
-		if (s instanceof AnonymousClassDeclaration) {
-			return endvisit((AnonymousClassDeclaration) s);
-		}
-		return super.endvisit(s);
-	}
 }

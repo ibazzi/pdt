@@ -12,7 +12,6 @@
 package org.eclipse.php.internal.core.typeinference;
 
 import org.eclipse.dltk.ast.ASTNode;
-import org.eclipse.dltk.ast.ASTVisitor;
 import org.eclipse.dltk.ast.declarations.Declaration;
 import org.eclipse.dltk.ast.declarations.MethodDeclaration;
 import org.eclipse.dltk.ast.declarations.ModuleDeclaration;
@@ -22,11 +21,14 @@ import org.eclipse.dltk.ast.statements.Statement;
 import org.eclipse.dltk.core.IMember;
 import org.eclipse.dltk.core.ISourceRange;
 import org.eclipse.dltk.core.ModelException;
+import org.eclipse.php.core.compiler.ast.nodes.AnonymousClassDeclaration;
+import org.eclipse.php.core.compiler.ast.nodes.LambdaFunctionDeclaration;
+import org.eclipse.php.core.compiler.ast.visitor.PHPASTVisitor;
 
-class DeclarationSearcher extends ASTVisitor {
+class DeclarationSearcher extends PHPASTVisitor {
 
 	enum DeclarationType {
-		METHOD, CLASS, FIELD
+		METHOD, CLASS, FIELD, LAMBDA_FUNCTION, ANONYMOUS_CLASS
 	};
 
 	private int bestScore = Integer.MAX_VALUE;
@@ -35,7 +37,7 @@ class DeclarationSearcher extends ASTVisitor {
 	private int modelCutoffStart;
 	private int modelCutoffEnd;
 	private String elementName;
-	private Declaration result;
+	private Statement result;
 	private DeclarationType declarationType;
 
 	public DeclarationSearcher(ModuleDeclaration moduleDeclaration, IMember modelElement,
@@ -50,12 +52,20 @@ class DeclarationSearcher extends ASTVisitor {
 		this.declarationType = declarationType;
 	}
 
-	public Declaration getResult() {
+	public Statement getResult() {
 		return result;
 	}
 
-	protected void checkElementDeclaration(Declaration s) {
-		if (s.getName().equals(elementName)) {
+	protected void checkElementDeclaration(Statement s) {
+		String name = ""; //$NON-NLS-1$
+		if (s instanceof Declaration) {
+			name = ((Declaration) s).getName();
+		} else if (s instanceof LambdaFunctionDeclaration) {
+			name = "__anonymous"; //$NON-NLS-1$
+		} else if (s instanceof AnonymousClassDeclaration) {
+			name = "__anonymous"; //$NON-NLS-1$
+		}
+		if (name.equals(elementName)) {
 			int astStart = s.sourceStart();
 			int astEnd = s.sourceEnd();
 			int diff1 = modelStart - astStart;
@@ -82,6 +92,9 @@ class DeclarationSearcher extends ASTVisitor {
 		if (!interesting(s)) {
 			return false;
 		}
+		if (s instanceof LambdaFunctionDeclaration) {
+			return visit((LambdaFunctionDeclaration) s);
+		}
 		return true;
 	}
 
@@ -100,6 +113,17 @@ class DeclarationSearcher extends ASTVisitor {
 			return false;
 		}
 		if (declarationType == DeclarationType.METHOD) {
+			checkElementDeclaration(s);
+		}
+		return true;
+	}
+
+	@Override
+	public boolean visit(LambdaFunctionDeclaration s) throws Exception {
+		if (!interesting(s)) {
+			return false;
+		}
+		if (declarationType == DeclarationType.LAMBDA_FUNCTION) {
 			checkElementDeclaration(s);
 		}
 		return true;

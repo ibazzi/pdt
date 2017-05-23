@@ -12,6 +12,7 @@ package org.eclipse.php.internal.core.typeinference.context;
 
 import org.eclipse.dltk.ti.ISourceModuleContext;
 import org.eclipse.dltk.ti.InstanceContext;
+import org.eclipse.php.core.compiler.ast.nodes.NamespaceDeclaration;
 import org.eclipse.php.internal.core.typeinference.IModelAccessCache;
 import org.eclipse.php.internal.core.typeinference.PHPNamespaceType;
 
@@ -22,10 +23,13 @@ import org.eclipse.php.internal.core.typeinference.PHPNamespaceType;
 public class NamespaceContext extends InstanceContext implements INamespaceContext, IModelCacheContext {
 
 	private String namespaceName;
+	private NamespaceDeclaration namespaceNode;
 	private IModelAccessCache cache;
 
-	public NamespaceContext(ISourceModuleContext parent, PHPNamespaceType instanceType) {
+	public NamespaceContext(ISourceModuleContext parent, NamespaceDeclaration namespaceNode,
+			PHPNamespaceType instanceType) {
 		super(parent, instanceType);
+		this.namespaceNode = namespaceNode;
 		this.namespaceName = instanceType.getTypeName();
 	}
 
@@ -39,6 +43,10 @@ public class NamespaceContext extends InstanceContext implements INamespaceConte
 
 	public void setCache(IModelAccessCache cache) {
 		this.cache = cache;
+	}
+
+	public NamespaceDeclaration getNamespaceNode() {
+		return namespaceNode;
 	}
 
 	public int hashCode() {
