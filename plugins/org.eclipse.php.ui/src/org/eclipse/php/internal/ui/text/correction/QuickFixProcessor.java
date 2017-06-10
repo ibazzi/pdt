@@ -105,6 +105,8 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 		case ImportNotFound:
 		case SuperclassMustBeAClass:
 		case UndefinedType:
+		case UndefinedFunction:
+		case UndefinedConstant:
 		case UnnecessaryImport:
 		case UnusedImport:
 			return true;

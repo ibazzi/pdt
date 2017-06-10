@@ -39,6 +39,8 @@ public class Messages extends NLS {
 	public static String MethodRequiresBody;
 	public static String AbstractMethodsInConcreteClass;
 	public static String UndefinedType;
+	public static String UndefinedFunction;
+	public static String UndefinedConstant;
 	public static String AbstractMethodMustBeImplemented;
 	public static String ImportNotFound;
 	public static String DuplicateImport;

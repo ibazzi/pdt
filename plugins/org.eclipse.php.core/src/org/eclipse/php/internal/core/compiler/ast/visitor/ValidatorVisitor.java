@@ -108,6 +108,10 @@ public class ValidatorVisitor extends PHPASTVisitor {
 	public boolean visit(PHPCallExpression node) throws Exception {
 		if (node.getReceiver() != null) {
 			node.getReceiver().traverse(this);
+		} else {
+			if (node.getCallName() instanceof FullyQualifiedReference) {
+				visit((FullyQualifiedReference) node.getCallName());
+			}
 		}
 		if (node.getArgs() != null) {
 			node.getArgs().traverse(this);
@@ -117,10 +121,30 @@ public class ValidatorVisitor extends PHPASTVisitor {
 
 	@Override
 	public boolean visit(FullyQualifiedReference node) throws Exception {
-		if (node.getElementType() == FullyQualifiedReference.T_TYPE) {
-			return visit((TypeReference) node);
+		return visit((TypeReference) node);
+	}
+
+	@Override
+	public boolean visit(Scalar s) throws Exception {
+		if (s.getScalarType() != Scalar.TYPE_STRING || PHPSimpleTypes.isHintable(s.getValue(), version)
+				|| TYPE_SKIP.contains(s.getValue().toLowerCase())) {
+			return true;
 		}
-		return super.visit(node);
+		String name = s.getValue();
+		// To be sure it is a constant
+		if (!(name.startsWith("\"") && name.endsWith("\"") || (name.startsWith("\'") && name.endsWith("\'")))) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+			UsePartInfo info = usePartInfo.get(name.toLowerCase());
+
+			if (info != null) {
+				info.refer();
+			}
+			boolean isFound = findElement(s);
+			if (!isFound) {
+				reportProblem(s, Messages.UndefinedConstant, PHPProblemIdentifier.UndefinedConstant, name,
+						ProblemSeverities.Error);
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -153,7 +177,19 @@ public class ValidatorVisitor extends PHPASTVisitor {
 		}
 		boolean isFound = findElement(tri);
 		if (!isFound) {
-			reportProblem(node, Messages.UndefinedType, PHPProblemIdentifier.UndefinedType, node.getName(), severity);
+			String message = Messages.UndefinedType;
+			PHPProblemIdentifier problem = PHPProblemIdentifier.UndefinedType;
+			if (node instanceof FullyQualifiedReference) {
+				int elementType = ((FullyQualifiedReference) node).getElementType();
+				if (elementType == FullyQualifiedReference.T_FUNCTION) {
+					message = Messages.UndefinedFunction;
+					problem = PHPProblemIdentifier.UndefinedFunction;
+				} else if (elementType == FullyQualifiedReference.T_CONSTANT) {
+					message = Messages.UndefinedConstant;
+					problem = PHPProblemIdentifier.UndefinedConstant;
+				}
+			}
+			reportProblem(node, message, problem, node.getName(), severity);
 		}
 		return false;
 	}
@@ -231,16 +267,6 @@ public class ValidatorVisitor extends PHPASTVisitor {
 	public boolean visit(UsePart part) throws Exception {
 		UsePartInfo info = new UsePartInfo(part);
 		TypeReferenceInfo tri = info.getTypeReferenceInfo();
-
-		if (tri.getTypeReference() instanceof FullyQualifiedReference) {
-			int elementType = ((FullyQualifiedReference) tri.getTypeReference()).getElementType();
-			if (elementType == FullyQualifiedReference.T_CONSTANT
-					|| elementType == FullyQualifiedReference.T_FUNCTION) {
-				// TODO implement later, skip check for function and constant
-				// for now
-				return false;
-			}
-		}
 
 		String name = tri.getTypeName();
 		String currentNamespaceName;
@@ -436,6 +462,23 @@ public class ValidatorVisitor extends PHPASTVisitor {
 		typeDeclared.clear();
 	}
 
+	private boolean findElement(Scalar scalar) {
+		String name = scalar.getValue();
+		if (elementExists.containsKey(name)) {
+			return elementExists.get(name);
+		}
+		boolean isFound = false;
+		try {
+			IModelElement[] elements = PHPModelUtils.getFields(name, sourceModule, scalar.start(), null);
+			if (elements.length > 0) {
+				isFound = true;
+			}
+		} catch (ModelException e) {
+		}
+		elementExists.put(name, isFound);
+		return isFound;
+	}
+
 	private boolean findElement(TypeReferenceInfo info) {
 		String name = info.getFullyQualifiedName();
 		if (elementExists.containsKey(name)) {
@@ -449,28 +492,29 @@ public class ValidatorVisitor extends PHPASTVisitor {
 			if (type instanceof FullyQualifiedReference) {
 				elementType = ((FullyQualifiedReference) type).getElementType();
 			}
+			IModelElement[] elements = new IModelElement[0];
 			switch (elementType) {
 			case FullyQualifiedReference.T_TYPE:
-				IModelElement[] types = PHPModelUtils.getTypes(name, sourceModule, type.start(), null);
-				if (types.length == 0) {
-					types = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
-				}
-				if (types.length == 0 && info.isUseStatement()) {
-					types = sourceModule.codeSelect(type.start(), type.end() - type.start());
-				}
-				if (types.length > 0) {
-					isFound = true;
+				elements = PHPModelUtils.getTypes(name, sourceModule, type.start(), null);
+				if (elements.length == 0) {
+					elements = PHPModelUtils.getTraits(name, sourceModule, type.start(), null, null);
 				}
 				break;
 			case FullyQualifiedReference.T_CONSTANT:
+				elements = PHPModelUtils.getFields(name, sourceModule, type.start(), null);
+				break;
 			case FullyQualifiedReference.T_FUNCTION:
-				// TODO implement later, skip check for function and constant
-				// for now
-				isFound = true;
+				elements = PHPModelUtils.getFunctions(name, sourceModule, type.start(), null);
 				break;
 			default:
 				isFound = false;
 				break;
+			}
+			if (elements.length == 0 && info.isUseStatement()) {
+				elements = sourceModule.codeSelect(type.start(), type.end() - type.start());
+			}
+			if (elements.length > 0) {
+				isFound = true;
 			}
 		} catch (ModelException e) {
 			PHPCorePlugin.log(e);
@@ -624,8 +668,10 @@ public class ValidatorVisitor extends PHPASTVisitor {
 			this.typeReference = typeReference;
 			this.isUseStatement = isUseStatement;
 			FullyQualifiedReference fullTypeReference = null;
+			int elementType = FullyQualifiedReference.T_TYPE;
 			if (typeReference instanceof FullyQualifiedReference) {
 				fullTypeReference = (FullyQualifiedReference) typeReference;
+				elementType = fullTypeReference.getElementType();
 				if (fullTypeReference.getNamespace() != null) {
 					if (!fullTypeReference.getNamespace().isLocal()) {
 						hasNamespace = true;
@@ -660,7 +706,8 @@ public class ValidatorVisitor extends PHPASTVisitor {
 				String key = getFirstSegmentOfTypeName(fullyQualifiedName).toLowerCase();
 				if (usePartInfo.containsKey(key)) {
 					fullyQualifiedName = usePartInfo.get(key).getFullyQualifiedName();
-				} else if (currentNamespace != null && !currentNamespace.isGlobal()) {
+				} else if (currentNamespace != null && !currentNamespace.isGlobal()
+						&& elementType == FullyQualifiedReference.T_TYPE) {
 					fullyQualifiedName = PHPModelUtils.concatFullyQualifiedNames(currentNamespace.getName(),
 							fullyQualifiedName);
 				}
