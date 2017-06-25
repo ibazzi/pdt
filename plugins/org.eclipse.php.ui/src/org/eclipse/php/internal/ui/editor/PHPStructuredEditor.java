@@ -74,10 +74,7 @@ import org.eclipse.php.internal.core.project.PHPVersionChangedHandler;
 import org.eclipse.php.internal.core.search.IOccurrencesFinder;
 import org.eclipse.php.internal.core.search.IOccurrencesFinder.OccurrenceLocation;
 import org.eclipse.php.internal.core.search.OccurrencesFinderFactory;
-import org.eclipse.php.internal.ui.IPHPHelpContextIds;
-import org.eclipse.php.internal.ui.Logger;
-import org.eclipse.php.internal.ui.PHPUIMessages;
-import org.eclipse.php.internal.ui.PHPUiPlugin;
+import org.eclipse.php.internal.ui.*;
 import org.eclipse.php.internal.ui.actions.*;
 import org.eclipse.php.internal.ui.actions.GotoMatchingBracketAction;
 import org.eclipse.php.internal.ui.autoEdit.TabAutoEditStrategy;
@@ -295,6 +292,13 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 	 * @since 3.0
 	 */
 	protected OverrideIndicatorManager fOverrideIndicatorManager;
+
+	/**
+	 * Semantic highlighting manager
+	 *
+	 * @since 3.0, protected as of 3.3
+	 */
+	protected SemanticHighlightingManager fSemanticManager;
 
 	/**
 	 * Tells whether text drag and drop has been installed on the control.
@@ -800,6 +804,33 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 		if (!isActivePart() && PHPUiPlugin.getActivePage() != null)
 			PHPUiPlugin.getActivePage().bringToTop(this);
 		setSelection(reference, !isActivePart());
+
+		ISelectionProvider selectionProvider = getSelectionProvider();
+		if (selectionProvider == null)
+			return;
+
+		ISelection textSelection = selectionProvider.getSelection();
+		if (!(textSelection instanceof ITextSelection))
+			return;
+
+		ISourceModule sourceModule = (ISourceModule) getModelElement();
+		if (sourceModule == null)
+			return;
+
+		IProgressMonitor monitor = getProgressMonitor();
+		Program ast = null;
+		try {
+			ast = SharedASTProvider.getAST(sourceModule,
+					SharedASTProvider.WAIT_NO /* DO NOT USE WAIT_ACTIVE_ONLY */ , monitor);
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
+		} finally {
+			monitor.done();
+		}
+		if (ast != null) {
+			fForcedMarkOccurrencesSelection = textSelection;
+			updateOccurrenceAnnotations((ITextSelection) textSelection, ast);
+		}
 
 	}
 
@@ -1523,8 +1554,7 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 		}
 		if (fFormatterProfileListener != null) {
 			// workaround for bug 409116
-			PreferencesPropagator propagator = PreferencePropagatorFactory.getInstance()
-					.getPreferencePropagator(FORMATTER_PLUGIN_ID);
+			PreferencesPropagator propagator = PreferencePropagatorFactory.getPreferencePropagator(FORMATTER_PLUGIN_ID);
 			propagator.removePropagatorListener(fFormatterProfileListener,
 					"org.eclipse.php.formatter.core.formatter.tabulation.size"); //$NON-NLS-1$
 			propagator.removePropagatorListener(fFormatterProfileListener, "formatterProfile"); //$NON-NLS-1$
@@ -1550,6 +1580,7 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 		}
 		uninstallOccurrencesFinder();
 		uninstallOverrideIndicator();
+		uninstallSemanticHighlighting();
 
 		// remove the listener we added in createAction method
 
@@ -2536,6 +2567,9 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 		if (isMarkingOccurrences())
 			installOccurrencesFinder(true);
 
+		if (isSemanticHighlightingEnabled())
+			installSemanticHighlighting();
+
 		final IInformationControlCreator informationControlCreator = new IInformationControlCreator() {
 			@Override
 			public IInformationControl createInformationControl(Shell shell) {
@@ -2823,7 +2857,13 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 				fStickyOccurrenceAnnotations = newBooleanValue;
 				return;
 			}
-
+			if (SemanticHighlightings.affectsEnablement(getPreferenceStore(), event)) {
+				if (isSemanticHighlightingEnabled())
+					installSemanticHighlighting();
+				else
+					uninstallSemanticHighlighting();
+				return;
+			}
 			if (affectsOverrideIndicatorAnnotations(event)) {
 				if (isShowingOverrideIndicators()) {
 					if (fOverrideIndicatorManager == null)
@@ -2916,6 +2956,67 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 				|| getBoolean(store, preference.getVerticalRulerPreferenceKey())
 				|| getBoolean(store, preference.getOverviewRulerPreferenceKey())
 				|| getBoolean(store, preference.getTextPreferenceKey());
+	}
+
+	/**
+	 * @return <code>true</code> if Semantic Highlighting is enabled.
+	 *
+	 * @since 3.0
+	 */
+	private boolean isSemanticHighlightingEnabled() {
+		return SemanticHighlightings.isEnabled(getPreferenceStore());
+	}
+
+	/**
+	 * Install Semantic Highlighting.
+	 *
+	 * @since 3.0
+	 */
+	protected void installSemanticHighlighting() {
+		if (fSemanticManager == null) {
+			fSemanticManager = new SemanticHighlightingManager();
+			fSemanticManager.install(this, (PHPStructuredTextViewer) getSourceViewer(),
+					(ColorManager) PHPUiPlugin.getDefault().getTextTools().getColorManager(), getPreferenceStore());
+
+			if (isExternal) {
+				Job job = new Job("Override indicator installation job") { //$NON-NLS-1$
+					@Override
+					protected IStatus run(IProgressMonitor monitor) {
+						try {
+							Program ast = SharedASTProvider.getAST((ISourceModule) getModelElement(),
+									SharedASTProvider.WAIT_YES, null);
+							if (fOverrideIndicatorManager != null)
+								fOverrideIndicatorManager.reconciled(ast, true, monitor);
+							if (fSemanticManager != null) {
+								SemanticHighlightingReconciler reconciler = fSemanticManager.getReconciler();
+								if (reconciler != null)
+									reconciler.reconciled(ast, false, monitor);
+							}
+							if (isMarkingOccurrences())
+								installOccurrencesFinder(false);
+						} catch (ModelException e) {
+						} catch (IOException e) {
+						}
+						return Status.OK_STATUS;
+					}
+				};
+				job.setPriority(Job.DECORATE);
+				job.setSystem(true);
+				job.schedule();
+			}
+		}
+	}
+
+	/**
+	 * Uninstall Semantic Highlighting.
+	 *
+	 * @since 3.0
+	 */
+	private void uninstallSemanticHighlighting() {
+		if (fSemanticManager != null) {
+			fSemanticManager.uninstall();
+			fSemanticManager = null;
+		}
 	}
 
 	/**
@@ -3058,8 +3159,7 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 			};
 
 			// workaround for bug 409116
-			PreferencesPropagator propagator = PreferencePropagatorFactory.getInstance()
-					.getPreferencePropagator(FORMATTER_PLUGIN_ID);
+			PreferencesPropagator propagator = PreferencePropagatorFactory.getPreferencePropagator(FORMATTER_PLUGIN_ID);
 			propagator.addPropagatorListener(fFormatterProfileListener,
 					"org.eclipse.php.formatter.core.formatter.tabulation.size"); //$NON-NLS-1$
 			propagator.addPropagatorListener(fFormatterProfileListener, "formatterProfile"); //$NON-NLS-1$
@@ -3122,7 +3222,8 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 	/**
 	 * IScriptReconcilingListener methods - reconcile listeners
 	 */
-	private ListenerList fReconcilingListeners = new ListenerList(ListenerList.IDENTITY);
+	private ListenerList<IPHPScriptReconcilingListener> fReconcilingListeners = new ListenerList<>(
+			ListenerList.IDENTITY);
 
 	public void addReconcileListener(IPHPScriptReconcilingListener reconcileListener) {
 		synchronized (fReconcilingListeners) {
@@ -3163,7 +3264,6 @@ public class PHPStructuredEditor extends StructuredTextEditor implements IPHPScr
 
 		// Always notify AST provider
 		ISourceModule inputModelElement = (ISourceModule) getModelElement();
-
 		phpPlugin.getASTProvider().reconciled(ast, inputModelElement, progressMonitor);
 
 		// Notify listeners

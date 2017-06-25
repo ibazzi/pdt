@@ -16,7 +16,11 @@ package org.eclipse.php.core.ast.nodes;
 
 import org.eclipse.dltk.ast.Modifiers;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.internal.core.ExternalProjectFragment;
+import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.typeinference.FakeField;
+import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 
 /**
  * A variable binding represents either a field of a class or interface, or a
@@ -37,14 +41,18 @@ public class VariableBinding implements IVariableBinding {
 	private final BindingResolver resolver;
 	private final IMember modelElement;
 	private boolean isFakeField;
+	private boolean isSuperGlobal;
+	private boolean isInternalEvaluated;
+	private boolean isInternal;
 
 	private ITypeBinding declaringClassTypeBinding;
+	private ITypeBinding type;
 	private int id;
 
-	private Variable varialbe;
+	private Variable variable;
 
-	public Variable getVarialbe() {
-		return varialbe;
+	public Variable getVariable() {
+		return variable;
 	}
 
 	/**
@@ -57,11 +65,17 @@ public class VariableBinding implements IVariableBinding {
 	}
 
 	public VariableBinding(DefaultBindingResolver resolver, IMember modelElement, Variable variable, int id) {
+		this(resolver, modelElement, variable, id, false);
+	}
+
+	public VariableBinding(DefaultBindingResolver resolver, IMember modelElement, Variable variable, int id,
+			boolean isSuperGlobal) {
 		this.resolver = resolver;
 		this.modelElement = modelElement;
 		this.isFakeField = modelElement instanceof FakeField;
-		this.varialbe = variable;
+		this.variable = variable;
 		this.id = id;
+		this.isSuperGlobal = isSuperGlobal;
 	}
 
 	/**
@@ -106,7 +120,33 @@ public class VariableBinding implements IVariableBinding {
 	 * getDeclaringFunction ()
 	 */
 	public IFunctionBinding getDeclaringFunction() {
-		// TODO ?
+		if (!isField()) {
+			ASTNode node = this.resolver.findDeclaringNode(this);
+			while (true) {
+				if (node == null) {
+					// if (this.binding instanceof LocalVariableBinding) {
+					// LocalVariableBinding localVariableBinding =
+					// (LocalVariableBinding) this.binding;
+					// org.eclipse.jdt.internal.compiler.lookup.MethodBinding
+					// enclosingMethod =
+					// localVariableBinding.getEnclosingMethod();
+					// if (enclosingMethod != null)
+					// return this.resolver.getMethodBinding(enclosingMethod);
+					// }
+					return null;
+				}
+				switch (node.getType()) {
+				case ASTNode.METHOD_DECLARATION:
+					MethodDeclaration methodDeclaration = (MethodDeclaration) node;
+					return methodDeclaration.resolveMethodBinding();
+				case ASTNode.LAMBDA_FUNCTION_DECLARATION:
+					LambdaFunctionDeclaration lambdaExpression = (LambdaFunctionDeclaration) node;
+					return lambdaExpression.resolveFunctionBinding();
+				default:
+					node = node.getParent();
+				}
+			}
+		}
 		return null;
 	}
 
@@ -125,8 +165,14 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#getType()
 	 */
 	public ITypeBinding getType() {
-		// TODO: Do we need type information for PHP Element?
-		return null;
+		if (this.type == null && variable != null) {
+			if (variable.getParent() instanceof Assignment) {
+				this.type = this.resolver.resolveExpressionType(((Assignment) variable.getParent()).getRightHandSide());
+			} else {
+				this.type = this.resolver.resolveExpressionType(variable);
+			}
+		}
+		return this.type;
 	}
 
 	/*
@@ -154,7 +200,12 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isGlobal()
 	 */
 	public boolean isGlobal() {
-		// TODO Auto-generated method stub
+		if (IModelElement.FIELD == modelElement.getElementType()) {
+			if (variable.getLocationInParent() == GlobalStatement.VARIABLES_PROPERTY) {
+				return true;
+			}
+			return !isFakeField && getDeclaringFunction() == null;
+		}
 		return false;
 	}
 
@@ -164,7 +215,13 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isLocal()
 	 */
 	public boolean isLocal() {
-		return IModelElement.FIELD == modelElement.getElementType() && !isFakeField && getDeclaringClass() == null;
+		if (IModelElement.FIELD == modelElement.getElementType()) {
+			if (variable != null && variable.getLocationInParent() == GlobalStatement.VARIABLES_PROPERTY) {
+				return false;
+			}
+			return !isFakeField && getDeclaringFunction() != null;
+		}
+		return false;
 	}
 
 	/*
@@ -174,8 +231,18 @@ public class VariableBinding implements IVariableBinding {
 	 * org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isParameter()
 	 */
 	public boolean isParameter() {
-		// TODO Auto-generated method stub
-		return false;
+		boolean isParameter = false;
+		if (variable != null) {
+			ASTNode decl = variable.getProgramRoot().findDeclaringNode(this);
+			if (decl != null) {
+				if (decl instanceof Variable || decl instanceof Reference) {
+					isParameter = decl.getLocationInParent() == FormalParameter.PARAMETER_NAME_PROPERTY;
+				} else if (decl instanceof Identifier) {
+					isParameter = decl.getParent().getLocationInParent() == FormalParameter.PARAMETER_TYPE_PROPERTY;
+				}
+			}
+		}
+		return isParameter;
 	}
 
 	/*
@@ -203,13 +270,11 @@ public class VariableBinding implements IVariableBinding {
 	 * @see Modifiers
 	 */
 	public int getModifiers() {
-		if (isField()) {
+		if (modelElement != null) {
 			try {
-				return ((IField) modelElement).getFlags() & VALID_MODIFIERS;
+				return modelElement.getFlags() & VALID_MODIFIERS;
 			} catch (ModelException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
-				}
+				PHPCorePlugin.log(e);
 			}
 		}
 		return 0;
@@ -230,7 +295,7 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IBinding#isDeprecated()
 	 */
 	public boolean isDeprecated() {
-		return false;
+		return PHPModelUtils.isDeprecated(modelElement);
 	}
 
 	@Override
@@ -240,5 +305,34 @@ public class VariableBinding implements IVariableBinding {
 		}
 
 		return false;
+	}
+
+	@Override
+	public IVariableBinding getVariableDeclaration() {
+		if (isField()) {
+			return this.resolver.getVariableBinding((IField) modelElement);
+		}
+		return this;
+	}
+
+	@Override
+	public boolean isSuperGlobal() {
+		return isSuperGlobal;
+	}
+
+	@Override
+	public boolean isInternal() {
+		if (isConstant() && !isInternalEvaluated && modelElement != null) {
+			IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
+			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+				isInternal = true;
+			}
+		}
+		return isInternal;
+	}
+
+	@Override
+	public boolean isConstant() {
+		return PHPFlags.isConstant(getModifiers());
 	}
 }

@@ -430,6 +430,22 @@ public interface ITypeBinding extends IBinding {
 	 */
 	public boolean isUnknown();
 
+	/**
+	 * Returns whether this type is internal type
+	 *
+	 * @return <code>true</code> if this type is known and <code>false</code>
+	 *         otherwise
+	 */
+	public boolean isInternal();
+
+	/**
+	 * Returns whether this type is anonymous type
+	 *
+	 * @return <code>true</code> if this type is known and <code>false</code>
+	 *         otherwise
+	 */
+	public boolean isAnonymous();
+
 	public List<IType> getTraitList(boolean isMethod, String classMemberName, boolean includeSuper);
 
 	public org.eclipse.dltk.core.IModelElement[] getPHPElements();

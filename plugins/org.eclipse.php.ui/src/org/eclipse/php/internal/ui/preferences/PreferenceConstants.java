@@ -17,10 +17,11 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.MessageDialogWithToggle;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
+import org.eclipse.jface.resource.StringConverter;
 import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.internal.core.PHPCoreConstants;
 import org.eclipse.php.internal.ui.PHPUiPlugin;
-import org.eclipse.php.internal.ui.editor.SemanticHighlightingManager;
+import org.eclipse.php.internal.ui.editor.SemanticHighlightings;
 import org.eclipse.php.internal.ui.editor.saveparticipant.CodeFormatSaveParticipant;
 import org.eclipse.php.internal.ui.editor.saveparticipant.OrganizeUseStatmentsSaveParticipant;
 import org.eclipse.php.internal.ui.editor.saveparticipant.RemoveTrailingWhitespacesSaveParticipant;
@@ -127,7 +128,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_BOUNDARYMARKER_DEFAULT_COLOR = ColorHelper.getColorString(255, 0, 0);
+	public static final String EDITOR_BOUNDARYMARKER_DEFAULT_COLOR = getColorString(new RGB(255, 0, 0));
 
 	/**
 	 * A named preference that controls whether the 'close braces' feature is
@@ -206,7 +207,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_COMMENT_DEFAULT_COLOR = ColorHelper.getColorString(85, 127, 95);
+	public static final String EDITOR_COMMENT_DEFAULT_COLOR = getColorString(new RGB(85, 127, 95));
 
 	/**
 	 * A named preference that holds the color for the PHP comments
@@ -222,7 +223,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_LINE_COMMENT_DEFAULT_COLOR = ColorHelper.getColorString(85, 127, 95);
+	public static final String EDITOR_LINE_COMMENT_DEFAULT_COLOR = getColorString(new RGB(85, 127, 95));
 
 	/**
 	 * A named preference that holds the color for the PHP comments
@@ -238,7 +239,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_PHPDOC_COMMENT_DEFAULT_COLOR = ColorHelper.getColorString(63, 85, 191);
+	public static final String EDITOR_PHPDOC_COMMENT_DEFAULT_COLOR = getColorString(new RGB(63, 85, 191));
 
 	/**
 	 * A named preference that controls if correction indicators are shown in
@@ -263,7 +264,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_HEREDOC_DEFAULT_COLOR = ColorHelper.getColorString(0, 130, 130);
+	public static final String EDITOR_HEREDOC_DEFAULT_COLOR = getColorString(new RGB(0, 130, 130));
 
 	/**
 	 * A named preference that holds the color for the PHP keyword
@@ -280,7 +281,7 @@ public class PreferenceConstants {
 	 * </p>
 	 */
 	public static final String EDITOR_KEYWORD_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(127, 0, 85), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { getColorString(new RGB(127, 0, 85)), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the color for the normal PHP text
@@ -296,7 +297,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_NORMAL_DEFAULT_COLOR = ColorHelper.getColorString(0, 0, 0);
+	public static final String EDITOR_NORMAL_DEFAULT_COLOR = getColorString(new RGB(0, 0, 0));
 
 	/**
 	 * A named preference that holds the color for the numbers
@@ -312,7 +313,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_NUMBER_DEFAULT_COLOR = ColorHelper.getColorString(0, 0, 0);
+	public static final String EDITOR_NUMBER_DEFAULT_COLOR = getColorString(new RGB(0, 0, 0));
 
 	/**
 	 * A named preference that holds the color for the PHPDoc comments
@@ -330,7 +331,7 @@ public class PreferenceConstants {
 	 * 
 	 * @return Foo
 	 */
-	public static final String EDITOR_PHPDOC_DEFAULT_COLOR = ColorHelper.getColorString(127, 159, 191) + " | | true"; //$NON-NLS-1$
+	public static final String EDITOR_PHPDOC_DEFAULT_COLOR = getColorString(new RGB(127, 159, 191)) + " | | true"; //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the color for the PHP string
@@ -346,7 +347,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_STRING_DEFAULT_COLOR = ColorHelper.getColorString(0, 0, 192);
+	public static final String EDITOR_STRING_DEFAULT_COLOR = getColorString(new RGB(0, 0, 192));
 
 	/**
 	 * A named preference that controls whether the outline view selection
@@ -378,7 +379,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PUBLIC_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(34, 128, 76), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { getColorString(new RGB(34, 128, 76)), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for the PHP variable
@@ -393,7 +394,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PROTECTED_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(165, 124, 44), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { getColorString(new RGB(165, 124, 44)), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for the PHP variable
@@ -408,7 +409,7 @@ public class PreferenceConstants {
 	 * @since 3.5.0
 	 */
 	public static final String EDITOR_KEYWORD_PRIVATE_DEFAULT_COLOR = ColorHelper
-			.packStylePreferences(new String[] { ColorHelper.getColorString(194, 27, 48), null, "true" }); //$NON-NLS-1$
+			.packStylePreferences(new String[] { getColorString(new RGB(194, 27, 48)), null, "true" }); //$NON-NLS-1$
 
 	/**
 	 * A named preference that holds the default color for public keyword
@@ -416,7 +417,7 @@ public class PreferenceConstants {
 	 * Value is of type <code>String</code>.
 	 * </p>
 	 */
-	public static final String EDITOR_VARIABLE_DEFAULT_COLOR = ColorHelper.getColorString(0, 0, 0);
+	public static final String EDITOR_VARIABLE_DEFAULT_COLOR = getColorString(new RGB(0, 0, 0));
 
 	/**
 	 * A named preference that controls the smart tab behavior.
@@ -1206,7 +1207,7 @@ public class PreferenceConstants {
 		store.setDefault(EXPLORER_GROUP_BY_NAMESPACES, false);
 
 		// PHP Semantic Highlighting
-		SemanticHighlightingManager.getInstance().initDefaults(store);
+		SemanticHighlightings.initDefaults(store);
 
 		// do more complicated stuff
 		PHPProjectLayoutPreferencePage.initDefaults(store);
@@ -1215,6 +1216,10 @@ public class PreferenceConstants {
 	public static String getEnabledPreferenceKey(String preferenceKey) {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + preferenceKey
 				+ PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_ENABLED_SUFFIX;
+	}
+
+	private static String getColorString(RGB value) {
+		return StringConverter.asString(value);
 	}
 
 	// Don't instantiate

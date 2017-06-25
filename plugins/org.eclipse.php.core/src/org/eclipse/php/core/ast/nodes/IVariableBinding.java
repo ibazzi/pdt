@@ -54,6 +54,30 @@ public interface IVariableBinding extends IBinding {
 	public boolean isGlobal();
 
 	/**
+	 * Returns whether this binding corresponds to a super global.
+	 *
+	 * @return <code>true</code> if this is the binding for a super global, and
+	 *         <code>false</code> otherwise
+	 */
+	public boolean isSuperGlobal();
+
+	/**
+	 * Returns whether this binding corresponds to a constant.
+	 *
+	 * @return <code>true</code> if this is the binding for a internal constant,
+	 *         and <code>false</code> otherwise
+	 */
+	public boolean isConstant();
+
+	/**
+	 * Returns whether this binding corresponds to a internal constant.
+	 *
+	 * @return <code>true</code> if this is the binding for a internal constant,
+	 *         and <code>false</code> otherwise
+	 */
+	public boolean isInternal();
+
+	/**
 	 * Returns whether this binding corresponds to a local.
 	 * 
 	 * @return <code>true</code> if this is the binding for a local, and
@@ -147,4 +171,16 @@ public interface IVariableBinding extends IBinding {
 	 *         or <code>null</code> if none
 	 */
 	public ITypeBinding getDeclaringClass();
+
+	/**
+	 * Returns the binding for the variable declaration corresponding to this
+	 * variable binding. For a binding for a field declaration in an instance of
+	 * a generic type, this method returns the binding for the corresponding
+	 * field declaration in the generic type. For other variable bindings,
+	 * including all ones for local variables and parameters, this method
+	 * returns the same binding.
+	 *
+	 * @return the variable binding for the originating declaration
+	 */
+	public IVariableBinding getVariableDeclaration();
 }

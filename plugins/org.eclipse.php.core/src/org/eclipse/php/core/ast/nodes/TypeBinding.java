@@ -19,14 +19,18 @@ import org.eclipse.dltk.ast.Modifiers;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.evaluation.types.MultiTypeType;
 import org.eclipse.dltk.evaluation.types.SimpleType;
+import org.eclipse.dltk.internal.core.ExternalProjectFragment;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.php.core.compiler.PHPFlags;
+import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.typeinference.PHPClassType;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.core.typeinference.evaluators.PHPTraitType;
 
 public class TypeBinding implements ITypeBinding {
 
+	protected static final int VALID_MODIFIERS = PHPFlags.AccNameSpace | PHPFlags.AccAnonymous | PHPFlags.AccInterface
+			| PHPFlags.AccTrait | PHPFlags.AccFinal | PHPFlags.AccAbstract;
 	private IEvaluatedType type;
 	private IModelElement[] elements;
 	private BindingResolver resolver;
@@ -35,6 +39,8 @@ public class TypeBinding implements ITypeBinding {
 	private ITypeBinding[] interfaces;
 	private IVariableBinding[] fields;
 	private IMethodBinding[] methods;
+	private boolean isInternal = false;
+	private boolean isInternalEvaluated = false;
 	private Map<IType, ITypeHierarchy> hierarchy = new HashMap<IType, ITypeHierarchy>();
 
 	/**
@@ -262,10 +268,15 @@ public class TypeBinding implements ITypeBinding {
 	 * @see Modifiers
 	 */
 	public int getModifiers() {
-		if (isClass()) {
-			// element.
+		if (elements.length > 0 && elements[0] instanceof IMember) {
+			try {
+				IMember element = (IMember) elements[0];
+				return element.getFlags() & VALID_MODIFIERS;
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
 		}
-		return -1;
+		return 0;
 	}
 
 	/**
@@ -819,6 +830,11 @@ public class TypeBinding implements ITypeBinding {
 	 *         time).
 	 */
 	public boolean isDeprecated() {
+		for (IModelElement element : elements) {
+			if (PHPModelUtils.isDeprecated(element)) {
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -962,6 +978,22 @@ public class TypeBinding implements ITypeBinding {
 
 	public IModelElement[] getPHPElements() {
 		return elements;
+	}
+
+	@Override
+	public boolean isInternal() {
+		if (!isInternalEvaluated && elements.length > 0) {
+			IModelElement element = elements[0].getAncestor(IModelElement.PROJECT_FRAGMENT);
+			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+				isInternal = true;
+			}
+		}
+		return isInternal;
+	}
+
+	@Override
+	public boolean isAnonymous() {
+		return PHPFlags.isAnonymous(getModifiers());
 	}
 
 }

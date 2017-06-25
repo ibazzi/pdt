@@ -132,4 +132,9 @@ public class MethodBinding extends FunctionBinding implements IMethodBinding {
 	public ITypeBinding[] getReturnType() {
 		return resolver.getMethodReturnTypeBinding(modelElement);
 	}
+
+	@Override
+	public IMethodBinding getMethodDeclaration() {
+		return resolver.getMethodBinding(modelElement);
+	}
 }

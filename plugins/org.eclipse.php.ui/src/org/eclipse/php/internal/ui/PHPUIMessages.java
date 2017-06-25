@@ -1010,6 +1010,8 @@ public final class PHPUIMessages extends NLS {
 	public static String PHPUiPlugin_4;
 	public static String PHPUiPlugin_5;
 
+	public static String SemanticHighlighting_job;
+
 	static {
 		NLS.initializeMessages(BUNDLE_NAME, PHPUIMessages.class);
 	}

@@ -14,11 +14,14 @@
  */
 package org.eclipse.php.core.ast.nodes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.dltk.ast.Modifiers;
-import org.eclipse.dltk.core.DLTKCore;
-import org.eclipse.dltk.core.IMethod;
-import org.eclipse.dltk.core.IModelElement;
-import org.eclipse.dltk.core.ModelException;
+import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.internal.core.ExternalProjectFragment;
+import org.eclipse.php.internal.core.PHPCorePlugin;
+import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 
 /**
  * A PHP function binding. This class is also the base class for the
@@ -31,7 +34,11 @@ public class FunctionBinding implements IFunctionBinding {
 	protected static final int VALID_MODIFIERS = Modifiers.AccPublic | Modifiers.AccProtected | Modifiers.AccPrivate
 			| Modifiers.AccDefault | Modifiers.AccStatic | Modifiers.AccFinal | Modifiers.AccAbstract;
 	protected BindingResolver resolver;
+	private ITypeBinding[] parameterTypes;
+	private ITypeBinding[] returnType;
 	protected IMethod modelElement;
+	private boolean isInternalEvaluated;
+	private boolean isInternal;
 
 	/**
 	 * Constructs a new FunctionBinding.
@@ -80,10 +87,23 @@ public class FunctionBinding implements IFunctionBinding {
 	 * getParameterTypes ()
 	 */
 	public ITypeBinding[] getParameterTypes() {
-		// TODO - Create the parameters types according to the defined types in
-		// the function declaration
-		// and in its DocBlock.
-		return null;
+		if (this.parameterTypes == null) {
+			try {
+				IModelElement[] elements = modelElement.getChildren();
+				List<ITypeBinding> typeBindings = new ArrayList<>();
+				if (elements != null) {
+					for (IModelElement element : elements) {
+						if (element instanceof IField) {
+							typeBindings.add(this.resolver.getFieldTypeBinding((IField) element));
+						}
+					}
+				}
+				this.parameterTypes = typeBindings.toArray(new ITypeBinding[0]);
+			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
+			}
+		}
+		return this.parameterTypes;
 	}
 
 	/*
@@ -93,7 +113,10 @@ public class FunctionBinding implements IFunctionBinding {
 	 * org.eclipse.php.internal.core.ast.nodes.IFunctionBinding#getReturnType()
 	 */
 	public ITypeBinding[] getReturnType() {
-		return resolver.getMethodReturnTypeBinding(modelElement);
+		if (this.returnType == null) {
+			this.returnType = resolver.getMethodReturnTypeBinding(modelElement);
+		}
+		return this.returnType;
 	}
 
 	/*
@@ -155,6 +178,17 @@ public class FunctionBinding implements IFunctionBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IBinding#isDeprecated()
 	 */
 	public boolean isDeprecated() {
-		return false;
+		return PHPModelUtils.isDeprecated(modelElement);
+	}
+
+	@Override
+	public boolean isInternal() {
+		if (!isInternalEvaluated && modelElement != null) {
+			IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
+			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+				isInternal = true;
+			}
+		}
+		return isInternal;
 	}
 }

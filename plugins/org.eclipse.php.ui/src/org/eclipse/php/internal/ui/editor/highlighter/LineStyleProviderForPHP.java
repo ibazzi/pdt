@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.resource.StringConverter;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITypedRegion;
 import org.eclipse.jface.text.TextAttribute;
@@ -229,16 +230,10 @@ public class LineStyleProviderForPHP extends AbstractLineStyleProvider implement
 	@Override
 	protected void addTextAttribute(String colorKey) {
 		if (getColorPreferences() != null) {
-			String enableKey = PreferenceConstants.getEnabledPreferenceKey(colorKey);
-			boolean enabled = getColorPreferences().getBoolean(enableKey);
-			if (enabled) {
-				String prefString = getColorPreferences().getString(colorKey);
-				String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
-				if (stylePrefs != null) {
-					getTextAttributes().put(colorKey, createTextAttribute(stylePrefs));
-				}
-			} else {
-				addDefaultTextAttribute(colorKey);
+			String prefString = getColorPreferences().getString(colorKey);
+			String[] stylePrefs = ColorHelper.unpackStylePreferences(prefString);
+			if (stylePrefs != null) {
+				getTextAttributes().put(colorKey, createTextAttribute(stylePrefs));
 			}
 		}
 	}
@@ -270,7 +265,7 @@ public class LineStyleProviderForPHP extends AbstractLineStyleProvider implement
 		if (Boolean.valueOf(stylePrefs[5]).booleanValue()) { // underline
 			fontModifier |= TextAttribute.UNDERLINE;
 		}
-		return new TextAttribute(EditorUtility.getColor(ColorHelper.toRGB(stylePrefs[0])),
+		return new TextAttribute(EditorUtility.getColor(StringConverter.asRGB(stylePrefs[0], null)),
 				EditorUtility.getColor(ColorHelper.toRGB(stylePrefs[1])), fontModifier);
 	}
 
@@ -717,38 +712,37 @@ public class LineStyleProviderForPHP extends AbstractLineStyleProvider implement
 					|| PreferenceConstants.EDITOR_KEYWORD_PROTECTED_COLOR.equals(prefKey)
 					|| PreferenceConstants.EDITOR_KEYWORD_PUBLIC_COLOR.equals(prefKey)) {
 				addTextAttribute(prefKey);
-			} else
-				if (PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_NORMAL_COLOR).equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_BOUNDARYMARKER_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_VARIABLE_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_STRING_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_COMMENT_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_LINE_COMMENT_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_PHPDOC_COMMENT_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_PHPDOC_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_NUMBER_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_HEREDOC_COLOR)
-								.equals(prefKey)
-								// ||
-								// PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_TASK_COLOR)
-								// .equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PRIVATE_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants
-								.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PROTECTED_COLOR)
-								.equals(prefKey)
-						|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PUBLIC_COLOR)
-								.equals(prefKey)) {
+			} else if (PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_NORMAL_COLOR)
+					.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_BOUNDARYMARKER_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_VARIABLE_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_STRING_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_COMMENT_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_LINE_COMMENT_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_PHPDOC_COMMENT_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_PHPDOC_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_NUMBER_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_HEREDOC_COLOR)
+							.equals(prefKey)
+					// ||
+					// PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_TASK_COLOR)
+					// .equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PRIVATE_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PROTECTED_COLOR)
+							.equals(prefKey)
+					|| PreferenceConstants.getEnabledPreferenceKey(PreferenceConstants.EDITOR_KEYWORD_PUBLIC_COLOR)
+							.equals(prefKey)) {
 				boolean enabled = getColorPreferences().getBoolean(prefKey);
 				prefKey = prefKey.split("\\.")[1]; //$NON-NLS-1$
 				if (enabled) {

@@ -18,11 +18,15 @@ import java.util.*;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.dltk.core.*;
+import org.eclipse.dltk.internal.core.SourceRefElement;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
+import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.core.ast.visitor.AbstractVisitor;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.Logger;
+import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.codeassist.CodeAssistUtils;
+import org.eclipse.php.internal.core.language.PHPVariables;
 import org.eclipse.php.internal.core.model.PerFileModelAccessCache;
 import org.eclipse.php.internal.core.typeinference.*;
 
@@ -53,6 +57,16 @@ public class DefaultBindingResolver extends BindingResolver {
 		}
 
 	}
+
+	/**
+	 * This map is used to retrieve the corresponding block scope for a ast node
+	 */
+	Map astNodesToBlockScope;
+
+	/**
+	 * This map is used to get an ast node from its binding (new binding) or DOM
+	 */
+	Map<IBinding, ASTNode> bindingsToAstNodes;
 
 	/**
 	 * The shared binding tables accros ASTs.
@@ -88,6 +102,7 @@ public class DefaultBindingResolver extends BindingResolver {
 		this.sourceModule = sourceModule;
 		this.workingCopyOwner = owner;
 		this.bindingTables = new BindingTables();
+		this.bindingsToAstNodes = new HashMap<>();
 		this.modelAccessCache = new PerFileModelAccessCache(sourceModule);
 		this.bindingUtil = new BindingUtility(this.sourceModule, this.modelAccessCache);
 	}
@@ -221,6 +236,15 @@ public class DefaultBindingResolver extends BindingResolver {
 		return (ITypeBinding[]) result.toArray(new ITypeBinding[result.size()]);
 	}
 
+	public ITypeBinding getFieldTypeBinding(IField field) {
+		try {
+			IEvaluatedType fieldEvaluatedType = bindingUtil.getType((SourceRefElement) field);
+			return getTypeBinding(fieldEvaluatedType, sourceModule);
+		} catch (ModelException e) {
+		}
+		return null;
+	}
+
 	/**
 	 * Returns the {@link IEvaluatedType} according to the offset and the
 	 * length.
@@ -289,16 +313,63 @@ public class DefaultBindingResolver extends BindingResolver {
 			return resolveFunction((FunctionInvocation) functionName.getParent());
 		}
 		// end
-		if (name.getParent() instanceof Variable) {
-			return resolveVariable((Variable) name.getParent());
-		}
-		IBinding binding = resolveExpressionType(name);
-		if (binding instanceof ITypeBinding) {
-			if (((ITypeBinding) binding).getEvaluatedType() instanceof PHPNamespaceConstantType) {
-				return resolveField(name);
+		ASTNode parent = name.getParent();
+		if (parent instanceof Variable) {
+			if (name.getName().equals("this")) { //$NON-NLS-1$
+				return null;
 			}
+			return resolveVariable((Variable) parent);
+		} else if (parent instanceof FullyQualifiedTraitMethodReference) {
+			FullyQualifiedTraitMethodReference reference = (FullyQualifiedTraitMethodReference) parent;
+			ITypeBinding typeBinding = reference.getClassName().resolveTypeBinding();
+			if (typeBinding != null) {
+				IMethodBinding[] methods = typeBinding.getDeclaredMethods();
+				for (IMethodBinding methodBinding : methods) {
+					if (methodBinding.getName().equalsIgnoreCase(name.getName())) {
+						return methodBinding;
+					}
+				}
+			}
+		} else if (parent instanceof ConstantDeclaration) {
+			while (parent != null) {
+				if (parent instanceof TypeDeclaration || parent instanceof NamespaceDeclaration) {
+					break;
+				}
+				parent = parent.getParent();
+			}
+			ITypeBinding typeBinding = null;
+			if (parent instanceof TypeDeclaration) {
+				TypeDeclaration typeDeclaration = (TypeDeclaration) parent;
+				typeBinding = typeDeclaration.resolveTypeBinding();
+			} else if (parent instanceof NamespaceDeclaration) {
+				typeBinding = ((NamespaceDeclaration) parent).resolveTypeBinding();
+			}
+			if (typeBinding != null) {
+				IVariableBinding[] fields = typeBinding.getDeclaredFields();
+				for (IVariableBinding fieldBinding : fields) {
+					if (fieldBinding.getName().equalsIgnoreCase(name.getName())
+							&& PHPFlags.isConstant(fieldBinding.getModifiers())) {
+						return fieldBinding;
+					}
+				}
+			}
+
+		} else if (parent instanceof StaticConstantAccess) {
+			return resolveField((StaticConstantAccess) parent);
+		} else if (parent instanceof FunctionDeclaration) {
+			return resolveFunction((FunctionDeclaration) parent);
+		} else if (parent instanceof NamespaceDeclaration) {
+
+		} else {
+			IBinding binding = resolveExpressionType(name);
+			if (binding instanceof ITypeBinding) {
+				if (((ITypeBinding) binding).getEvaluatedType() instanceof PHPNamespaceConstantType) {
+					return resolveField(name);
+				}
+			}
+			return binding;
 		}
-		return binding;
+		return null;
 	}
 
 	private FunctionName getFunctionName(Identifier name) {
@@ -338,7 +409,9 @@ public class DefaultBindingResolver extends BindingResolver {
 		try {
 			IModelElement elementAt = sourceModule.getElementAt(method.getStart());
 			if (elementAt instanceof IMethod) {
-				return getMethodBinding((IMethod) elementAt);
+				IMethodBinding methodBinding = getMethodBinding((IMethod) elementAt);
+				this.bindingsToAstNodes.put(methodBinding, method);
+				return methodBinding;
 			}
 
 		} catch (ModelException e) {
@@ -380,17 +453,21 @@ public class DefaultBindingResolver extends BindingResolver {
 		return new IncludeBinding(sourceModule, includeDeclaration);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.php.internal.core.ast.nodes.BindingResolver#findDeclaringNode
-	 * (org.eclipse.php.internal.core.ast.nodes.IBinding)
-	 */
-	@Override
-	org.eclipse.php.core.ast.nodes.ASTNode findDeclaringNode(IBinding binding) {
-		// TODO Auto-generated method stub
-		return super.findDeclaringNode(binding);
+	synchronized ASTNode findDeclaringNode(IBinding binding) {
+		if (binding == null) {
+			return null;
+		}
+		if (binding instanceof IMethodBinding) {
+			IMethodBinding methodBinding = (IMethodBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(methodBinding.getMethodDeclaration());
+		} else if (binding instanceof ITypeBinding) {
+			ITypeBinding typeBinding = (ITypeBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(typeBinding.getTypeDeclaration());
+		} else if (binding instanceof IVariableBinding) {
+			IVariableBinding variableBinding = (IVariableBinding) binding;
+			return (ASTNode) this.bindingsToAstNodes.get(variableBinding.getVariableDeclaration());
+		}
+		return (ASTNode) this.bindingsToAstNodes.get(binding);
 	}
 
 	/*
@@ -550,11 +627,36 @@ public class DefaultBindingResolver extends BindingResolver {
 	@Override
 	IVariableBinding resolveField(Scalar scalar) {
 		try {
-			IModelElement[] modelElements = sourceModule.codeSelect(scalar.getStart(), scalar.getLength());
-			if (modelElements != null && modelElements.length > 0) {
-				for (IModelElement element : modelElements) {
-					if (element.getElementType() == IModelElement.FIELD) {
-						return new VariableBinding(this, (IField) element);
+			if (scalar.getParent() instanceof FunctionInvocation) {
+				FunctionInvocation fi = (FunctionInvocation) scalar.getParent();
+				Expression functionName = fi.getFunctionName().getName();
+				if (fi.parameters().get(0) == scalar && functionName instanceof Identifier) {
+					final String name = ((Identifier) functionName).getName();
+					String constName = scalar.getStringValue();
+					if (constName.length() > 0 && (constName.charAt(0) == '\'' || constName.charAt(0) == '\"')) {
+						constName = constName.substring(1, constName.length() - 1);
+						if ("define".equalsIgnoreCase(name)) {//$NON-NLS-1$
+							IModelElement field = sourceModule.getElementAt(scalar.getStart() + 1);
+							if (field instanceof IField) {
+								return new VariableBinding(this, (IField) field);
+							}
+						} else if ("constant".equalsIgnoreCase(name)) {//$NON-NLS-1$
+							IField[] fields = PHPModelUtils.getFields(constName, sourceModule, scalar.getStart(), null);
+							for (IField field : fields) {
+								if (PHPFlags.isConstant(field.getFlags()) && field.getElementName().equals(constName)) {
+									return new VariableBinding(this, field);
+								}
+							}
+						}
+					}
+				}
+			} else {
+				IModelElement[] modelElements = sourceModule.codeSelect(scalar.getStart(), scalar.getLength());
+				if (modelElements != null && modelElements.length > 0) {
+					for (IModelElement element : modelElements) {
+						if (element.getElementType() == IModelElement.FIELD) {
+							return new VariableBinding(this, (IField) element);
+						}
 					}
 				}
 			}
@@ -623,7 +725,32 @@ public class DefaultBindingResolver extends BindingResolver {
 		if (modelElements != null && modelElements.length > 0) {
 			for (IModelElement element : modelElements) {
 				if (element.getElementType() == IModelElement.METHOD) {
-					return new MethodBinding(this, (IMethod) element);
+					IFunctionBinding methodBinding = new MethodBinding(this, (IMethod) element);
+					this.bindingsToAstNodes.put(methodBinding, function);
+					return methodBinding;
+				}
+			}
+		}
+		return super.resolveFunction(function);
+	}
+
+	@Override
+	IFunctionBinding resolveFunction(LambdaFunctionDeclaration function) {
+		IModelElement[] modelElements = null;
+		try {
+			modelElements = sourceModule.codeSelect(function.getStart(), function.getLength());
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				Logger.logException(e);
+			}
+			return null;
+		}
+		if (modelElements != null && modelElements.length > 0) {
+			for (IModelElement element : modelElements) {
+				if (element.getElementType() == IModelElement.METHOD) {
+					IFunctionBinding functionBinding = new FunctionBinding(this, (IMethod) element);
+					this.bindingsToAstNodes.put(functionBinding, function);
+					return functionBinding;
 				}
 			}
 		}
@@ -750,6 +877,19 @@ public class DefaultBindingResolver extends BindingResolver {
 		return super.resolveType(type);
 	}
 
+	@Override
+	ITypeBinding resolveType(NamespaceDeclaration namespace) {
+		try {
+			IModelElement element = sourceModule.getElementAt(namespace.getStart());
+			if (element instanceof IType && PHPFlags.isNamespace(((IType) element).getFlags())) {
+				return getTypeBinding((IType) element);
+			}
+		} catch (ModelException e) {
+			PHPCorePlugin.log(e);
+		}
+		return null;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -772,8 +912,25 @@ public class DefaultBindingResolver extends BindingResolver {
 	 */
 	@Override
 	IVariableBinding resolveVariable(FieldsDeclaration variable) {
-		// TODO Auto-generated method stub
 		return super.resolveVariable(variable);
+	}
+
+	IVariableBinding resolveVariable(SingleFieldDeclaration fieldDeclaration) {
+		if (fieldDeclaration == null || fieldDeclaration.getName() == null) {
+			throw new IllegalArgumentException("Can not resolve null expression"); //$NON-NLS-1$
+		}
+		try {
+			IModelElement elementAt = sourceModule.getElementAt(fieldDeclaration.getStart());
+			if (elementAt instanceof IField) {
+				return getVariableBinding((IField) elementAt);
+			}
+
+		} catch (ModelException e) {
+			if (DLTKCore.DEBUG) {
+				e.printStackTrace();
+			}
+		}
+		return null;
 	}
 
 	/*
@@ -785,23 +942,49 @@ public class DefaultBindingResolver extends BindingResolver {
 	 */
 	@Override
 	IVariableBinding resolveVariable(Variable variable) {
-		IModelElement modelElements = null;
-		try {
-			modelElements = bindingUtil.getFieldByPosition(variable.getStart(), variable.getLength());
-		} catch (ModelException e) {
-			if (DLTKCore.DEBUG) {
-				Logger.logException(e);
-			}
-		} catch (Exception e) {
-			Logger.logException(e);
-		}
+		ASTNode parent = variable.getParent();
+		if (parent instanceof SingleFieldDeclaration) {
+			return resolveVariable((SingleFieldDeclaration) parent);
+		} else if (parent instanceof FieldAccess) {
+			return resolveField((FieldAccess) parent);
+		} else if (parent instanceof StaticFieldAccess) {
+			return resolveField((StaticFieldAccess) parent);
+		} else {
+			try {
+				IModelElement modelElements = null;
+				if (parent instanceof FormalParameter) {
+					modelElements = sourceModule.getElementAt(parent.getStart());
+				} else {
+					modelElements = bindingUtil.getFieldByPosition(variable.getStart(), variable.getLength());
+				}
+				if (modelElements != null) {
+					if (modelElements.getElementType() == IModelElement.FIELD) {
+						int id = LocalVariableIndex.perform(variable.getEnclosingBodyNode(), variable);
+						IVariableBinding variableBinding = new VariableBinding(this, (IMember) modelElements, variable,
+								id);
+						this.bindingsToAstNodes.put(variableBinding, variable);
+						return variableBinding;
+					}
 
-		if (modelElements != null) {
-			if (modelElements.getElementType() == IModelElement.FIELD) {
-				int id = LocalVariableIndex.perform(variable.getEnclosingBodyNode(), variable);
-				return new VariableBinding(this, (IMember) modelElements, variable, id);
+				} else {
+					String[] globals = PHPVariables.getVariables(PHPVersion.PHP5_3);
+					for (String global : globals) {
+						if (variable.getName() instanceof Identifier) {
+							String name = ((Identifier) variable.getName()).getName();
+							if (variable.isDollared()) {
+								name = '$' + name;
+							}
+							if (global.equals(name)) {
+								IVariableBinding variableBinding = new VariableBinding(this, null, variable, -1, true);
+								this.bindingsToAstNodes.put(variableBinding, variable);
+								return variableBinding;
+							}
+						}
+					}
+				}
+			} catch (Exception e) {
+				PHPCorePlugin.log(e);
 			}
-
 		}
 		return super.resolveVariable(variable);
 	}

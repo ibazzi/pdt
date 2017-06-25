@@ -289,4 +289,14 @@ public class NamespaceDeclaration extends Statement {
 		// allow default implementation to flag the error
 		return super.internalGetSetChildProperty(property, get, child);
 	}
+
+	/**
+	 * Resolves and returns the binding for this type
+	 *
+	 * @return the binding, or <code>null</code> if the binding cannot be
+	 *         resolved
+	 */
+	public final ITypeBinding resolveTypeBinding() {
+		return this.ast.getBindingResolver().resolveType(this);
+	}
 }

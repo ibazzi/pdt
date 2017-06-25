@@ -58,6 +58,7 @@ import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.compiler.ast.parser.ASTUtils;
 import org.eclipse.php.internal.core.filenetwork.FileNetworkUtility;
 import org.eclipse.php.internal.core.filenetwork.ReferenceTree;
+import org.eclipse.php.internal.core.index.IPHPDocAwareElement;
 import org.eclipse.php.internal.core.language.LanguageModelInitializer;
 import org.eclipse.php.internal.core.model.PHPModelAccess;
 import org.eclipse.php.internal.core.typeinference.DeclarationSearcher.DeclarationType;
@@ -2396,6 +2397,19 @@ public class PHPModelUtils {
 		} catch (ModelException e) {
 			PHPCorePlugin.log(e);
 		}
+	}
+
+	public static boolean isDeprecated(IModelElement element) {
+		if (element instanceof IPHPDocAwareElement) {
+			return ((IPHPDocAwareElement) element).isDeprecated();
+		} else if (element instanceof IMember) {
+			try {
+				return PHPFlags.isDeprecated(((IMember) element).getFlags());
+			} catch (ModelException e) {
+				Logger.logException(e);
+			}
+		}
+		return false;
 	}
 
 }

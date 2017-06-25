@@ -89,4 +89,12 @@ public interface IFunctionBinding extends IBinding {
 	 */
 	public boolean isVarargs();
 
+	/**
+	 * Returns whether this function is internal function
+	 *
+	 * @return <code>true</code> if this type is known and <code>false</code>
+	 *         otherwise
+	 */
+	public boolean isInternal();
+
 }

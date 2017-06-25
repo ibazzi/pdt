@@ -419,4 +419,15 @@ public class LambdaFunctionDeclaration extends Expression {
 	List<StructuralPropertyDescriptor> internalStructuralPropertiesForType(PHPVersion apiLevel) {
 		return PROPERTY_DESCRIPTORS;
 	}
+
+	/**
+	 * Resolves and returns the binding for this method
+	 *
+	 * @return the binding, or <code>null</code> if the binding cannot be
+	 *         resolved
+	 */
+	public IFunctionBinding resolveFunctionBinding() {
+		return this.ast.getBindingResolver().resolveFunction(this);
+	}
+
 }

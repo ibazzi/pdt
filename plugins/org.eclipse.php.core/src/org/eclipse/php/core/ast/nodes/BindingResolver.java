@@ -228,6 +228,22 @@ public class BindingResolver {
 	}
 
 	/**
+	 * Returns the field types binding corresponding to the given {@link IField}
+	 * .
+	 * <p>
+	 * The default implementation of this method returns <code>null</code>.
+	 * Subclasses may reimplement.
+	 * </p>
+	 * 
+	 * @param field
+	 *            An {@link IField}
+	 * @return the field types binding
+	 */
+	public ITypeBinding getFieldTypeBinding(IField field) {
+		return null;
+	}
+
+	/**
 	 * Return the working copy owner for the receiver.
 	 * <p>
 	 * The default implementation of this method returns <code>null</code>.
@@ -527,6 +543,10 @@ public class BindingResolver {
 		return null;
 	}
 
+	IFunctionBinding resolveFunction(LambdaFunctionDeclaration function) {
+		return null;
+	}
+
 	/**
 	 * Resolves the given function invocation and returns the binding for it.
 	 * <p>
@@ -713,6 +733,30 @@ public class BindingResolver {
 	}
 
 	/**
+	 * Resolves the given namespace declaration and returns the binding for it.
+	 * <p>
+	 * The implementation of
+	 * <code>NamespaceDeclaration.resolveTypeBinding</code> (and
+	 * <code>TypeDeclarationStatement.resolveBinding</code>) forwards to this
+	 * method. How the type declaration resolves is often a function of the
+	 * context in which the type declaration node is embedded as well as the
+	 * type declaration subtree itself.
+	 * </p>
+	 * <p>
+	 * The default implementation of this method returns <code>null</code>.
+	 * Subclasses may reimplement.
+	 * </p>
+	 *
+	 * @param namespace
+	 *            the namespace declaration of interest
+	 * @return the binding for the given type declaration, or <code>null</code>
+	 *         if no binding is available
+	 */
+	ITypeBinding resolveType(NamespaceDeclaration namespace) {
+		return null;
+	}
+
+	/**
 	 * Resolves the given type parameter and returns the type binding for the
 	 * type parameter.
 	 * <p>
@@ -758,6 +802,31 @@ public class BindingResolver {
 	 *         <code>null</code> if no binding is available
 	 */
 	IVariableBinding resolveVariable(FieldsDeclaration variable) {
+		return null;
+	}
+
+	/**
+	 * Resolves the given variable declaration and returns the binding for it.
+	 * <p>
+	 * The implementation of <code>VariableDeclaration.resolveBinding</code>
+	 * forwards to this method. How the variable declaration resolves is often a
+	 * function of the context in which the variable declaration node is
+	 * embedded as well as the variable declaration subtree itself.
+	 * VariableDeclaration declarations used as local variable, formal parameter
+	 * and exception variables resolve to local variable bindings; variable
+	 * declarations used to declare fields resolve to field bindings.
+	 * </p>
+	 * <p>
+	 * The default implementation of this method returns <code>null</code>.
+	 * Subclasses may reimplement.
+	 * </p>
+	 *
+	 * @param variable
+	 *            the variable declaration of interest
+	 * @return the binding for the given variable declaration, or
+	 *         <code>null</code> if no binding is available
+	 */
+	IVariableBinding resolveVariable(SingleFieldDeclaration fieldDeclaration) {
 		return null;
 	}
 

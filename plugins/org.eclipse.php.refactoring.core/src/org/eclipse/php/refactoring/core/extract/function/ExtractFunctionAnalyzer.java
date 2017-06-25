@@ -395,7 +395,7 @@ import org.eclipse.php.refactoring.core.visitor.ScopeSyntaxErrorsVisitor;
 		Selection selection = getSelection();
 
 		for (int i = 0; i < bindings.length; i++) {
-			if (!selection.covers(((VariableBinding) bindings[i]).getVarialbe()))
+			if (!selection.covers(((VariableBinding) bindings[i]).getVariable()))
 				;
 			result.add(bindings[i]);
 		}

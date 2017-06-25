@@ -24,11 +24,15 @@ public class Messages extends NLS {
 	public static String InternalConstantHighlighting_0;
 	public static String InternalFunctionHighlighting_0;
 	public static String MethodHighlighting_0;
+	public static String MethodDeclarationHighlighting_0;
 	public static String ParameterVariableHighlighting_0;
 	public static String StaticFieldHighlighting_0;
 	public static String StaticMethodHighlighting_0;
+	public static String StaticMethodInvocation_0;
 	public static String SuperGlobalHighlighting_0;
 	public static String TaskTagHighlighting_0;
+	public static String LocalVariableHighlighting_0;
+	public static String NumbersHighlighting_0;
 
 	static {
 		// initialize resource bundle

@@ -12,6 +12,7 @@
 package org.eclipse.php.internal.ui.wizards.fields;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.layout.LayoutConstants;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.php.internal.ui.util.PixelConverter;
 import org.eclipse.swt.SWT;
@@ -139,6 +140,20 @@ public class LayoutUtil {
 		final Object ld = control.getLayoutData();
 		if (ld instanceof GridData)
 			((GridData) ld).widthHint = widthHint;
+	}
+
+	/**
+	 * Returns the indent of dependent controls, in pixels.
+	 * <p>
+	 * <strong>Note:</strong> Use this method instead of
+	 * {@link LayoutConstants#getIndent()} for compatibility reasons.
+	 * </p>
+	 *
+	 * @return the indent of dependent controls, in pixels.
+	 * @since 3.9
+	 */
+	public static final int getIndent() {
+		return LayoutConstants.getIndent();
 	}
 
 }
