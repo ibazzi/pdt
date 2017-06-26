@@ -60,16 +60,14 @@ public class SemanticHighlightings {
 	public static final String STATIC_METHOD_INVOCATION = "staticMethodInvocation"; //$NON-NLS-1$
 
 	/**
-	 * <<<<<<< HEAD A named preference part that controls the highlighting of
-	 * inherited method invocations.
+	 * A named preference part that controls the highlighting of inherited
+	 * method invocations.
 	 */
 	public static final String INHERITED_METHOD_INVOCATION = "inheritedMethodInvocation"; //$NON-NLS-1$
 
 	/**
 	 * A named preference part that controls the highlighting of annotation
 	 * element references.
-	 *
-	 * @since 3.1
 	 */
 	public static final String ANNOTATION_ELEMENT_REFERENCE = "annotationElementReference"; //$NON-NLS-1$
 
@@ -205,7 +203,6 @@ public class SemanticHighlightings {
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
 	 * @return the strikethrough preference key
-	 * @since 3.1
 	 */
 	public static String getStrikethroughPreferenceKey(SemanticHighlighting semanticHighlighting) {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + semanticHighlighting.getPreferenceKey()
@@ -219,7 +216,6 @@ public class SemanticHighlightings {
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
 	 * @return the underline preference key
-	 * @since 3.1
 	 */
 	public static String getUnderlinePreferenceKey(SemanticHighlighting semanticHighlighting) {
 		return PreferenceConstants.EDITOR_SEMANTIC_HIGHLIGHTING_PREFIX + semanticHighlighting.getPreferenceKey()
@@ -640,7 +636,6 @@ public class SemanticHighlightings {
 
 		@Override
 		public boolean consumes(SemanticToken token) {
-			;
 			IBinding binding = token.getBinding();
 			return binding != null && binding.getKind() == IBinding.METHOD;
 		}
@@ -775,15 +770,15 @@ public class SemanticHighlightings {
 		@Override
 		public boolean consumes(SemanticToken token) {
 			IBinding binding = token.getBinding();
-			boolean isConsumed = binding != null && binding.getKind() == IBinding.VARIABLE
+			boolean isField = binding != null && binding.getKind() == IBinding.VARIABLE
 					&& ((IVariableBinding) binding).isField();
-			if (isConsumed) {
+			if (isField) {
 				ASTNode node = token.getNode();
 				if (node.getParent() instanceof Variable) {
 					token.setHighlightingNode(node.getParent());
 				}
 			}
-			return isConsumed;
+			return isField;
 		}
 	}
 
@@ -825,15 +820,15 @@ public class SemanticHighlightings {
 		@Override
 		public boolean consumes(SemanticToken token) {
 			IBinding binding = token.getBinding();
-			boolean isConsumed = binding != null && binding.getKind() == IBinding.VARIABLE
+			boolean isStaticField = binding != null && binding.getKind() == IBinding.VARIABLE
 					&& ((IVariableBinding) binding).isField() && PHPFlags.isStatic(binding.getModifiers());
-			if (isConsumed) {
+			if (isStaticField) {
 				ASTNode node = token.getNode();
 				if (node.getParent() instanceof Variable) {
 					token.setHighlightingNode(node.getParent());
 				}
 			}
-			return isConsumed;
+			return isStaticField;
 		}
 	}
 
@@ -945,7 +940,6 @@ public class SemanticHighlightings {
 	/**
 	 * Semantic highlighting for numbers.
 	 *
-	 * @since 3.4
 	 */
 	private static final class NumberHighlighting extends SemanticHighlighting {
 
@@ -1002,76 +996,41 @@ public class SemanticHighlightings {
 	 */
 	static final class DeprecatedMemberHighlighting extends SemanticHighlighting {
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting#
-		 * getPreferenceKey()
-		 */
 		@Override
 		public String getPreferenceKey() {
 			return DEPRECATED_MEMBER;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.ISemanticHighlighting#
-		 * getDefaultTextColor()
-		 */
 		@Override
 		public RGB getDefaultDefaultTextColor() {
 			return new RGB(0, 0, 0);
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.ISemanticHighlighting#
-		 * getDefaultTextStyleBold()
-		 */
 		@Override
 		public boolean isBoldByDefault() {
 			return false;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting#
-		 * isItalicByDefault()
-		 */
 		@Override
 		public boolean isItalicByDefault() {
 			return false;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting#
-		 * isStrikethroughByDefault()
-		 * 
-		 * @since 3.1
-		 */
 		@Override
 		public boolean isStrikethroughByDefault() {
 			return true;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting#
-		 * isEnabledByDefault()
-		 */
 		@Override
 		public boolean isEnabledByDefault() {
 			return true;
 		}
 
-		/*
-		 * @see org.eclipse.jdt.internal.ui.javaeditor.ISemanticHighlighting#
-		 * getDisplayName()
-		 */
 		@Override
 		public String getDisplayName() {
 			return Messages.DeprecatedHighlighting_0;
 		}
 
-		/*
-		 * @see
-		 * org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting#consumes(
-		 * org.eclipse.jdt.internal.ui.javaeditor.SemanticToken)
-		 */
 		@Override
 		public boolean consumes(SemanticToken token) {
 			IBinding binding = token.getBinding();
@@ -1092,13 +1051,14 @@ public class SemanticHighlightings {
 						}
 						return false;
 					}
-					return declaringClass.isDeprecated() && !(token.getNode().getParent() instanceof MethodDeclaration);
+					return declaringClass.isDeprecated()
+							&& !(token.getNode().getParent() instanceof FunctionDeclaration);
 				} else if (binding instanceof IVariableBinding) {
 					IVariableBinding variableBinding = (IVariableBinding) binding;
 					ITypeBinding declaringClass = variableBinding.getDeclaringClass();
-					return declaringClass != null && declaringClass.isDeprecated();
-					// && !(token.getNode().getParent() instanceof
-					// VariableDeclaration);
+					return declaringClass != null && declaringClass.isDeprecated()
+							&& token.getNode().getParent() != null
+							&& !(token.getNode().getParent().getParent() instanceof SingleFieldDeclaration);
 				}
 			}
 			return false;
@@ -1140,7 +1100,6 @@ public class SemanticHighlightings {
 	 *            the property change under examination
 	 * @return <code>true</code> if <code>event</code> changed semantic
 	 *         highlighting enablement, <code>false</code> if it did not
-	 * @since 3.1
 	 */
 	public static boolean affectsEnablement(IPreferenceStore store, PropertyChangeEvent event) {
 		String relevantKey = null;
@@ -1174,7 +1133,6 @@ public class SemanticHighlightings {
 	 *            the preference store to consult
 	 * @return <code>true</code> if semantic highlighting is enabled,
 	 *         <code>false</code> if it is not
-	 * @since 3.1
 	 */
 	public static boolean isEnabled(IPreferenceStore store) {
 		SemanticHighlighting[] highlightings = getSemanticHighlightings();
@@ -1199,7 +1157,6 @@ public class SemanticHighlightings {
 	 *            the preference key
 	 * @param newValue
 	 *            the new value
-	 * @since 3.3
 	 */
 	private static void setDefaultAndFireEvent(IPreferenceStore store, String key, RGB newValue) {
 		RGB oldValue = null;

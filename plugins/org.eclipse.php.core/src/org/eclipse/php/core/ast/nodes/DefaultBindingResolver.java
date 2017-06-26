@@ -945,18 +945,13 @@ public class DefaultBindingResolver extends BindingResolver {
 		ASTNode parent = variable.getParent();
 		if (parent instanceof SingleFieldDeclaration) {
 			return resolveVariable((SingleFieldDeclaration) parent);
-		} else if (parent instanceof FieldAccess) {
+		} else if (parent instanceof FieldAccess && ((FieldAccess) parent).getField() == variable) {
 			return resolveField((FieldAccess) parent);
 		} else if (parent instanceof StaticFieldAccess) {
 			return resolveField((StaticFieldAccess) parent);
 		} else {
 			try {
-				IModelElement modelElements = null;
-				if (parent instanceof FormalParameter) {
-					modelElements = sourceModule.getElementAt(parent.getStart());
-				} else {
-					modelElements = bindingUtil.getFieldByPosition(variable.getStart(), variable.getLength());
-				}
+				IModelElement modelElements = bindingUtil.getFieldByPosition(variable.getStart(), variable.getLength());
 				if (modelElements != null) {
 					if (modelElements.getElementType() == IModelElement.FIELD) {
 						int id = LocalVariableIndex.perform(variable.getEnclosingBodyNode(), variable);

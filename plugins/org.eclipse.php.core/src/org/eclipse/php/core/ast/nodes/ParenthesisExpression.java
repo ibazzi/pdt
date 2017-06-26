@@ -175,4 +175,9 @@ public class ParenthesisExpression extends VariableBase {
 	List<StructuralPropertyDescriptor> internalStructuralPropertiesForType(PHPVersion apiLevel) {
 		return PROPERTY_DESCRIPTORS;
 	}
+
+	@Override
+	public ITypeBinding resolveTypeBinding() {
+		return this.ast.getBindingResolver().resolveExpressionType(this.expression);
+	}
 }

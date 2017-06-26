@@ -278,6 +278,8 @@ public class SemanticHighlightingReconciler implements IPHPScriptReconcilingList
 				updatePresentation(textPresentation, fAddedPositions, fRemovedPositions);
 
 			stopReconcilingPositions();
+		} catch (Exception e) {
+			PHPUiPlugin.log(e);
 		} finally {
 			fJobPresenter = null;
 			fJobSemanticHighlightings = null;

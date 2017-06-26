@@ -217,7 +217,7 @@ public class VariableDeclarationSearcher extends ContextFinder {
 			}
 		} else if (node instanceof FormalParameter) {
 			FormalParameter parameter = (FormalParameter) node;
-			getScope().addDeclaration(parameter.getName(), parameter);
+			getScope().addDeclaration(parameter.getName(), parameter.getParameterName());
 		} else if (node instanceof CatchClause) {
 			CatchClause clause = (CatchClause) node;
 			VariableReference varReference = clause.getVariable();
@@ -233,13 +233,13 @@ public class VariableDeclarationSearcher extends ContextFinder {
 
 			if (value instanceof SimpleReference) {
 				String variableName = ((SimpleReference) value).getName();
-				getScope().addDeclaration(variableName, foreachStatement);
+				getScope().addDeclaration(variableName, value);
 			}
 
 			final Expression key = foreachStatement.getKey();
 			if (key instanceof SimpleReference) {
 				String variableName = ((SimpleReference) key).getName();
-				getScope().addDeclaration(variableName, foreachStatement);
+				getScope().addDeclaration(variableName, key);
 			}
 		} else if (node instanceof StaticStatement) {
 			StaticStatement staticStatement = (StaticStatement) node;
