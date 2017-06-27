@@ -39,6 +39,7 @@ public class FormalParameter extends Argument {
 	public FormalParameter(int start, int end, SimpleReference type, final VariableReference parameterName,
 			Expression defaultValue, boolean isMandatory, boolean isVariadic) {
 		super(parameterName, start, end, defaultValue, 0);
+		this.setEnd(end);
 
 		SimpleReference ref = getRef();
 		if (ref != null) {

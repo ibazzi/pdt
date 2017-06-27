@@ -359,6 +359,14 @@ public interface ITypeBinding extends IBinding {
 	public boolean isClass();
 
 	/**
+	 * Returns whether this type binding represents a namesapce type.
+	 * 
+	 * @return <code>true</code> if this object represents an interface, and
+	 *         <code>false</code> otherwise
+	 */
+	public boolean isNamespace();
+
+	/**
 	 * Returns whether this type binding represents a class type or a recovered
 	 * binding.
 	 * 

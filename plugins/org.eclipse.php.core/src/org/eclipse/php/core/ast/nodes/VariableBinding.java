@@ -42,8 +42,7 @@ public class VariableBinding implements IVariableBinding {
 	private final IMember modelElement;
 	private boolean isFakeField;
 	private boolean isSuperGlobal;
-	private boolean isInternalEvaluated;
-	private boolean isInternal;
+	private Boolean isInternal = null;
 
 	private ITypeBinding declaringClassTypeBinding;
 	private ITypeBinding type;
@@ -139,6 +138,9 @@ public class VariableBinding implements IVariableBinding {
 				case ASTNode.METHOD_DECLARATION:
 					MethodDeclaration methodDeclaration = (MethodDeclaration) node;
 					return methodDeclaration.resolveMethodBinding();
+				case ASTNode.FUNCTION_DECLARATION:
+					FunctionDeclaration functionDeclaration = (FunctionDeclaration) node;
+					return functionDeclaration.resolveFunctionBinding();
 				case ASTNode.LAMBDA_FUNCTION_DECLARATION:
 					LambdaFunctionDeclaration lambdaExpression = (LambdaFunctionDeclaration) node;
 					return lambdaExpression.resolveFunctionBinding();
@@ -191,7 +193,13 @@ public class VariableBinding implements IVariableBinding {
 	 * @see org.eclipse.php.internal.core.ast.nodes.IVariableBinding#isField()
 	 */
 	public boolean isField() {
-		return IModelElement.FIELD == modelElement.getElementType() && !isFakeField && getDeclaringClass() != null;
+		if (IModelElement.FIELD == modelElement.getElementType() && !isFakeField) {
+			ITypeBinding declaraingClass = getDeclaringClass();
+			if (declaraingClass != null && declaraingClass.isClass()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/*
@@ -322,10 +330,13 @@ public class VariableBinding implements IVariableBinding {
 
 	@Override
 	public boolean isInternal() {
-		if (isConstant() && !isInternalEvaluated && modelElement != null) {
-			IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
-			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
-				isInternal = true;
+		if (isInternal == null) {
+			isInternal = false;
+			if (isConstant() && modelElement != null) {
+				IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
+				if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+					isInternal = true;
+				}
 			}
 		}
 		return isInternal;

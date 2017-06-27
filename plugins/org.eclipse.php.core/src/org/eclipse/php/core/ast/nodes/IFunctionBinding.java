@@ -97,4 +97,12 @@ public interface IFunctionBinding extends IBinding {
 	 */
 	public boolean isInternal();
 
+	/**
+	 * Returns whether this function is lambda function
+	 *
+	 * @return <code>true</code> if this type is known and <code>false</code>
+	 *         otherwise
+	 */
+	public boolean isAnonymous();
+
 }

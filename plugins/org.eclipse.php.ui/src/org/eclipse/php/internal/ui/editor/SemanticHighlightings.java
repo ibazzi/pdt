@@ -296,7 +296,8 @@ public class SemanticHighlightings {
 		@Override
 		public boolean consumes(SemanticToken token) {
 			IBinding binding = token.getBinding();
-			if (token.getNode().getName().equalsIgnoreCase("self")) { //$NON-NLS-1$
+			if (token.getNode().getName().equalsIgnoreCase("self") //$NON-NLS-1$
+					|| token.getNode().getName().equalsIgnoreCase("static")) {
 				return false;
 			}
 			if (binding instanceof ITypeBinding) {

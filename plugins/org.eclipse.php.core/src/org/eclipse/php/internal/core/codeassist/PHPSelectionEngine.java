@@ -451,6 +451,13 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 
 			}
 		}
+		// lambda function declaration
+		else if (node instanceof LambdaFunctionDeclaration) {
+			IModelElement element = sourceModule.getElementAt(node.sourceStart());
+			if (element != null) {
+				return new IModelElement[] { element };
+			}
+		}
 		// Class name in declaration
 		else if ((node instanceof TypeDeclaration || node instanceof MethodDeclaration)
 				&& ((Declaration) node).getNameStart() <= offset && ((Declaration) node).getNameEnd() >= offset) {
@@ -486,6 +493,17 @@ public class PHPSelectionEngine extends ScriptSelectionEngine {
 					}
 
 					return methods.toArray(new IMethod[methods.size()]);
+				}
+			} else if (reference instanceof VariableReference) {
+				BindingUtility util = new BindingUtility(sourceModule);
+				try {
+					IModelElement element = util.getFieldByPosition(reference.sourceStart(),
+							reference.sourceEnd() - reference.sourceStart());
+					if (element != null) {
+						return new IModelElement[] { element };
+					}
+				} catch (Exception e) {
+					PHPCorePlugin.log(e);
 				}
 			}
 		}

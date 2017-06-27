@@ -23,6 +23,7 @@ import org.eclipse.dltk.internal.core.ExternalProjectFragment;
 import org.eclipse.dltk.ti.types.IEvaluatedType;
 import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.PHPCorePlugin;
+import org.eclipse.php.internal.core.typeinference.AnonymousClassInstanceType;
 import org.eclipse.php.internal.core.typeinference.PHPClassType;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.core.typeinference.evaluators.PHPTraitType;
@@ -39,8 +40,7 @@ public class TypeBinding implements ITypeBinding {
 	private ITypeBinding[] interfaces;
 	private IVariableBinding[] fields;
 	private IMethodBinding[] methods;
-	private boolean isInternal = false;
-	private boolean isInternalEvaluated = false;
+	private Boolean isInternal = null;
 	private Map<IType, ITypeHierarchy> hierarchy = new HashMap<IType, ITypeHierarchy>();
 
 	/**
@@ -568,10 +568,18 @@ public class TypeBinding implements ITypeBinding {
 	 *         recovered binding, and <code>false</code> otherwise
 	 */
 	public boolean isClass() {
+		if (isUnknown() || isNamespace()) {
+			return false;
+		}
+		return type.getClass() == PHPClassType.class || type.getClass() == AnonymousClassInstanceType.class;
+	}
+
+	public boolean isNamespace() {
 		if (isUnknown()) {
 			return false;
 		}
-		return type.getClass() == PHPClassType.class;
+
+		return PHPFlags.isNamespace(getModifiers());
 	}
 
 	/**
@@ -608,9 +616,7 @@ public class TypeBinding implements ITypeBinding {
 			try {
 				result &= (member.getFlags() & Modifiers.AccInterface) != 0;
 			} catch (ModelException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
-				}
+				PHPCorePlugin.log(e);
 			}
 		}
 		return result;
@@ -688,9 +694,7 @@ public class TypeBinding implements ITypeBinding {
 					}
 				}
 			} catch (ModelException e) {
-				if (DLTKCore.DEBUG) {
-					e.printStackTrace();
-				}
+				PHPCorePlugin.log(e);
 			}
 		}
 		return isSubTypeCompatible;
@@ -942,9 +946,7 @@ public class TypeBinding implements ITypeBinding {
 						result.add(trait);
 					}
 				} catch (ModelException e) {
-					if (DLTKCore.DEBUG) {
-						e.printStackTrace();
-					}
+					PHPCorePlugin.log(e);
 				}
 			}
 		}
@@ -971,6 +973,7 @@ public class TypeBinding implements ITypeBinding {
 					}
 				}
 			} catch (ModelException e) {
+				PHPCorePlugin.log(e);
 			}
 		}
 		return null;
@@ -982,10 +985,13 @@ public class TypeBinding implements ITypeBinding {
 
 	@Override
 	public boolean isInternal() {
-		if (!isInternalEvaluated && elements.length > 0) {
-			IModelElement element = elements[0].getAncestor(IModelElement.PROJECT_FRAGMENT);
-			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
-				isInternal = true;
+		if (isInternal == null) {
+			isInternal = false;
+			if (elements.length > 0) {
+				IModelElement element = elements[0].getAncestor(IModelElement.PROJECT_FRAGMENT);
+				if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+					isInternal = true;
+				}
 			}
 		}
 		return isInternal;

@@ -284,8 +284,7 @@ class PHPEditorColoringConfigurationBlock extends AbstractConfigurationBlock {
 	 * The keys of the overlay store.
 	 */
 	private final String[][] fSyntaxColorListModel = new String[][] {
-			// { PreferencesMessages.JavaEditorPreferencePage_javaDocKeywords,
-			// PreferenceConstants.EDITOR_JAVADOC_KEYWORD_COLOR },
+			{ PHPUIMessages.ColorPage_Phpdoc, PreferenceConstants.EDITOR_PHPDOC_COLOR },
 			// { PreferencesMessages.JavaEditorPreferencePage_javaDocHtmlTags,
 			// PreferenceConstants.EDITOR_JAVADOC_TAG_COLOR },
 			// { PreferencesMessages.JavaEditorPreferencePage_javaDocLinks,

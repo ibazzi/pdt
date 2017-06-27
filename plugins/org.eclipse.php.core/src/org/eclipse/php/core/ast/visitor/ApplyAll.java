@@ -319,6 +319,10 @@ public abstract class ApplyAll extends AbstractVisitor {
 		return apply(func);
 	}
 
+	public boolean visit(AnonymousClassDeclaration anonymousClassDeclaration) {
+		return apply(anonymousClassDeclaration);
+	}
+
 	public boolean visit(GotoLabel gotoLabel) {
 		return apply(gotoLabel);
 	}
@@ -605,6 +609,10 @@ public abstract class ApplyAll extends AbstractVisitor {
 
 	public void endVisit(LambdaFunctionDeclaration func) {
 		endVisitNode(func);
+	}
+
+	public void endVisit(AnonymousClassDeclaration anonymousClassDeclaration) {
+		endVisitNode(anonymousClassDeclaration);
 	}
 
 	public void endVisit(GotoStatement gotoStatement) {

@@ -112,6 +112,21 @@ public class VariableDeclarationSearcher extends ContextFinder {
 		return super.endvisit(node);
 	}
 
+	public final boolean visit(AnonymousClassDeclaration node) throws Exception {
+		if (!isInteresting(node)) {
+			visitGeneral(node);
+			return false;
+		}
+
+		postProcess(node);
+
+		return super.visit(node);
+	}
+
+	public final boolean endvisit(AnonymousClassDeclaration node) throws Exception {
+		return super.endvisit(node);
+	}
+
 	/**
 	 * Override to invoke additional processing on this kind of node
 	 * 
@@ -132,6 +147,21 @@ public class VariableDeclarationSearcher extends ContextFinder {
 	}
 
 	public final boolean endvisit(MethodDeclaration node) throws Exception {
+		return super.endvisit(node);
+	}
+
+	public final boolean visit(LambdaFunctionDeclaration node) throws Exception {
+		if (!isInteresting(node)) {
+			visitGeneral(node);
+			return false;
+		}
+
+		postProcess(node);
+
+		return super.visit(node);
+	}
+
+	public final boolean endvisit(LambdaFunctionDeclaration node) throws Exception {
 		return super.endvisit(node);
 	}
 
@@ -217,7 +247,7 @@ public class VariableDeclarationSearcher extends ContextFinder {
 			}
 		} else if (node instanceof FormalParameter) {
 			FormalParameter parameter = (FormalParameter) node;
-			getScope().addDeclaration(parameter.getName(), parameter.getParameterName());
+			getScope().addDeclaration(parameter.getName(), parameter);
 		} else if (node instanceof CatchClause) {
 			CatchClause clause = (CatchClause) node;
 			VariableReference varReference = clause.getVariable();
@@ -310,7 +340,8 @@ public class VariableDeclarationSearcher extends ContextFinder {
 			final int kind = ((Statement) node).getKind();
 			return kind == ASTNodeKinds.CATCH_CLAUSE || kind == ASTNodeKinds.IF_STATEMENT
 					|| kind == ASTNodeKinds.FOR_STATEMENT || kind == ASTNodeKinds.FOR_EACH_STATEMENT
-					|| kind == ASTNodeKinds.SWITCH_CASE || kind == ASTNodeKinds.WHILE_STATEMENT;
+					|| kind == ASTNodeKinds.SWITCH_CASE || kind == ASTNodeKinds.WHILE_STATEMENT
+					|| kind == ASTNodeKinds.LAMBDA_FUNCTION;
 		}
 		return false;
 	}

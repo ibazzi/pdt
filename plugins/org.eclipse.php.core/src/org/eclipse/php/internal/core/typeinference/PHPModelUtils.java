@@ -1325,6 +1325,19 @@ public class PHPModelUtils {
 		return (ASTNode) visitor.getResult();
 	}
 
+	public static LambdaFunctionDeclaration getNodeByLambdaFunction(ModuleDeclaration rootNode, IMethod method)
+			throws ModelException {
+		DeclarationSearcher visitor = new DeclarationSearcher(rootNode, method, DeclarationType.LAMBDA_FUNCTION);
+		try {
+			rootNode.traverse(visitor);
+		} catch (Exception e) {
+			if (DLTKCore.DEBUG) {
+				Logger.logException(e);
+			}
+		}
+		return (LambdaFunctionDeclaration) visitor.getResult();
+	}
+
 	public static MethodDeclaration getNodeByMethod(ModuleDeclaration rootNode, IMethod method) throws ModelException {
 		DeclarationSearcher visitor = new DeclarationSearcher(rootNode, method, DeclarationType.METHOD);
 		try {

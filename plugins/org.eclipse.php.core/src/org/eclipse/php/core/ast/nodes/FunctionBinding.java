@@ -15,11 +15,14 @@
 package org.eclipse.php.core.ast.nodes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.dltk.ast.Modifiers;
 import org.eclipse.dltk.core.*;
 import org.eclipse.dltk.internal.core.ExternalProjectFragment;
+import org.eclipse.php.core.compiler.IPHPModifiers;
+import org.eclipse.php.core.compiler.PHPFlags;
 import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 
@@ -32,13 +35,13 @@ import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 public class FunctionBinding implements IFunctionBinding {
 
 	protected static final int VALID_MODIFIERS = Modifiers.AccPublic | Modifiers.AccProtected | Modifiers.AccPrivate
-			| Modifiers.AccDefault | Modifiers.AccStatic | Modifiers.AccFinal | Modifiers.AccAbstract;
+			| Modifiers.AccDefault | Modifiers.AccStatic | Modifiers.AccFinal | Modifiers.AccAbstract
+			| IPHPModifiers.AccAnonymous;
 	protected BindingResolver resolver;
 	private ITypeBinding[] parameterTypes;
 	private ITypeBinding[] returnType;
 	protected IMethod modelElement;
-	private boolean isInternalEvaluated;
-	private boolean isInternal;
+	private Boolean isInternal = null;
 
 	/**
 	 * Constructs a new FunctionBinding.
@@ -90,10 +93,11 @@ public class FunctionBinding implements IFunctionBinding {
 		if (this.parameterTypes == null) {
 			try {
 				IModelElement[] elements = modelElement.getChildren();
+				List<String> parameterNames = Arrays.asList(modelElement.getParameterNames());
 				List<ITypeBinding> typeBindings = new ArrayList<>();
 				if (elements != null) {
 					for (IModelElement element : elements) {
-						if (element instanceof IField) {
+						if (element instanceof IField && parameterNames.contains(element.getElementName())) {
 							typeBindings.add(this.resolver.getFieldTypeBinding((IField) element));
 						}
 					}
@@ -183,12 +187,21 @@ public class FunctionBinding implements IFunctionBinding {
 
 	@Override
 	public boolean isInternal() {
-		if (!isInternalEvaluated && modelElement != null) {
-			IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
-			if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
-				isInternal = true;
+		if (isInternal == null) {
+			isInternal = false;
+			if (modelElement != null) {
+				IModelElement element = modelElement.getAncestor(IModelElement.PROJECT_FRAGMENT);
+				if (element instanceof ExternalProjectFragment && ((ExternalProjectFragment) element).isExternal()) {
+					isInternal = true;
+				}
 			}
 		}
 		return isInternal;
 	}
+
+	@Override
+	public boolean isAnonymous() {
+		return PHPFlags.isAnonymous(getModifiers());
+	}
+
 }

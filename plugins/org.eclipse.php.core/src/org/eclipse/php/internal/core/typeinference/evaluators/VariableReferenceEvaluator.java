@@ -35,9 +35,7 @@ import org.eclipse.php.internal.core.typeinference.ArrayDeclaration;
 import org.eclipse.php.internal.core.typeinference.Declaration;
 import org.eclipse.php.internal.core.typeinference.PHPSimpleTypes;
 import org.eclipse.php.internal.core.typeinference.PHPTypeInferenceUtils;
-import org.eclipse.php.internal.core.typeinference.context.ContextFinder;
-import org.eclipse.php.internal.core.typeinference.context.FileContext;
-import org.eclipse.php.internal.core.typeinference.context.MethodContext;
+import org.eclipse.php.internal.core.typeinference.context.*;
 import org.eclipse.php.internal.core.typeinference.goals.ArrayDeclarationGoal;
 import org.eclipse.php.internal.core.typeinference.goals.ForeachStatementGoal;
 import org.eclipse.php.internal.core.typeinference.goals.GlobalVariableReferencesGoal;
@@ -101,8 +99,13 @@ public class VariableReferenceEvaluator extends GoalEvaluator {
 				ISourceModuleContext typedContext = (ISourceModuleContext) context;
 				ASTNode rootNode = typedContext.getRootNode();
 				ASTNode localScopeNode = rootNode;
+				if (context instanceof LambdaFunctionContext) {
+					context = ((LambdaFunctionContext) context).getParentContext();
+				}
 				if (context instanceof MethodContext) {
 					localScopeNode = ((MethodContext) context).getMethodNode();
+				} else if (context instanceof NamespaceContext) {
+					localScopeNode = ((NamespaceContext) context).getNamespaceNode();
 				}
 				LocalReferenceDeclSearcher varDecSearcher = new LocalReferenceDeclSearcher(
 						typedContext.getSourceModule(), variableReference, localScopeNode);
@@ -228,6 +231,12 @@ public class VariableReferenceEvaluator extends GoalEvaluator {
 
 		public Declaration[] getDeclarations() {
 			Declaration[] declarations = getScope(variableContext).getDeclarations(variableName);
+			if (declarations.length == 0) {
+				if (variableContext instanceof LambdaFunctionContext) {
+					IContext context = ((LambdaFunctionContext) variableContext).getParentContext();
+					declarations = getScope(context).getDeclarations(variableName);
+				}
+			}
 			if (variableLevel > 0 && variableLevel < declarations.length) {
 				Declaration[] newDecls = new Declaration[declarations.length - variableLevel];
 				System.arraycopy(declarations, variableLevel, newDecls, 0, newDecls.length);
@@ -270,7 +279,12 @@ public class VariableReferenceEvaluator extends GoalEvaluator {
 			if (node.sourceStart() <= variableOffset) {
 				if (node instanceof Assignment) {
 					Assignment tmp = (Assignment) node;
-					if (tmp.getValue().start() <= variableOffset && tmp.getValue().end() > variableOffset) {
+					if (tmp.getValue() instanceof LambdaFunctionDeclaration) {
+						return true;
+					} else if (tmp.getValue() instanceof ClassInstanceCreation
+							&& ((ClassInstanceCreation) tmp.getValue()).getAnonymousClassDeclaration() != null) {
+						return true;
+					} else if (tmp.getValue().start() <= variableOffset && tmp.getValue().end() > variableOffset) {
 						return false;
 					}
 				}

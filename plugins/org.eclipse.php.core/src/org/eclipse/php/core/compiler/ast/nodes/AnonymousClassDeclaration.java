@@ -49,8 +49,8 @@ public class AnonymousClassDeclaration extends Expression implements IRecoverabl
 				}
 			}
 			body.traverse(visitor);
+			visitor.endvisit(this);
 		}
-		visitor.endvisit(this);
 	}
 
 	public TypeReference getSuperClass() {
