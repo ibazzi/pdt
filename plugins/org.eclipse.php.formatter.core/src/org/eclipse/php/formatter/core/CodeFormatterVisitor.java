@@ -41,7 +41,6 @@ import org.eclipse.php.internal.formatter.core.DocumentReader;
 import org.eclipse.php.internal.formatter.core.Logger;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
-import org.eclipse.text.edits.TextEdit;
 import org.eclipse.wst.sse.core.internal.provisional.text.*;
 
 import java_cup.runtime.Symbol;
@@ -5122,12 +5121,8 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 	 */
 	@Override
 	public @NonNull MultiTextEdit getTextEdits() {
-		List<ReplaceEdit> allChanges = getChanges();
 		MultiTextEdit rootEdit = new MultiTextEdit();
-		for (ReplaceEdit edit : allChanges) {
-			TextEdit textEdit = new ReplaceEdit(edit.getOffset(), edit.getLength(), edit.getText());
-			rootEdit.addChild(textEdit);
-		}
+		rootEdit.addChildren(getChanges().toArray(new ReplaceEdit[0]));
 		return rootEdit;
 	}
 
@@ -5197,8 +5192,8 @@ public class CodeFormatterVisitor extends AbstractVisitor implements ICodeFormat
 
 	/**
 	 * PHP Partitions can contain contiguous &lt;?php ?&gt; regions (see
-	 * {@link PHPStructuredTextPartitioner#computePartitioning(int, int)}), we
-	 * have to split them manually.
+	 * {@link PHPStructuredTextPartitioner#computePartitioning(int, int)}), we have
+	 * to split them manually.
 	 * 
 	 * @param partition
 	 *            PHP Partition

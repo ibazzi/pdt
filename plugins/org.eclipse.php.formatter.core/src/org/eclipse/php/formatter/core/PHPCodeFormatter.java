@@ -10,7 +10,10 @@
  *******************************************************************************/
 package org.eclipse.php.formatter.core;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -28,14 +31,15 @@ import org.eclipse.jface.text.formatter.IFormattingStrategy;
 import org.eclipse.php.core.PHPVersion;
 import org.eclipse.php.core.project.ProjectOptions;
 import org.eclipse.php.formatter.core.profiles.CodeFormatterPreferences;
+import org.eclipse.php.internal.core.PHPCorePlugin;
 import org.eclipse.php.internal.core.format.ICodeFormattingProcessor;
 import org.eclipse.php.internal.core.format.IFormatterProcessorFactory;
 import org.eclipse.php.internal.core.typeinference.PHPModelUtils;
 import org.eclipse.php.internal.formatter.core.FormatterCorePlugin;
 import org.eclipse.php.internal.formatter.core.HtmlFormatterForPHPCode;
 import org.eclipse.php.internal.formatter.core.Logger;
+import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.MultiTextEdit;
-import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.wst.html.core.internal.format.HTMLFormatProcessorImpl;
 import org.eclipse.wst.sse.core.StructuredModelManager;
@@ -84,13 +88,7 @@ public class PHPCodeFormatter implements IContentFormatter, IFormatterProcessorF
 				boolean useShortTags = ProjectOptions.useShortTags(project);
 				ICodeFormattingProcessor codeFormatterVisitor = getCodeFormattingProcessor(project, document, version,
 						useShortTags, region);
-				if (codeFormatterVisitor instanceof CodeFormatterVisitor) {
-					List<ReplaceEdit> changes = ((CodeFormatterVisitor) codeFormatterVisitor).getChanges();
-					if (changes.size() > 0) {
-						replaceAll(document, changes, structuredModel);
-					}
-				}
-
+				apply(document, codeFormatterVisitor.getTextEdits());
 			} else {
 				// TODO: how to handle other document types?
 			}
@@ -165,10 +163,11 @@ public class PHPCodeFormatter implements IContentFormatter, IFormatterProcessorF
 		return ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(id));
 	}
 
-	private void replaceAll(IDocument document, List<ReplaceEdit> changes, IStructuredModel domModelForPHP)
-			throws BadLocationException {
-		MultiTextEdit multiEdit = new MultiTextEdit();
-		multiEdit.addChildren(changes.toArray(new ReplaceEdit[0]));
+	private void apply(IDocument document, MultiTextEdit multiEdit) {
+		if (!multiEdit.hasChildren()) {
+			return;
+		}
+
 		Map<String, IDocumentPartitioner> partitioners = null;
 		try {
 			if (multiEdit.getChildrenSize() > 20) {
@@ -177,6 +176,8 @@ public class PHPCodeFormatter implements IContentFormatter, IFormatterProcessorF
 			RewriteSessionEditProcessor editProcessor = new RewriteSessionEditProcessor(document, multiEdit,
 					TextEdit.CREATE_UNDO | TextEdit.UPDATE_REGIONS);
 			editProcessor.performEdits();
+		} catch (MalformedTreeException | BadLocationException e) {
+			PHPCorePlugin.log(e);
 		} finally {
 			if (partitioners != null) {
 				TextUtilities.addDocumentPartitioners(document, partitioners);

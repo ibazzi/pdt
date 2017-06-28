@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.eclipse.php.internal.ui.editor.saveparticipant;
 
+import java.util.Map;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -22,10 +24,7 @@ import org.eclipse.dltk.core.ISourceModule;
 import org.eclipse.dltk.core.PreferencesLookupDelegate;
 import org.eclipse.dltk.core.manipulation.SourceModuleChange;
 import org.eclipse.dltk.ui.editor.saveparticipant.IPostSaveListener;
-import org.eclipse.jface.text.Document;
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IRegion;
-import org.eclipse.jface.text.Region;
+import org.eclipse.jface.text.*;
 import org.eclipse.jface.text.formatter.IContentFormatter;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
 import org.eclipse.php.core.project.ProjectOptions;
@@ -104,11 +103,22 @@ public class CodeFormatSaveParticipant implements IPostSaveListener {
 								ProjectOptions.useShortTags(project), new Region(0, document.getLength()));
 				MultiTextEdit edits = processor.getTextEdits();
 				if (edits.hasChildren()) {
-					final SourceModuleChange change = new SourceModuleChange(
-							"Format " + compilationUnit.getElementName(), compilationUnit); //$NON-NLS-1$
-					change.setSaveMode(TextFileChange.LEAVE_DIRTY);
-					change.setEdit(edits);
-					change.perform(monitor);
+
+					Map<String, IDocumentPartitioner> partitioners = null;
+					try {
+						if (edits.getChildrenSize() > 20) {
+							partitioners = TextUtilities.removeDocumentPartitioners(document);
+						}
+						final SourceModuleChange change = new SourceModuleChange(
+								"Format " + compilationUnit.getElementName(), compilationUnit); //$NON-NLS-1$
+						change.setSaveMode(TextFileChange.LEAVE_DIRTY);
+						change.setEdit(edits);
+						change.perform(monitor);
+					} finally {
+						if (partitioners != null) {
+							TextUtilities.addDocumentPartitioners(document, partitioners);
+						}
+					}
 				}
 			} catch (Exception e) {
 				throw new CoreException(new Status(IStatus.ERROR, PHPUiPlugin.ID, e.toString(), e));
