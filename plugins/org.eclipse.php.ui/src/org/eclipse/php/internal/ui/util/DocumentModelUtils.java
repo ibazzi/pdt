@@ -53,7 +53,6 @@ public class DocumentModelUtils {
 		IDocument document = textViewer.getDocument();
 		if (document instanceof IStructuredDocument) {
 			reparseDocument((IStructuredDocument) document);
-			textViewer.reconcile();
 		}
 	}
 
@@ -71,7 +70,6 @@ public class DocumentModelUtils {
 		IDocument document = textViewer.getDocument();
 		if (document instanceof IStructuredDocument) {
 			reparseDocument((IStructuredDocument) document, project);
-			textViewer.reconcile();
 		}
 	}
 
