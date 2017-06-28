@@ -135,7 +135,7 @@ public class VariableDeclarationSearcher extends ContextFinder {
 	protected void postProcess(MethodDeclaration node) {
 	}
 
-	public final boolean visit(MethodDeclaration node) throws Exception {
+	public final boolean visit(PHPMethodDeclaration node) throws Exception {
 		if (!isInteresting(node)) {
 			visitGeneral(node);
 			return false;
@@ -146,7 +146,7 @@ public class VariableDeclarationSearcher extends ContextFinder {
 		return super.visit(node);
 	}
 
-	public final boolean endvisit(MethodDeclaration node) throws Exception {
+	public final boolean endvisit(PHPMethodDeclaration node) throws Exception {
 		return super.endvisit(node);
 	}
 
@@ -313,7 +313,8 @@ public class VariableDeclarationSearcher extends ContextFinder {
 	}
 
 	public final void endvisitGeneral(ASTNode node) throws Exception {
-		nodesStack.pop();
+		ASTNode n = nodesStack.pop();
+		assert n == node;
 		super.endvisitGeneral(node);
 	}
 

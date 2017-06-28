@@ -26,8 +26,7 @@ import org.eclipse.swt.graphics.RGB;
 public class SemanticHighlightings {
 
 	/**
-	 * A named preference part that controls the highlighting of constant
-	 * fields.
+	 * A named preference part that controls the highlighting of constant fields.
 	 */
 	public static final String CONSTANT = "constant"; //$NON-NLS-1$
 
@@ -60,14 +59,14 @@ public class SemanticHighlightings {
 	public static final String STATIC_METHOD_INVOCATION = "staticMethodInvocation"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of inherited
-	 * method invocations.
+	 * A named preference part that controls the highlighting of inherited method
+	 * invocations.
 	 */
 	public static final String INHERITED_METHOD_INVOCATION = "inheritedMethodInvocation"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of annotation
-	 * element references.
+	 * A named preference part that controls the highlighting of annotation element
+	 * references.
 	 */
 	public static final String ANNOTATION_ELEMENT_REFERENCE = "annotationElementReference"; //$NON-NLS-1$
 
@@ -78,14 +77,12 @@ public class SemanticHighlightings {
 	public static final String ABSTRACT_METHOD_INVOCATION = "abstractMethodInvocation"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of local
-	 * variables.
+	 * A named preference part that controls the highlighting of local variables.
 	 */
 	public static final String LOCAL_VARIABLE_DECLARATION = "localVariableDeclaration"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of local
-	 * variables.
+	 * A named preference part that controls the highlighting of local variables.
 	 */
 	public static final String LOCAL_VARIABLE = "localVariable"; //$NON-NLS-1$
 
@@ -96,8 +93,7 @@ public class SemanticHighlightings {
 	public static final String PARAMETER_VARIABLE = "parameterVariable"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of deprecated
-	 * members.
+	 * A named preference part that controls the highlighting of deprecated members.
 	 */
 	public static final String DEPRECATED_MEMBER = "deprecatedMember"; //$NON-NLS-1$
 
@@ -121,22 +117,19 @@ public class SemanticHighlightings {
 	public static final String CLASS = "class"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of internal
-	 * classes.
+	 * A named preference part that controls the highlighting of internal classes.
 	 *
 	 */
 	public static final String INTERNAL_CLASS = "internalClass"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of internal
-	 * constant.
+	 * A named preference part that controls the highlighting of internal constant.
 	 *
 	 */
 	public static final String INTERNAL_CONSTANT = "internalConstant"; //$NON-NLS-1$
 
 	/**
-	 * A named preference part that controls the highlighting of internal
-	 * function.
+	 * A named preference part that controls the highlighting of internal function.
 	 *
 	 */
 	public static final String INTERNAL_FUNCTION = "internalFunction"; //$NON-NLS-1$
@@ -171,8 +164,8 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * A named preference that controls if the given semantic highlighting has
-	 * the text attribute bold.
+	 * A named preference that controls if the given semantic highlighting has the
+	 * text attribute bold.
 	 *
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
@@ -184,8 +177,8 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * A named preference that controls if the given semantic highlighting has
-	 * the text attribute italic.
+	 * A named preference that controls if the given semantic highlighting has the
+	 * text attribute italic.
 	 *
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
@@ -197,8 +190,8 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * A named preference that controls if the given semantic highlighting has
-	 * the text attribute strikethrough.
+	 * A named preference that controls if the given semantic highlighting has the
+	 * text attribute strikethrough.
 	 *
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
@@ -210,8 +203,8 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * A named preference that controls if the given semantic highlighting has
-	 * the text attribute underline.
+	 * A named preference that controls if the given semantic highlighting has the
+	 * text attribute underline.
 	 *
 	 * @param semanticHighlighting
 	 *            the semantic highlighting
@@ -242,7 +235,7 @@ public class SemanticHighlightings {
 	public static SemanticHighlighting[] getSemanticHighlightings() {
 		if (fgSemanticHighlightings == null)
 			fgSemanticHighlightings = new SemanticHighlighting[] { new DeprecatedMemberHighlighting(),
-					new InternalConstantHighlighting(), new SuperGlobalHighlighting(), new ConstantFieldHighlighting(),
+					new InternalConstantHighlighting(), new SuperGlobalHighlighting(), new ConstantHighlighting(),
 					new StaticFieldHighlighting(), new FieldHighlighting(), new InternalFunctionHighlighting(),
 					new FunctionHighlighting(), new MethodDeclarationHighlighting(),
 					new StaticMethodInvocationHighlighting(),
@@ -834,9 +827,9 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * Semantic highlighting for constant fields.
+	 * Semantic highlighting for constants.
 	 */
-	private static final class ConstantFieldHighlighting extends SemanticHighlighting {
+	private static final class ConstantHighlighting extends SemanticHighlighting {
 
 		@Override
 		public String getPreferenceKey() {
@@ -871,7 +864,7 @@ public class SemanticHighlightings {
 		@Override
 		public boolean consumes(SemanticToken token) {
 			IBinding binding = token.getBinding();
-			return binding != null && binding.getKind() == IBinding.VARIABLE && ((IVariableBinding) binding).isField()
+			return binding != null && binding.getKind() == IBinding.VARIABLE
 					&& PHPFlags.isConstant(binding.getModifiers());
 		}
 
@@ -1092,15 +1085,15 @@ public class SemanticHighlightings {
 	}
 
 	/**
-	 * Tests whether <code>event</code> in <code>store</code> affects the
-	 * enablement of semantic highlighting.
+	 * Tests whether <code>event</code> in <code>store</code> affects the enablement
+	 * of semantic highlighting.
 	 *
 	 * @param store
 	 *            the preference store where <code>event</code> was observed
 	 * @param event
 	 *            the property change under examination
-	 * @return <code>true</code> if <code>event</code> changed semantic
-	 *         highlighting enablement, <code>false</code> if it did not
+	 * @return <code>true</code> if <code>event</code> changed semantic highlighting
+	 *         enablement, <code>false</code> if it did not
 	 */
 	public static boolean affectsEnablement(IPreferenceStore store, PropertyChangeEvent event) {
 		String relevantKey = null;

@@ -480,8 +480,7 @@ public abstract class PHPASTVisitor extends ASTVisitor {
 	}
 
 	public boolean visit(ConstantReference s) throws Exception {
-		endvisitGeneral(s);
-		return false;
+		return visitGeneral(s);
 	}
 
 	public boolean visit(ContinueStatement s) throws Exception {
