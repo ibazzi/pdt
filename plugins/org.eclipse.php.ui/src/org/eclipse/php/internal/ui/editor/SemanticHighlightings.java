@@ -288,9 +288,27 @@ public class SemanticHighlightings {
 
 		@Override
 		public boolean consumes(SemanticToken token) {
+			Identifier name = token.getNode();
+			ASTNode node = name.getParent();
+			int nodeType = node.getType();
+			if (nodeType != ASTNode.NAMESPACE_NAME && nodeType != ASTNode.TRAIT_DECLARATION
+					&& nodeType != ASTNode.INTERFACE_DECLARATION && nodeType != ASTNode.CLASS_DECLARATION
+					&& nodeType != ASTNode.CLASS_INSTANCE_CREATION)
+				return false;
+			while (node instanceof Identifier) {
+				node = node.getParent();
+				nodeType = node.getType();
+				if (nodeType == ASTNode.USE_STATEMENT || nodeType == ASTNode.USE_STATEMENT_PART)
+					return false;
+			}
+
+			if (node instanceof NamespaceDeclaration) {
+				return false;
+			}
+
 			IBinding binding = token.getBinding();
 			if (token.getNode().getName().equalsIgnoreCase("self") //$NON-NLS-1$
-					|| token.getNode().getName().equalsIgnoreCase("static")) {
+					|| token.getNode().getName().equalsIgnoreCase("static")) { //$NON-NLS-1$
 				return false;
 			}
 			if (binding instanceof ITypeBinding) {
